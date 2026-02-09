@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import WorkflowGuide from "./WorkflowGuide";
 
 type PageShellProps = {
   title: string;
@@ -25,6 +26,7 @@ export default function PageShell({ title, subtitle, eyebrow, children }: PageSh
           </div>
 
           {subtitle && <p className="mt-3 muted max-w-4xl text-sm sm:text-[0.98rem] leading-relaxed">{subtitle}</p>}
+          <WorkflowGuide />
         </div>
       </section>
 

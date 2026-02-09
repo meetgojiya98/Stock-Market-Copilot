@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { createLocalAlert } from "../lib/data-client";
 import { pushResearchIdeaTicket } from "../lib/research-handoff";
+import AdvancedMarketChart from "./AdvancedMarketChart";
 import {
   buildResearchDecisionPacket,
   coerceDecisionPacket,
@@ -28,7 +29,6 @@ import {
   fetchSymbolContext,
   markdownFromDecisionPacket,
   normalizeSymbol,
-  sparklinePath,
   workspaceTitle,
   type HorizonMode,
   type ResearchDecisionPacket,
@@ -326,15 +326,27 @@ export default function ResearchPanel() {
       .slice(0, 20);
   }, [primaryContext, compareContext, benchmarkContext]);
 
-  const primarySparkline = useMemo(() => {
-    if (!primaryContext) return "";
-    return sparklinePath(primaryContext.points.slice(-120), 320, 78);
-  }, [primaryContext]);
+  const primarySeries = useMemo(
+    () =>
+      primaryContext
+        ? primaryContext.points.map((item) => ({
+            date: new Date(item.ts).toISOString().slice(0, 10),
+            close: item.price,
+          }))
+        : [],
+    [primaryContext]
+  );
 
-  const benchmarkSparkline = useMemo(() => {
-    if (!benchmarkContext) return "";
-    return sparklinePath(benchmarkContext.points.slice(-120), 320, 78);
-  }, [benchmarkContext]);
+  const benchmarkSeries = useMemo(
+    () =>
+      benchmarkContext
+        ? benchmarkContext.points.map((item) => ({
+            date: new Date(item.ts).toISOString().slice(0, 10),
+            close: item.price,
+          }))
+        : [],
+    [benchmarkContext]
+  );
 
   const handleGenerate = async () => {
     if (!primaryContext) {
@@ -705,76 +717,50 @@ export default function ResearchPanel() {
           </div>
 
           <div className="space-y-2">
-            <div className="card-elevated rounded-xl p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs muted">Primary Context</span>
-                <span className="text-xs muted">{primaryContext?.symbol || "-"}</span>
-              </div>
-
-              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <div className="muted">Last</div>
-                  <div className="metric-value font-semibold">
-                    {primaryContext ? formatMoney(primaryContext.price) : "-"}
-                  </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="card-elevated rounded-xl p-3">
+                <div className="muted">Primary</div>
+                <div className="mt-1 text-sm font-semibold">{primaryContext?.symbol || "-"}</div>
+                <div className="metric-value mt-0.5">
+                  {primaryContext ? formatMoney(primaryContext.price) : "-"}
                 </div>
-                <div>
-                  <div className="muted">Day Change</div>
-                  <div
-                    className={`metric-value font-semibold ${
-                      (primaryContext?.changePct ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"
-                    }`}
-                  >
-                    {primaryContext ? formatPct(primaryContext.changePct) : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="muted">Momentum 20D</div>
-                  <div className="metric-value font-semibold">
-                    {primaryContext ? formatPct(primaryContext.momentum20Pct) : "-"}
-                  </div>
-                </div>
-                <div>
-                  <div className="muted">Volatility</div>
-                  <div className="metric-value font-semibold">
-                    {primaryContext ? `${primaryContext.volatilityPct.toFixed(2)}%` : "-"}
-                  </div>
+                <div
+                  className={`text-[11px] mt-0.5 ${
+                    (primaryContext?.changePct ?? 0) >= 0
+                      ? "text-[var(--positive)]"
+                      : "text-[var(--negative)]"
+                  }`}
+                >
+                  {primaryContext ? formatPct(primaryContext.changePct) : "-"}
                 </div>
               </div>
-
-              <div className="mt-2 rounded-lg bg-white/65 dark:bg-black/25 p-2">
-                <div className="text-[11px] muted mb-1">Primary Price Structure</div>
-                {primarySparkline ? (
-                  <svg viewBox="0 0 320 78" className="w-full h-[78px]">
-                    <path d={primarySparkline} fill="none" stroke="var(--accent)" strokeWidth="2" />
-                  </svg>
-                ) : (
-                  <div className="text-xs muted">Loading sparkline...</div>
-                )}
+              <div className="card-elevated rounded-xl p-3">
+                <div className="muted">Benchmark</div>
+                <div className="mt-1 text-sm font-semibold">{benchmarkContext?.symbol || "-"}</div>
+                <div className="metric-value mt-0.5">
+                  {benchmarkContext ? formatMoney(benchmarkContext.price) : "-"}
+                </div>
+                <div
+                  className={`text-[11px] mt-0.5 ${
+                    (benchmarkContext?.changePct ?? 0) >= 0
+                      ? "text-[var(--positive)]"
+                      : "text-[var(--negative)]"
+                  }`}
+                >
+                  {benchmarkContext ? formatPct(benchmarkContext.changePct) : "-"}
+                </div>
               </div>
             </div>
 
-            <div className="card-elevated rounded-xl p-3">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs muted">Benchmark Structure</span>
-                <span className="text-xs muted">{benchmarkContext?.symbol || "-"}</span>
-              </div>
-
-              <div className="mt-2 rounded-lg bg-white/65 dark:bg-black/25 p-2">
-                <div className="text-[11px] muted mb-1">Benchmark Trend</div>
-                {benchmarkSparkline ? (
-                  <svg viewBox="0 0 320 78" className="w-full h-[78px]">
-                    <path d={benchmarkSparkline} fill="none" stroke="var(--accent-2)" strokeWidth="2" />
-                  </svg>
-                ) : (
-                  <div className="text-xs muted">Loading sparkline...</div>
-                )}
-              </div>
-
-              <div className="mt-2 text-[11px] muted">
-                Updated {primaryContext ? formatDate(primaryContext.asOf) : "-"}
-              </div>
-            </div>
+            <AdvancedMarketChart
+              title={`${primaryContext?.symbol || normalizeSymbol(primarySymbol)} Advanced Structure`}
+              subtitle={`Updated ${primaryContext ? formatDate(primaryContext.asOf) : "—"} • RSI/EMA/Bollinger/Relative overlays`}
+              data={primarySeries}
+              benchmark={benchmarkSeries}
+              support={primaryContext?.support}
+              resistance={primaryContext?.resistance}
+              compact
+            />
           </div>
         </div>
       </section>

@@ -17,13 +17,16 @@ import {
   XCircle,
 } from "lucide-react";
 import AttributionRiskLab from "./AttributionRiskLab";
+import AdvancedMarketChart from "./AdvancedMarketChart";
 import AutomationRulesLab from "./AutomationRulesLab";
 import BacktestingLab from "./BacktestingLab";
 import BrokerIntegrationsLab from "./BrokerIntegrationsLab";
 import CollaborationLab from "./CollaborationLab";
+import ExecutionPlaybooksLab from "./ExecutionPlaybooksLab";
 import MobileExecutionLab from "./MobileExecutionLab";
 import ThesisMemoryLab from "./ThesisMemoryLab";
 import { createLocalAlert, fetchWatchlistData } from "../lib/data-client";
+import { fetchMarketSeries, type MarketSeriesPoint } from "../lib/market-series";
 import {
   cancelPaperOrder,
   fetchPaperTradingLedger,
@@ -41,6 +44,7 @@ import {
   fetchResearchIdeaTickets,
   type ResearchIdeaTicket,
 } from "../lib/research-handoff";
+import type { ExecutionPlaybook } from "../lib/execution-playbooks";
 
 type WatchlistItem = {
   symbol: string;
@@ -51,6 +55,8 @@ type QuoteMeta = {
   changePct: number;
   asOf: string;
 };
+
+type ExecutionView = "desk" | "orders" | "labs";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
 
@@ -65,6 +71,9 @@ const ROADMAP_QUEUE = [
   { label: "PWA + Mobile Execution UX", state: "Live" },
   { label: "Research Decision Engine v2", state: "Live" },
   { label: "Research-to-Execution Handoff Queue", state: "Live" },
+  { label: "Execution Playbooks + Risk Guardrails", state: "Live" },
+  { label: "Guided Workflow Onboarding", state: "Live" },
+  { label: "Advanced Multi-Indicator Charts", state: "Live" },
 ];
 
 function normalizeSymbol(symbol: string) {
@@ -177,12 +186,18 @@ export default function ExecutionHub() {
   const [quantity, setQuantity] = useState("10");
   const [limitPrice, setLimitPrice] = useState("");
   const [baseSlippageBps, setBaseSlippageBps] = useState(8);
+  const [stopDistancePct, setStopDistancePct] = useState(2);
+  const [takeProfitPct, setTakeProfitPct] = useState(5);
+  const [riskPerTradePct, setRiskPerTradePct] = useState(1);
   const [ideaSource, setIdeaSource] = useState<PaperIdeaSource>("watchlist");
   const [busy, setBusy] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
   const [ideaQueue, setIdeaQueue] = useState<ResearchIdeaTicket[]>([]);
+  const [activeSeries, setActiveSeries] = useState<MarketSeriesPoint[]>([]);
+  const [seriesSource, setSeriesSource] = useState<"local" | "remote" | "synthetic">("local");
+  const [workspaceView, setWorkspaceView] = useState<ExecutionView>("desk");
 
   const ledgerRef = useRef<PaperTradingLedger | null>(null);
   const watchlistRef = useRef<WatchlistItem[]>([]);
@@ -221,6 +236,21 @@ export default function ExecutionHub() {
   const refreshIdeaQueue = useCallback(async () => {
     const result = await fetchResearchIdeaTickets();
     setIdeaQueue(result.data);
+  }, []);
+
+  const refreshActiveSeries = useCallback(async (nextSymbol: string) => {
+    const normalized = normalizeSymbol(nextSymbol);
+    if (!normalized) {
+      setActiveSeries([]);
+      return;
+    }
+
+    const result = await fetchMarketSeries(normalized, 260, API_BASE);
+    setActiveSeries(result.series);
+    setSeriesSource(result.source);
+    if (result.detail) {
+      setNotice(result.detail);
+    }
   }, []);
 
   const syncMarketData = useCallback(async () => {
@@ -309,6 +339,10 @@ export default function ExecutionHub() {
   }, [refreshIdeaQueue]);
 
   useEffect(() => {
+    refreshActiveSeries(symbol);
+  }, [refreshActiveSeries, symbol]);
+
+  useEffect(() => {
     if (!ledger) return;
     const interval = window.setInterval(() => {
       syncMarketData();
@@ -384,12 +418,34 @@ export default function ExecutionHub() {
     return (activeQuote.price * qty * baseSlippageBps) / 10_000;
   }, [activeQuote?.price, baseSlippageBps, quantity]);
 
+  const estimatedNotional = useMemo(() => {
+    const qty = Math.max(0, Math.floor(Number(quantity)));
+    if (!activeQuote?.price || qty <= 0) return 0;
+    return qty * activeQuote.price;
+  }, [activeQuote?.price, quantity]);
+
+  const estimatedRiskDollar = useMemo(() => {
+    if (!estimatedNotional || stopDistancePct <= 0) return 0;
+    return estimatedNotional * (stopDistancePct / 100) + estimatedSlipDollar;
+  }, [estimatedNotional, stopDistancePct, estimatedSlipDollar]);
+
+  const riskBudgetDollar = useMemo(() => {
+    if (!portfolioEquity || riskPerTradePct <= 0) return 0;
+    return portfolioEquity * (riskPerTradePct / 100);
+  }, [portfolioEquity, riskPerTradePct]);
+
+  const riskBudgetUtilization = useMemo(() => {
+    if (!riskBudgetDollar) return 0;
+    return (estimatedRiskDollar / riskBudgetDollar) * 100;
+  }, [estimatedRiskDollar, riskBudgetDollar]);
+
   const handleRefresh = async () => {
     setError("");
     setNotice("");
     setBusy(true);
     try {
       await syncMarketData();
+      await refreshActiveSeries(symbolRef.current || symbol);
       setNotice("Execution workspace synced.");
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Unable to refresh execution data.");
@@ -491,6 +547,18 @@ export default function ExecutionHub() {
     setIdeaQueue(result.data);
   };
 
+  const handleApplyPlaybook = (playbook: ExecutionPlaybook) => {
+    setSide(playbook.side);
+    setOrderType(playbook.orderType);
+    setQuantity(String(playbook.quantity));
+    setBaseSlippageBps(playbook.baseSlippageBps);
+    setStopDistancePct(playbook.stopDistancePct);
+    setTakeProfitPct(playbook.takeProfitPct);
+    setRiskPerTradePct(playbook.riskPerTradePct);
+    setIdeaSource("manual");
+    setNotice(`Playbook "${playbook.name}" applied to ticket.`);
+  };
+
   const handleCancelOrder = async (orderId: string) => {
     setError("");
     const result = await cancelPaperOrder(orderId);
@@ -550,6 +618,19 @@ export default function ExecutionHub() {
         return;
       }
 
+      const projectedRisk =
+        qty * reference * (Math.max(0.1, stopDistancePct) / 100) +
+        (qty * reference * baseSlippageBps) / 10_000;
+      const maxRisk = portfolioEquity * (riskPerTradePct / 100);
+      if (maxRisk > 0 && projectedRisk > maxRisk * 1.35) {
+        setError(
+          `Risk guardrail exceeded: projected ${formatMoney(projectedRisk)} vs budget ${formatMoney(
+            maxRisk
+          )}. Reduce size or widen risk budget.`
+        );
+        return;
+      }
+
       const result = await submitPaperOrder({
         symbol: normalizedSymbol,
         side,
@@ -570,7 +651,9 @@ export default function ExecutionHub() {
 
       if (result.order?.status === "filled") {
         const fillPrice = result.order.fillPrice ?? result.order.requestedPrice;
-        const text = `Paper ${result.order.side.toUpperCase()} ${result.order.symbol} ${result.order.quantity} @ ${formatMoney(fillPrice)} filled.`;
+        const text = `Paper ${result.order.side.toUpperCase()} ${result.order.symbol} ${result.order.quantity} @ ${formatMoney(
+          fillPrice
+        )} filled. Plan stop ${stopDistancePct.toFixed(1)}% / target +${takeProfitPct.toFixed(1)}%.`;
         setNotice(text);
         createLocalAlert(result.order.symbol, text, "execution");
       } else if (result.order?.status === "open") {
@@ -649,7 +732,30 @@ export default function ExecutionHub() {
         </div>
       )}
 
-      <div className="grid xl:grid-cols-[1.55fr_1fr] gap-4">
+      <div className="card-elevated rounded-xl p-3 flex items-center gap-2 flex-wrap">
+        <span className="text-xs muted">Workspace View</span>
+        {[
+          { id: "desk", label: "Trade Desk" },
+          { id: "orders", label: "Orders + Queue" },
+          { id: "labs", label: "Quant Labs" },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setWorkspaceView(tab.id as ExecutionView)}
+            className={`rounded-full px-3 py-1 text-xs border ${
+              workspaceView === tab.id
+                ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_16%,transparent)]"
+                : "border-[var(--surface-border)] bg-white/75 dark:bg-black/25"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {(workspaceView === "desk" || workspaceView === "orders") && (
+      <div className={workspaceView === "orders" ? "grid xl:grid-cols-1 gap-4" : "grid xl:grid-cols-[1.55fr_1fr] gap-4"}>
+        {workspaceView === "desk" && (
         <div className="space-y-4">
           <section className="card-elevated rounded-xl p-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -694,6 +800,23 @@ export default function ExecutionHub() {
                 </button>
               ))}
             </div>
+
+            <AdvancedMarketChart
+              title={`${activeSymbol} Execution Structure`}
+              subtitle={`Source: ${
+                seriesSource === "synthetic"
+                  ? "Synthetic Path"
+                  : seriesSource === "remote"
+                  ? "Remote API"
+                  : "Local API"
+              } • Includes EMA/Bollinger/RSI/Relative overlays`}
+              data={activeSeries}
+              support={
+                positionRows.find((item) => item.symbol === activeSymbol)?.averagePrice
+              }
+              compact
+              className="mt-3"
+            />
 
             <form className="mt-4 grid sm:grid-cols-2 gap-3" onSubmit={handleSubmitOrder}>
               <label className="text-xs space-y-1">
@@ -822,6 +945,45 @@ export default function ExecutionHub() {
                 />
               </label>
 
+              <label className="text-xs space-y-1">
+                <div className="muted">Stop Distance %</div>
+                <input
+                  type="number"
+                  min={0.1}
+                  max={40}
+                  step={0.1}
+                  value={stopDistancePct}
+                  onChange={(event) => setStopDistancePct(Number(event.target.value))}
+                  className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm"
+                />
+              </label>
+
+              <label className="text-xs space-y-1">
+                <div className="muted">Take Profit %</div>
+                <input
+                  type="number"
+                  min={0.1}
+                  max={120}
+                  step={0.1}
+                  value={takeProfitPct}
+                  onChange={(event) => setTakeProfitPct(Number(event.target.value))}
+                  className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm"
+                />
+              </label>
+
+              <label className="text-xs space-y-1">
+                <div className="muted">Risk Budget %</div>
+                <input
+                  type="number"
+                  min={0.1}
+                  max={20}
+                  step={0.1}
+                  value={riskPerTradePct}
+                  onChange={(event) => setRiskPerTradePct(Number(event.target.value))}
+                  className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm"
+                />
+              </label>
+
               <div className="sm:col-span-2 rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="muted">Live quote</span>
@@ -833,6 +995,30 @@ export default function ExecutionHub() {
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <span className="muted">Estimated slippage impact</span>
                   <span>{formatMoney(estimatedSlipDollar)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="muted">Estimated notional</span>
+                  <span>{formatMoney(estimatedNotional)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="muted">Estimated risk (stop + slippage)</span>
+                  <span>{formatMoney(estimatedRiskDollar)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="muted">Risk budget utilization</span>
+                  <span
+                    className={
+                      riskBudgetUtilization <= 100
+                        ? "text-[var(--positive)]"
+                        : riskBudgetUtilization <= 135
+                        ? "text-[var(--warning)]"
+                        : "text-[var(--negative)]"
+                    }
+                  >
+                    {riskBudgetDollar > 0
+                      ? `${riskBudgetUtilization.toFixed(1)}% of ${formatMoney(riskBudgetDollar)}`
+                      : "—"}
+                  </span>
                 </div>
               </div>
 
@@ -897,8 +1083,11 @@ export default function ExecutionHub() {
             </div>
           </section>
         </div>
+        )}
 
         <div className="space-y-4">
+          {workspaceView === "desk" && (
+          <>
           <section className="card-elevated rounded-xl p-4">
             <div className="flex items-center justify-between gap-2">
               <h3 className="section-title text-base flex items-center gap-2">
@@ -957,6 +1146,10 @@ export default function ExecutionHub() {
               ))}
             </div>
           </section>
+
+          <ExecutionPlaybooksLab onApply={handleApplyPlaybook} />
+          </>
+          )}
 
           <section className="card-elevated rounded-xl p-4">
             <h3 className="section-title text-base flex items-center gap-2">
@@ -1032,7 +1225,9 @@ export default function ExecutionHub() {
           </section>
         </div>
       </div>
+      )}
 
+      {workspaceView === "orders" && (
       <section className="card-elevated rounded-xl p-4">
         <h3 className="section-title text-base flex items-center gap-2">
           <ListOrdered size={15} />
@@ -1094,7 +1289,10 @@ export default function ExecutionHub() {
           </table>
         </div>
       </section>
+      )}
 
+      {workspaceView === "labs" && (
+      <>
       <BacktestingLab
         watchlistSymbols={watchlist.map((item) => item.symbol)}
         defaultSymbol={activeSymbol || watchlist[0]?.symbol}
@@ -1143,6 +1341,8 @@ export default function ExecutionHub() {
         onQuickTrade={handleQuickTrade}
         onRefresh={handleRefresh}
       />
+      </>
+      )}
     </div>
   );
 }

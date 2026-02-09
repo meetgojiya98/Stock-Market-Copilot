@@ -12,15 +12,8 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import AdvancedEquityChart from "./AdvancedEquityChart";
+import AdvancedMarketChart from "./AdvancedMarketChart";
 import {
   defaultBacktestConfig,
   type BacktestConfig,
@@ -64,14 +57,6 @@ function formatDate(value: string) {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function shortDate(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  return `${date.toLocaleDateString("en-US", { month: "short" })} ${String(
-    date.getDate()
-  ).padStart(2, "0")}`;
 }
 
 function hashSymbol(symbol: string) {
@@ -193,6 +178,7 @@ export default function BacktestingLab({ watchlistSymbols, defaultSymbol }: Back
     defaultBacktestConfig(defaultSymbol || watchlistSymbols[0] || "AAPL")
   );
   const [result, setResult] = useState<BacktestResult | null>(null);
+  const [lastHistory, setLastHistory] = useState<HistoricalBar[]>([]);
   const [historySource, setHistorySource] = useState<"local" | "remote" | "synthetic">("local");
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
@@ -237,6 +223,7 @@ export default function BacktestingLab({ watchlistSymbols, defaultSymbol }: Back
         symbol,
       });
 
+      setLastHistory(history.bars);
       setResult(nextResult);
       setHistorySource(history.source);
       if (history.detail) setNotice(history.detail);
@@ -584,48 +571,26 @@ export default function BacktestingLab({ watchlistSymbols, defaultSymbol }: Back
             </div>
           </div>
 
-          <div className="mt-4 card-elevated rounded-xl p-3">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="muted">
-                Equity curve with mark-to-market open position value.
-              </span>
-              <span className={result.metrics.totalReturn >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
-                Total return: {formatMoney(result.metrics.totalReturn)} ({formatPercent(result.metrics.totalReturnPct)})
-              </span>
-            </div>
-            <div className="h-[220px] mt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={result.equityCurve}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(107,114,128,0.18)" />
-                  <XAxis
-                    dataKey="date"
-                    tickFormatter={shortDate}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickFormatter={(value: number) =>
-                      new Intl.NumberFormat("en-US", {
-                        notation: "compact",
-                        maximumFractionDigits: 1,
-                      }).format(value)
-                    }
-                    width={70}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => [formatMoney(value), "Equity"]}
-                    labelFormatter={(value: string) => formatDate(value)}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="equity"
-                    stroke="var(--accent-2)"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+          <div className="mt-4 space-y-3">
+            <AdvancedEquityChart
+              data={result.equityCurve}
+              subtitle={`Total return ${formatMoney(result.metrics.totalReturn)} (${formatPercent(
+                result.metrics.totalReturnPct
+              )})`}
+            />
+
+            <AdvancedMarketChart
+              title={`${result.symbol} Market Structure During Test`}
+              subtitle={`Historical source: ${
+                historySource === "synthetic"
+                  ? "Synthetic Path"
+                  : historySource === "remote"
+                  ? "Remote API"
+                  : "Local API"
+              }`}
+              data={lastHistory.map((item) => ({ date: item.date, close: item.close }))}
+              compact
+            />
           </div>
 
           <div className="mt-4 card-elevated rounded-xl p-3">
