@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import DynamicBackdrop from "./DynamicBackdrop";
 import WorkflowGuide from "./WorkflowGuide";
 
 type PageShellProps = {
@@ -11,7 +12,8 @@ type PageShellProps = {
 export default function PageShell({ title, subtitle, eyebrow, children }: PageShellProps) {
   return (
     <div className="pro-container py-8 sm:py-10 space-y-5">
-      <section className="surface-glass page-hero p-5 sm:p-7 fade-up">
+      <section className="surface-glass dynamic-surface page-hero p-5 sm:p-7 fade-up">
+        <DynamicBackdrop variant="aurora" />
         <div className="relative z-[1]">
           {eyebrow && (
             <div className="text-[11px] uppercase tracking-[0.18em] muted font-semibold">{eyebrow}</div>
@@ -30,7 +32,10 @@ export default function PageShell({ title, subtitle, eyebrow, children }: PageSh
         </div>
       </section>
 
-      <section className="surface-glass rounded-2xl p-4 sm:p-6 fade-up">{children}</section>
+      <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-6 fade-up relative overflow-hidden">
+        <DynamicBackdrop variant="mesh" />
+        <div className="relative z-[1]">{children}</div>
+      </section>
     </div>
   );
 }

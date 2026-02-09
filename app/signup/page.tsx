@@ -13,6 +13,7 @@ import {
   Waves,
 } from "lucide-react";
 import BrandLogo from "../../components/BrandLogo";
+import DynamicBackdrop from "../../components/DynamicBackdrop";
 import { isApiConfigured, registerUser } from "../../lib/auth-client";
 
 export default function SignupPage() {
@@ -55,7 +56,8 @@ export default function SignupPage() {
   return (
     <div className="pro-container py-8 sm:py-14">
       <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-5 items-stretch max-w-6xl mx-auto">
-        <section className="surface-glass page-hero rounded-3xl p-6 sm:p-9 hidden lg:flex flex-col justify-between relative overflow-hidden">
+        <section className="surface-glass dynamic-surface page-hero rounded-3xl p-6 sm:p-9 hidden lg:flex flex-col justify-between relative overflow-hidden">
+          <DynamicBackdrop variant="trading" />
           <div className="relative z-10">
             <BrandLogo size={52} withWordmark showTagline />
             <div className="inline-flex items-center gap-2 rounded-full border soft-divider px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] muted mt-6 bg-white/65 dark:bg-black/25">
@@ -87,7 +89,9 @@ export default function SignupPage() {
           </div>
         </section>
 
-        <section className="surface-glass rounded-3xl p-6 sm:p-9">
+        <section className="surface-glass dynamic-surface rounded-3xl p-6 sm:p-9 relative overflow-hidden">
+          <DynamicBackdrop variant="mesh" />
+          <div className="relative z-[1]">
           <div className="lg:hidden mb-4">
             <BrandLogo size={42} withWordmark showTagline />
           </div>
@@ -172,6 +176,7 @@ export default function SignupPage() {
                 Sign in
               </Link>
             </span>
+          </div>
           </div>
         </section>
       </div>

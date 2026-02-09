@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Plus, Star, TrendingUp, Trash2 } from "lucide-react";
+import AdvancedMarketChart from "./AdvancedMarketChart";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -9,6 +10,7 @@ import {
   fetchWatchlistData,
   removeWatchlistSymbol,
 } from "../lib/data-client";
+import { fetchMarketSeries, type MarketSeriesPoint } from "../lib/market-series";
 
 type WatchlistItem = {
   symbol: string;
@@ -88,6 +90,9 @@ export default function WatchlistPanel() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [error, setError] = useState("");
   const [dataMode, setDataMode] = useState<"remote" | "local">("remote");
+  const [selectedSymbol, setSelectedSymbol] = useState("");
+  const [selectedSeries, setSelectedSeries] = useState<MarketSeriesPoint[]>([]);
+  const [selectedSource, setSelectedSource] = useState<"local" | "remote" | "synthetic">("local");
 
   const sortedWatchlist = useMemo(
     () =>
@@ -123,6 +128,9 @@ export default function WatchlistPanel() {
     }
 
     await refreshPrices(watchResult.data.map((row) => row.symbol));
+    if (!selectedSymbol && watchResult.data[0]?.symbol) {
+      setSelectedSymbol(watchResult.data[0].symbol);
+    }
   };
 
   useEffect(() => {
@@ -155,6 +163,38 @@ export default function WatchlistPanel() {
     }, 45_000);
     return () => window.clearInterval(interval);
   }, [watchlist]);
+
+  useEffect(() => {
+    if (!watchlist.length) {
+      setSelectedSymbol("");
+      setSelectedSeries([]);
+      return;
+    }
+
+    if (!selectedSymbol || !watchlist.some((row) => row.symbol === selectedSymbol)) {
+      setSelectedSymbol(watchlist[0].symbol);
+    }
+  }, [selectedSymbol, watchlist]);
+
+  useEffect(() => {
+    if (!selectedSymbol) return;
+
+    let cancelled = false;
+    const loadSeries = async () => {
+      const result = await fetchMarketSeries(selectedSymbol, 260, API_BASE);
+      if (cancelled) return;
+      setSelectedSeries(result.series);
+      setSelectedSource(result.source);
+      if (result.detail) {
+        setError(result.detail);
+      }
+    };
+    loadSeries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedSymbol]);
 
   const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -241,7 +281,11 @@ export default function WatchlistPanel() {
             return (
               <div
                 key={item.symbol}
-                className="card-elevated rounded-xl p-4"
+                className={`card-elevated rounded-xl p-4 ${
+                  selectedSymbol === item.symbol
+                    ? "border-[color-mix(in_srgb,var(--accent)_45%,var(--surface-border))]"
+                    : ""
+                }`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -255,6 +299,12 @@ export default function WatchlistPanel() {
                     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${meta.changePct >= 0 ? "badge-positive" : "badge-negative"}`}>
                       {formatPercent(meta.changePct)}
                     </span>
+                    <button
+                      onClick={() => setSelectedSymbol(item.symbol)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2.5 py-1 text-xs"
+                    >
+                      Chart
+                    </button>
                     <button
                       onClick={() => handlePromote(item.symbol)}
                       className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/45 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 text-xs"
@@ -290,6 +340,20 @@ export default function WatchlistPanel() {
       </div>
 
       <aside className="card-elevated rounded-xl p-4">
+        <AdvancedMarketChart
+          title={`${selectedSymbol || "Watchlist"} Structure`}
+          subtitle={`Source: ${
+            selectedSource === "synthetic"
+              ? "Synthetic Path"
+              : selectedSource === "remote"
+              ? "Remote API"
+              : "Local API"
+          }`}
+          data={selectedSeries}
+          compact
+          className="mb-4"
+        />
+
         <h3 className="font-semibold section-title flex items-center gap-2">
           <Star size={15} />
           Trending Symbols

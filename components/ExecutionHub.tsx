@@ -24,6 +24,7 @@ import BrokerIntegrationsLab from "./BrokerIntegrationsLab";
 import CollaborationLab from "./CollaborationLab";
 import ExecutionPlaybooksLab from "./ExecutionPlaybooksLab";
 import MobileExecutionLab from "./MobileExecutionLab";
+import StrategySweepLab from "./StrategySweepLab";
 import ThesisMemoryLab from "./ThesisMemoryLab";
 import { createLocalAlert, fetchWatchlistData } from "../lib/data-client";
 import { fetchMarketSeries, type MarketSeriesPoint } from "../lib/market-series";
@@ -74,6 +75,8 @@ const ROADMAP_QUEUE = [
   { label: "Execution Playbooks + Risk Guardrails", state: "Live" },
   { label: "Guided Workflow Onboarding", state: "Live" },
   { label: "Advanced Multi-Indicator Charts", state: "Live" },
+  { label: "Strategy Sweep + Monte Carlo Optimizer", state: "Live" },
+  { label: "Adaptive Dynamic Background System", state: "Live" },
 ];
 
 function normalizeSymbol(symbol: string) {
@@ -438,6 +441,51 @@ export default function ExecutionHub() {
     if (!riskBudgetDollar) return 0;
     return (estimatedRiskDollar / riskBudgetDollar) * 100;
   }, [estimatedRiskDollar, riskBudgetDollar]);
+
+  const readinessChecks = useMemo(() => {
+    const qty = Math.floor(Number(quantity));
+    const hasLiveQuote = Boolean(activeQuote?.price && activeQuote.price > 0);
+    const hasValidQty = Number.isFinite(qty) && qty > 0;
+    const withinBudget = riskBudgetDollar <= 0 || riskBudgetUtilization <= 100;
+    const symbolInCoverage =
+      watchlist.some((item) => item.symbol === activeSymbol) ||
+      positionRows.some((row) => row.symbol === activeSymbol) ||
+      ideaSource === "research";
+
+    const checks = [
+      {
+        label: "Live quote available",
+        ok: hasLiveQuote,
+      },
+      {
+        label: "Quantity is valid",
+        ok: hasValidQty,
+      },
+      {
+        label: "Risk is within budget",
+        ok: withinBudget,
+      },
+      {
+        label: "Symbol is in watchlist/research scope",
+        ok: symbolInCoverage,
+      },
+    ];
+    const passed = checks.filter((item) => item.ok).length;
+    return {
+      checks,
+      score: checks.length ? (passed / checks.length) * 100 : 0,
+      passed,
+    };
+  }, [
+    activeQuote?.price,
+    activeSymbol,
+    ideaSource,
+    positionRows,
+    quantity,
+    riskBudgetDollar,
+    riskBudgetUtilization,
+    watchlist,
+  ]);
 
   const handleRefresh = async () => {
     setError("");
@@ -1022,6 +1070,33 @@ export default function ExecutionHub() {
                 </div>
               </div>
 
+              <div className="sm:col-span-2 rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-xs">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="muted">Execution Readiness</span>
+                  <span
+                    className={
+                      readinessChecks.score >= 75
+                        ? "text-[var(--positive)]"
+                        : readinessChecks.score >= 50
+                        ? "text-[var(--warning)]"
+                        : "text-[var(--negative)]"
+                    }
+                  >
+                    {readinessChecks.score.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="mt-1 grid sm:grid-cols-2 gap-1.5">
+                  {readinessChecks.checks.map((check) => (
+                    <div key={check.label} className="flex items-center justify-between gap-2">
+                      <span className="muted">{check.label}</span>
+                      <span className={check.ok ? "text-[var(--positive)]" : "text-[var(--negative)]"}>
+                        {check.ok ? "Ready" : "Needs Work"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={submitting}
@@ -1294,6 +1369,11 @@ export default function ExecutionHub() {
       {workspaceView === "labs" && (
       <>
       <BacktestingLab
+        watchlistSymbols={watchlist.map((item) => item.symbol)}
+        defaultSymbol={activeSymbol || watchlist[0]?.symbol}
+      />
+
+      <StrategySweepLab
         watchlistSymbols={watchlist.map((item) => item.symbol)}
         defaultSymbol={activeSymbol || watchlist[0]?.symbol}
       />

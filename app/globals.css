@@ -158,6 +158,24 @@ button:active {
   pointer-events: none;
 }
 
+.dynamic-surface {
+  position: relative;
+  overflow: hidden;
+}
+
+.dynamic-surface::after {
+  content: "";
+  position: absolute;
+  inset: -55% -20%;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent-2) 24%, transparent), transparent 46%),
+    radial-gradient(circle at 82% 30%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 42%),
+    radial-gradient(circle at 60% 78%, color-mix(in srgb, var(--accent-3) 18%, transparent), transparent 48%);
+  opacity: 0.34;
+  animation: surfaceDrift 22s ease-in-out infinite alternate;
+}
+
 .surface-panel {
   background: var(--surface-strong);
   border: 1px solid var(--surface-border);
@@ -370,4 +388,127 @@ textarea::placeholder {
 :focus-visible {
   outline: 2px solid color-mix(in srgb, var(--accent-2) 50%, transparent);
   outline-offset: 2px;
+}
+
+.dynamic-backdrop {
+  z-index: 0;
+}
+
+.dynamic-backdrop--aurora {
+  mix-blend-mode: screen;
+}
+
+.dynamic-backdrop--mesh {
+  mix-blend-mode: lighten;
+}
+
+.dynamic-backdrop--trading {
+  mix-blend-mode: screen;
+  opacity: 0.88;
+}
+
+.dynamic-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(42px);
+  opacity: 0.42;
+  will-change: transform;
+  animation: floatBlob 18s ease-in-out infinite;
+}
+
+.dynamic-blob--a {
+  width: 38vw;
+  height: 38vw;
+  min-width: 200px;
+  min-height: 200px;
+  left: -10%;
+  top: -26%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-2) 62%, transparent), transparent 68%);
+  animation-delay: -4s;
+}
+
+.dynamic-blob--b {
+  width: 32vw;
+  height: 32vw;
+  min-width: 170px;
+  min-height: 170px;
+  right: -10%;
+  top: 10%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 62%, transparent), transparent 70%);
+  animation-delay: -9s;
+}
+
+.dynamic-blob--c {
+  width: 28vw;
+  height: 28vw;
+  min-width: 140px;
+  min-height: 140px;
+  left: 20%;
+  bottom: -24%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent-3) 60%, transparent), transparent 70%);
+  animation-delay: -13s;
+}
+
+.dynamic-line {
+  position: absolute;
+  width: 160%;
+  left: -30%;
+  height: 1px;
+  opacity: 0.24;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--accent-2) 72%, transparent),
+    color-mix(in srgb, var(--accent) 72%, transparent),
+    transparent
+  );
+  animation: driftLine 16s linear infinite;
+}
+
+.dynamic-line--a {
+  top: 24%;
+}
+
+.dynamic-line--b {
+  top: 68%;
+  animation-delay: -8s;
+}
+
+@keyframes floatBlob {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  25% {
+    transform: translate3d(12px, -18px, 0) scale(1.05);
+  }
+  50% {
+    transform: translate3d(-14px, 16px, 0) scale(0.97);
+  }
+  75% {
+    transform: translate3d(18px, 8px, 0) scale(1.04);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes driftLine {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(18%);
+  }
+}
+
+@keyframes surfaceDrift {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(5%, -4%, 0) rotate(4deg);
+  }
+  100% {
+    transform: translate3d(-4%, 6%, 0) rotate(-4deg);
+  }
 }
