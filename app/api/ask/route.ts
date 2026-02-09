@@ -1,93 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
+import { fetchAskAnswer, normalizeQuery, normalizeSymbol } from "@/lib/server/ask-core";
+import {
+  computeGroundingMetrics,
+  ensureSourceTrail,
+  mergeAndRankSources,
+  retrieveWebSources,
+  sanitizeLocalSources,
+  type CopilotSource,
+} from "@/lib/server/research-copilot";
 
-function normalizeBase(value: string | undefined) {
-  const trimmed = value?.trim();
-  if (!trimmed) return "";
-  return trimmed.replace(/\/$/, "");
-}
-
-const BACKEND_BASES = Array.from(
-  new Set(
-    [
-      normalizeBase(process.env.API_BASE),
-      normalizeBase(process.env.NEXT_PUBLIC_API_BASE),
-      "http://127.0.0.1:8000",
-      "http://localhost:8000",
-    ].filter(Boolean)
-  )
-);
-
-function normalizeSymbol(value: unknown) {
-  if (typeof value !== "string") return "";
-  return value.trim().toUpperCase();
-}
-
-function normalizeQuery(value: unknown) {
-  if (typeof value !== "string") return "";
-  return value.trim();
-}
-
-function deterministicFallbackAnswer(query: string, symbol: string, detail: string) {
-  const activeSymbol = symbol || "the selected symbol";
-  const focus = query || `Build a risk-first trade plan for ${activeSymbol}.`;
-
+function buildSourcePacketBlock(sources: CopilotSource[]) {
+  if (!sources.length) return "";
+  const lines = sources.slice(0, 8).map((source) => {
+    const link = source.url || "#";
+    return `- [${source.id}] ${source.title} (${source.source}) ${link} | relevance=${source.relevance.toFixed(2)}`;
+  });
   return [
-    `Live AI endpoint is currently unavailable (${detail}). Deterministic mode is active.`,
-    `Focus: ${focus}`,
-    `Plan:`,
-    `1. Confirm trend and liquidity for ${activeSymbol} before entry.`,
-    `2. Use staged entry sizing with max risk <= 1% portfolio equity.`,
-    `3. Define invalidation first, then set stop and target levels.`,
-    `4. Track catalyst timing and avoid holding through unknown event risk.`,
-    `5. Reassess if volume drops or price closes beyond invalidation level.`,
+    "Verified Source Pack:",
+    ...lines,
+    "Use source ids like [S1], [S2] inline for every factual claim.",
   ].join("\n");
+}
+
+function resolveRetrievalQuery(raw: unknown, query: string) {
+  const explicit = normalizeQuery(raw);
+  if (explicit) return explicit;
+  return query.length <= 280 ? query : "";
 }
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const query = normalizeQuery(body?.query) || normalizeQuery(body?.question);
   const symbol = normalizeSymbol(body?.symbol);
+  const retrievalQuery = resolveRetrievalQuery(body?.retrievalQuery, query);
+
+  const localSources = sanitizeLocalSources(body?.sources);
+  const webSources = retrievalQuery ? await retrieveWebSources(retrievalQuery, symbol) : [];
+  const rankedSources = mergeAndRankSources(retrievalQuery || query || symbol, localSources, webSources, 10);
+
+  const sourcePacket = buildSourcePacketBlock(rankedSources);
+  const enhancedQuery = sourcePacket ? `${query}\n\n${sourcePacket}` : query;
+
   const payload = {
     ...body,
-    query,
+    query: enhancedQuery,
     ...(symbol ? { symbol } : {}),
   };
 
-  let lastDetail = "AI service is unavailable.";
-
-  for (const base of BACKEND_BASES) {
-    try {
-      const res = await fetch(`${base}/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        lastDetail = data?.detail || `AI request failed (${res.status}).`;
-        continue;
-      }
-
-      const answer = String(data?.answer ?? "").trim();
-      if (!answer) {
-        lastDetail = "AI response was empty.";
-        continue;
-      }
-
-      return NextResponse.json({
-        ...data,
-        answer,
-      });
-    } catch (error) {
-      lastDetail = error instanceof Error ? error.message : "AI service is unavailable.";
-    }
-  }
+  const result = await fetchAskAnswer(payload, query, symbol, rankedSources);
+  const answer = ensureSourceTrail(result.answer, rankedSources);
+  const metrics = computeGroundingMetrics(answer, rankedSources);
 
   return NextResponse.json({
-    answer: deterministicFallbackAnswer(query, symbol, lastDetail),
-    detail: lastDetail,
-    mode: "deterministic",
+    answer,
+    mode: result.mode,
+    detail: result.detail,
+    sources: rankedSources,
+    ...metrics,
   });
 }

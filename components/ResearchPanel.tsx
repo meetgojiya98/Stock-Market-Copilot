@@ -64,11 +64,24 @@ type Workspace = {
 };
 
 type CopilotSource = {
+  id?: string;
   title: string;
   url: string;
   source: string;
   publishedAt: string;
   relevance: number;
+  snippet?: string;
+  channel?: string;
+};
+
+type CopilotMetrics = {
+  groundingConfidence: number;
+  citationVerificationScore: number;
+  citationUsage: {
+    used: number;
+    verified: number;
+    total: number;
+  };
 };
 
 type CopilotTurn = {
@@ -78,6 +91,9 @@ type CopilotTurn = {
   createdAt: string;
   mode: "live" | "deterministic";
   sources: CopilotSource[];
+  metrics?: CopilotMetrics;
+  detail?: string;
+  streaming?: boolean;
 };
 
 function formatMoney(value: number) {
@@ -389,14 +405,87 @@ function deterministicCopilotFallback(input: {
   ].join("\n");
 }
 
+function toFiniteNumber(value: unknown) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function parseCopilotSources(raw: unknown): CopilotSource[] {
+  if (!Array.isArray(raw)) return [];
+  const parsed: Array<CopilotSource | null> = raw.map((item, index) => {
+    if (!item || typeof item !== "object") return null;
+    const row = item as Record<string, unknown>;
+    const title = String(row.title ?? "").trim();
+    if (!title) return null;
+    const url = String(row.url ?? "").trim();
+    const source = String(row.source ?? "Unknown").trim() || "Unknown";
+    const publishedAtRaw = String(row.publishedAt ?? "").trim();
+    const publishedAt = !Number.isNaN(Date.parse(publishedAtRaw))
+      ? new Date(publishedAtRaw).toISOString()
+      : new Date().toISOString();
+    return {
+      id: String(row.id ?? `S${index + 1}`),
+      title,
+      url,
+      source,
+      publishedAt,
+      relevance: Math.max(0, Math.min(1, toFiniteNumber(row.relevance))),
+      snippet: String(row.snippet ?? "").trim(),
+      channel: String(row.channel ?? "").trim() || undefined,
+    };
+  });
+
+  return parsed.filter((item): item is CopilotSource => item !== null).slice(0, 12);
+}
+
+function parseCopilotMetrics(raw: unknown): CopilotMetrics | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const row = raw as Record<string, unknown>;
+  const citationUsageRaw =
+    row.citationUsage && typeof row.citationUsage === "object"
+      ? (row.citationUsage as Record<string, unknown>)
+      : {};
+  return {
+    groundingConfidence: Math.max(0, Math.min(100, toFiniteNumber(row.groundingConfidence))),
+    citationVerificationScore: Math.max(0, Math.min(100, toFiniteNumber(row.citationVerificationScore))),
+    citationUsage: {
+      used: Math.max(0, Math.floor(toFiniteNumber(citationUsageRaw.used))),
+      verified: Math.max(0, Math.floor(toFiniteNumber(citationUsageRaw.verified))),
+      total: Math.max(0, Math.floor(toFiniteNumber(citationUsageRaw.total))),
+    },
+  };
+}
+
 function parseCopilotTurns(raw: string | null): CopilotTurn[] {
   if (!raw) return [];
   try {
-    const parsed = JSON.parse(raw) as CopilotTurn[];
+    const parsed = JSON.parse(raw) as unknown[];
     if (!Array.isArray(parsed)) return [];
-    return parsed
-      .filter((item) => item && typeof item.question === "string" && typeof item.answer === "string")
-      .slice(0, 30);
+    const turns: Array<CopilotTurn | null> = parsed.map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const question = String(row.question ?? "").trim();
+      const answer = String(row.answer ?? "");
+      if (!question) return null;
+      const mode: CopilotTurn["mode"] = row.mode === "live" ? "live" : "deterministic";
+      const createdAtRaw = String(row.createdAt ?? "").trim();
+      const createdAt = !Number.isNaN(Date.parse(createdAtRaw))
+        ? new Date(createdAtRaw).toISOString()
+        : new Date().toISOString();
+      return {
+        id: String(row.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+        question,
+        answer,
+        createdAt,
+        mode,
+        sources: parseCopilotSources(row.sources),
+        metrics: parseCopilotMetrics(row.metrics),
+        detail: String(row.detail ?? "").trim(),
+        streaming: false,
+      } satisfies CopilotTurn;
+    });
+
+    return turns.filter((item): item is CopilotTurn => item !== null).slice(0, 30);
   } catch {
     return [];
   }
@@ -507,7 +596,9 @@ export default function ResearchPanel() {
   useEffect(() => {
     localStorage.setItem(
       `${COPILOT_STORAGE_PREFIX}:${copilotThreadKey}`,
-      JSON.stringify(copilotTurns.slice(0, 30))
+      JSON.stringify(
+        copilotTurns.slice(0, 30).map(({ streaming: _streaming, ...turn }) => turn)
+      )
     );
   }, [copilotThreadKey, copilotTurns]);
 
@@ -943,88 +1034,171 @@ export default function ResearchPanel() {
       history: copilotTurns,
     });
 
+    const turnId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const createdAt = new Date().toISOString();
+    const patchTurn = (patch: Partial<CopilotTurn>) => {
+      setCopilotTurns((current) =>
+        current.map((turn) =>
+          turn.id === turnId
+            ? {
+                ...turn,
+                ...patch,
+              }
+            : turn
+        )
+      );
+    };
+
+    const pendingTurn: CopilotTurn = {
+      id: turnId,
+      question: userQuestion,
+      answer: "",
+      createdAt,
+      mode: "deterministic",
+      sources: rankedSources,
+      streaming: true,
+    };
+
+    setCopilotTurns((current) => [pendingTurn, ...current].slice(0, 30));
+
     let answer = "";
     let responseMode: CopilotTurn["mode"] = "deterministic";
+    let responseSources = rankedSources;
+    let responseMetrics: CopilotMetrics | undefined;
+    let responseDetail = "";
 
     try {
-      try {
-        const localResponse = await fetch("/api/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query: prompt, symbol: normalizeSymbol(primarySymbol) }),
-        });
-
-        if (localResponse.ok) {
-          const data = await localResponse.json();
-          const candidate = String(data?.answer ?? "").trim();
-          if (candidate) {
-            answer = candidate;
-            responseMode = data?.mode === "deterministic" ? "deterministic" : "live";
-          }
-        }
-      } catch {
-        // continue to remote
-      }
-
-      if (!answer && API_BASE) {
-        try {
-          const remoteResponse = await fetch(`${API_BASE}/ask`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: prompt, symbol: normalizeSymbol(primarySymbol) }),
-          });
-          if (remoteResponse.ok) {
-            const data = await remoteResponse.json();
-            const candidate = String(data?.answer ?? "").trim();
-            if (candidate) {
-              answer = candidate;
-              responseMode = "live";
-            }
-          }
-        } catch {
-          // deterministic fallback below
-        }
-      }
-
-      if (!answer) {
-        answer = deterministicCopilotFallback({
-          query: userQuestion,
+      const streamResponse = await fetch("/api/ask/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: prompt,
+          retrievalQuery: userQuestion,
           symbol: normalizeSymbol(primarySymbol),
-          packet: effectivePacket,
           sources: rankedSources,
-        });
-        responseMode = "deterministic";
+        }),
+      });
+
+      if (!streamResponse.ok || !streamResponse.body) {
+        const payload = await streamResponse.json().catch(() => ({}));
+        const detail =
+          typeof payload?.detail === "string" && payload.detail.trim()
+            ? payload.detail
+            : `Copilot stream failed (${streamResponse.status}).`;
+        throw new Error(detail);
+      }
+
+      const reader = streamResponse.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let done = false;
+
+      while (!done) {
+        const chunk = await reader.read();
+        if (chunk.done) break;
+
+        buffer += decoder.decode(chunk.value, { stream: true });
+        const events = buffer.split("\n\n");
+        buffer = events.pop() ?? "";
+
+        for (const rawEvent of events) {
+          if (!rawEvent.trim()) continue;
+          const lines = rawEvent.split("\n");
+          let event = "message";
+          const dataLines: string[] = [];
+
+          lines.forEach((line) => {
+            if (line.startsWith("event:")) {
+              event = line.slice(6).trim();
+              return;
+            }
+            if (line.startsWith("data:")) {
+              dataLines.push(line.slice(5).trim());
+            }
+          });
+
+          if (!dataLines.length) continue;
+          const dataText = dataLines.join("\n");
+          let payload: unknown = {};
+          try {
+            payload = JSON.parse(dataText);
+          } catch {
+            payload = {};
+          }
+
+          if (event === "chunk") {
+            const text = String((payload as Record<string, unknown>)?.text ?? "");
+            if (!text) continue;
+            answer += text;
+            patchTurn({ answer });
+            continue;
+          }
+
+          if (event === "sources") {
+            const nextSources = parseCopilotSources(
+              (payload as Record<string, unknown>)?.sources ?? payload
+            );
+            if (nextSources.length) {
+              responseSources = nextSources;
+              patchTurn({ sources: nextSources });
+            }
+            continue;
+          }
+
+          if (event === "meta") {
+            const row = payload as Record<string, unknown>;
+            responseMode = row?.mode === "deterministic" ? "deterministic" : "live";
+            responseDetail = String(row?.detail ?? "").trim();
+            const metrics = parseCopilotMetrics(row);
+            if (metrics) {
+              responseMetrics = metrics;
+              patchTurn({ metrics });
+            }
+            continue;
+          }
+
+          if (event === "error") {
+            const detail = String((payload as Record<string, unknown>)?.detail ?? "Copilot stream error.");
+            throw new Error(detail);
+          }
+
+          if (event === "done") {
+            done = true;
+          }
+        }
+      }
+
+      if (!answer.trim()) {
+        throw new Error("Copilot stream returned an empty response.");
       }
     } catch (copilotFailure) {
       answer = deterministicCopilotFallback({
         query: userQuestion,
         symbol: normalizeSymbol(primarySymbol),
         packet: effectivePacket,
-        sources: rankedSources,
+        sources: responseSources,
       });
       responseMode = "deterministic";
-      setCopilotError(copilotFailure instanceof Error ? copilotFailure.message : "Copilot fallback engaged.");
+      responseMetrics = undefined;
+      responseDetail =
+        copilotFailure instanceof Error ? copilotFailure.message : "Copilot fallback engaged.";
+      setCopilotError(responseDetail);
     } finally {
       setCopilotBusy(false);
     }
 
-    setCopilotTurns((current) =>
-      [
-        {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          question: userQuestion,
-          answer,
-          createdAt: new Date().toISOString(),
-          mode: responseMode,
-          sources: rankedSources,
-        },
-        ...current,
-      ].slice(0, 30)
-    );
+    patchTurn({
+      answer,
+      mode: responseMode,
+      sources: responseSources,
+      metrics: responseMetrics,
+      detail: responseDetail,
+      streaming: false,
+    });
     setCopilotQuestion("");
     setCopilotNotice(
       responseMode === "live"
-        ? "Copilot generated a live response with ranked source trail."
+        ? "Copilot streamed a live response with web retrieval and source verification scores."
         : "Copilot generated a deterministic fallback response."
     );
   };
@@ -1571,7 +1745,7 @@ export default function ResearchPanel() {
             </div>
 
             <p className="text-[11px] muted mt-1">
-              Multi-turn copilot with context memory, ranked evidence, and deterministic failover.
+              Multi-turn copilot with streaming output, live web retrieval, and grounding verification.
             </p>
 
             <div className="mt-3 grid sm:grid-cols-2 gap-2 text-[11px]">
@@ -1672,24 +1846,82 @@ export default function ResearchPanel() {
               {copilotTurns.map((turn) => (
                 <div key={turn.id} className="rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5">
                   <div className="text-xs font-semibold">{turn.question}</div>
-                  <div className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed">{turn.answer}</div>
+                  <div className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed">
+                    {turn.answer || (turn.streaming ? "Streaming response..." : "No response text available.")}
+                  </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-[11px] muted">
                     <span>{formatRelativeAge(turn.createdAt)}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 ${
-                        turn.mode === "live"
-                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
-                          : "bg-amber-500/15 text-amber-700 dark:text-amber-200"
-                      }`}
-                    >
-                      {turn.mode === "live" ? "Live AI" : "Deterministic"}
-                    </span>
+                    <div className="inline-flex items-center gap-1.5">
+                      {turn.streaming && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-200 px-2 py-0.5">
+                          <Loader2 size={10} className="animate-spin" />
+                          Streaming
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full px-2 py-0.5 ${
+                          turn.mode === "live"
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
+                            : "bg-amber-500/15 text-amber-700 dark:text-amber-200"
+                        }`}
+                      >
+                        {turn.mode === "live" ? "Live AI" : "Deterministic"}
+                      </span>
+                    </div>
                   </div>
+                  {turn.metrics && (
+                    <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 p-2">
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="muted">Grounding</span>
+                            <span className={`font-semibold ${scoreClass(turn.metrics.groundingConfidence)}`}>
+                              {Math.round(turn.metrics.groundingConfidence)}%
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-[var(--accent-2)] to-[var(--accent)]"
+                              style={{ width: `${Math.max(0, Math.min(100, turn.metrics.groundingConfidence))}%` }}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="muted">Citation Verify</span>
+                            <span
+                              className={`font-semibold ${scoreClass(turn.metrics.citationVerificationScore)}`}
+                            >
+                              {Math.round(turn.metrics.citationVerificationScore)}%
+                            </span>
+                          </div>
+                          <div className="mt-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-[var(--accent-3)] to-[var(--accent)]"
+                              style={{
+                                width: `${Math.max(
+                                  0,
+                                  Math.min(100, turn.metrics.citationVerificationScore)
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-1 text-[11px] muted">
+                        Citations used: {turn.metrics.citationUsage.used} · Verified:{" "}
+                        {turn.metrics.citationUsage.verified} · Source pool: {turn.metrics.citationUsage.total}
+                      </div>
+                    </div>
+                  )}
+                  {turn.detail && turn.mode === "deterministic" && (
+                    <div className="mt-2 text-[11px] muted">Fallback detail: {turn.detail}</div>
+                  )}
                   {turn.sources.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {turn.sources.slice(0, 3).map((source) => (
                         <a
-                          key={`${turn.id}-${source.title}`}
+                          key={`${turn.id}-${source.id || source.title}`}
                           href={source.url || "#"}
                           target="_blank"
                           rel="noopener noreferrer"
