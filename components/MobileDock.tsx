@@ -57,10 +57,10 @@ export default function MobileDock() {
 
   return (
     <div
-      className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] w-[min(96vw,430px)]"
+      className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] w-[min(95vw,430px)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="surface-glass dynamic-surface rounded-2xl px-2 py-2 border soft-divider">
+      <div className="dock-shell">
         <div className="grid grid-cols-6 gap-1">
           {ITEMS.map((item) => {
             const active = pathname === item.href;
@@ -68,11 +68,7 @@ export default function MobileDock() {
               <button
                 key={item.href}
                 onClick={() => navigate(item)}
-                className={`rounded-xl px-1 py-2.5 text-[11px] font-medium flex flex-col items-center gap-1 transition ${
-                  active
-                    ? "bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-[var(--accent-3)] text-white"
-                    : "control-surface"
-                }`}
+                className={`dock-link ${active ? "dock-link-active" : ""}`}
               >
                 {item.icon}
                 <span>{item.label}</span>

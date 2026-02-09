@@ -8,11 +8,11 @@ export default function ResearchPage() {
     <AuthGuard>
       <PageShell
         eyebrow="Research"
-        title="Neural Research Deck"
-        subtitle="Perplexity-grade market intelligence with streaming answers, verified citations, and execution-ready decision maps."
-        heroBackdrop="trading"
-        bodyBackdrop="trading"
-        badges={["Institutional AI", "Live Web Retrieval", "Grounded Citations"]}
+        title="Institutional Research Lab"
+        subtitle="Streaming market intelligence with grounded citations, evidence scoring, and execution-ready decision framing."
+        heroBackdrop="mesh"
+        bodyBackdrop="mesh"
+        badges={["Streaming AI", "Verified Sources", "Execution Mapping"]}
       >
         <ResearchPanel />
       </PageShell>

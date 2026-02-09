@@ -26,7 +26,6 @@ import {
 import { createLocalAlert } from "../lib/data-client";
 import { pushResearchIdeaTicket } from "../lib/research-handoff";
 import AdvancedMarketChart from "./AdvancedMarketChart";
-import DynamicBackdrop from "./DynamicBackdrop";
 import {
   buildResearchDecisionPacket,
   coerceDecisionPacket,
@@ -1054,7 +1053,10 @@ export default function ResearchPanel() {
 
     packet.followUps.forEach((followUp) => {
       const target = followUp.trim().toLowerCase();
-      const match = copilotTurns.find((turn) => turn.question.trim().toLowerCase() === target);
+      const match = copilotTurns.find((turn) => {
+        const turnQuestion = turn.question.trim().toLowerCase();
+        return turnQuestion === target || turnQuestion.includes(target) || target.includes(turnQuestion);
+      });
       if (match) {
         map.set(followUp, match);
       }
@@ -1154,6 +1156,10 @@ export default function ResearchPanel() {
     if (!userQuestion) {
       setCopilotError("Enter a copilot question first.");
       return;
+    }
+
+    if (packet?.followUps.some((item) => item.trim().toLowerCase() === userQuestion.toLowerCase())) {
+      setLastFollowUpPrompt(userQuestion);
     }
 
     setCopilotBusy(true);
@@ -1504,19 +1510,19 @@ export default function ResearchPanel() {
   const dataMode = dataModeLabel(primaryContext, compareContext, benchmarkContext);
   const viewSummary =
     workspaceView === "command"
-      ? "Configure symbols, risk controls, and execution parameters."
+      ? "Set symbols, risk posture, and generation controls."
       : workspaceView === "forensics"
-      ? "Interrogate sources, citations, and evidence quality."
-      : "Run live research synthesis and cross-examination.";
+      ? "Audit citations, source authority, and evidence quality."
+      : "Run streaming copilot analysis with grounded web retrieval.";
 
   return (
-    <div className="space-y-4 research-shell research-vx-shell">
-      <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-up research-hero quantum-surface">
+    <div className="space-y-4 research-shell research-vx-shell research-lab-shell">
+      <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-up research-hero quantum-surface research-command-shell">
         <div className="research-hero-glow" />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-lg font-semibold section-title inline-flex items-center gap-2">
             <BrainCircuit size={18} />
-            Institutional Research Nexus
+            Research Command Center
           </h2>
           <div className="flex items-center gap-2 text-xs">
             <span className={`rounded-full px-2.5 py-1 ${dataMode === "Remote" ? "badge-positive" : "badge-neutral"}`}>
@@ -1540,19 +1546,19 @@ export default function ResearchPanel() {
             onClick={() => setWorkspaceView("command")}
             className={`mission-tab ${workspaceView === "command" ? "mission-tab-active" : ""}`}
           >
-            Command Deck
+            Setup
           </button>
           <button
             onClick={() => setWorkspaceView("synthesis")}
             className={`mission-tab ${workspaceView === "synthesis" ? "mission-tab-active" : ""}`}
           >
-            Synthesis Lab
+            Copilot
           </button>
           <button
             onClick={() => setWorkspaceView("forensics")}
             className={`mission-tab ${workspaceView === "forensics" ? "mission-tab-active" : ""}`}
           >
-            Evidence Forensics
+            Evidence
           </button>
         </div>
 
@@ -1803,13 +1809,12 @@ export default function ResearchPanel() {
 
       {workspaceView !== "command" && (
         <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-in research-card research-intel-board quantum-surface">
-        <DynamicBackdrop variant="trading" className="opacity-[0.85]" />
         <div className="relative z-[1] grid lg:grid-cols-[1.55fr_1fr] gap-4">
           <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
                 <Compass size={15} />
-                Institutional Answer Workspace
+                Copilot Answer Workspace
               </h3>
               <div className="flex items-center gap-2 text-[11px]">
                 <span className="holo-chip">Thread: {copilotTurns.length}</span>
@@ -1883,7 +1888,7 @@ export default function ResearchPanel() {
           <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
             <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
               <Library size={15} />
-              Source Intelligence Board
+              Source Board
             </h3>
             <div className="mt-3 space-y-2 max-h-[420px] overflow-y-auto pr-1">
               {!latestTurnSourcePreview.length && (
@@ -1935,7 +1940,7 @@ export default function ResearchPanel() {
           <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card quantum-surface">
           <h3 className="font-semibold section-title text-lg inline-flex items-center gap-2">
             <Target size={16} />
-            Institutional Decision Pack
+            Decision Pack
           </h3>
 
           {!packet && (
