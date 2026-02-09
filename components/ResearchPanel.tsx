@@ -5,10 +5,14 @@ import {
   Activity,
   ArrowRightLeft,
   BrainCircuit,
+  Compass,
   Copy,
+  Eraser,
   FlaskConical,
   Library,
+  Link2,
   Loader2,
+  MessageSquareText,
   Newspaper,
   Plus,
   Save,
@@ -31,6 +35,7 @@ import {
   normalizeSymbol,
   workspaceTitle,
   type HorizonMode,
+  type NewsItem,
   type ResearchDecisionPacket,
   type ResearchMode,
   type RiskProfile,
@@ -39,6 +44,7 @@ import {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
 const WORKSPACES_KEY = "smc_research_workspaces_v4";
+const COPILOT_STORAGE_PREFIX = "smc_research_copilot_thread_v2";
 
 type Workspace = {
   id: string;
@@ -55,6 +61,23 @@ type Workspace = {
   includeMacro: boolean;
   includeFlow: boolean;
   packet: ResearchDecisionPacket;
+};
+
+type CopilotSource = {
+  title: string;
+  url: string;
+  source: string;
+  publishedAt: string;
+  relevance: number;
+};
+
+type CopilotTurn = {
+  id: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+  mode: "live" | "deterministic";
+  sources: CopilotSource[];
 };
 
 function formatMoney(value: number) {
@@ -188,6 +211,205 @@ function aiPrompt(input: {
   ].join("\n");
 }
 
+function buildUnifiedFeed(
+  primary: SymbolContext | null,
+  compare: SymbolContext | null,
+  benchmark: SymbolContext | null
+) {
+  const items = [
+    ...(primary?.news ?? []),
+    ...(compare?.news.slice(0, 6) ?? []),
+    ...(benchmark?.news.slice(0, 6) ?? []),
+  ];
+  const deduped = new Map<string, (typeof items)[number]>();
+  items.forEach((item) => {
+    if (!deduped.has(item.title)) {
+      deduped.set(item.title, item);
+    }
+  });
+
+  return [...deduped.values()]
+    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
+    .slice(0, 20);
+}
+
+function tokenize(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter((item) => item.length > 2);
+}
+
+function rankCopilotSources(
+  query: string,
+  feed: NewsItem[],
+  packet: ResearchDecisionPacket | null
+): CopilotSource[] {
+  const queryTokens = new Set(tokenize(query));
+  const cited = new Set((packet?.citations ?? []).map((item) => item.toLowerCase().trim()));
+
+  return feed
+    .map((item) => {
+      const title = item.title || "";
+      const blob = `${title} ${item.summary || ""}`;
+      const tokens = tokenize(blob);
+      const overlap = tokens.reduce((count, token) => (queryTokens.has(token) ? count + 1 : count), 0);
+      const overlapScore = queryTokens.size ? overlap / queryTokens.size : 0;
+      const citationBoost = cited.has(title.toLowerCase().trim()) ? 0.35 : 0;
+      const freshnessHours = Math.max(0, (Date.now() - Date.parse(item.publishedAt)) / 3_600_000);
+      const freshnessScore = Math.max(0, 1 - freshnessHours / 72);
+      const sentimentScore = Math.min(0.2, Math.abs(item.sentiment) * 0.2);
+      const relevance = Math.min(
+        1,
+        overlapScore * 0.55 + freshnessScore * 0.25 + citationBoost + sentimentScore
+      );
+
+      return {
+        title,
+        url: item.url,
+        source: item.source,
+        publishedAt: item.publishedAt,
+        relevance,
+      };
+    })
+    .sort((a, b) => b.relevance - a.relevance)
+    .slice(0, 6);
+}
+
+function buildCopilotPrompt(input: {
+  query: string;
+  primarySymbol: string;
+  compareSymbol: string;
+  benchmarkSymbol: string;
+  mode: ResearchMode;
+  horizon: HorizonMode;
+  riskProfile: RiskProfile;
+  includeMacro: boolean;
+  includeFlow: boolean;
+  catalyst: string;
+  packet: ResearchDecisionPacket | null;
+  sources: CopilotSource[];
+  history: CopilotTurn[];
+}) {
+  const payload = {
+    query: input.query,
+    symbols: {
+      primary: input.primarySymbol,
+      compare: input.compareSymbol || null,
+      benchmark: input.benchmarkSymbol,
+    },
+    controls: {
+      mode: input.mode,
+      horizon: input.horizon,
+      riskProfile: input.riskProfile,
+      includeMacro: input.includeMacro,
+      includeFlow: input.includeFlow,
+      catalyst: input.catalyst,
+    },
+    decisionPacket: input.packet
+      ? {
+          verdict: input.packet.verdict,
+          confidence: input.packet.confidence,
+          signalScore: input.packet.signalScore,
+          conviction: input.packet.conviction,
+          regime: input.packet.regime,
+          executiveSummary: input.packet.executiveSummary,
+          keyLevels: input.packet.keyLevels,
+          actionPlan: input.packet.actionPlan,
+        }
+      : null,
+    conversationTail: input.history.slice(0, 4).map((item) => ({
+      q: item.question,
+      a: item.answer.slice(0, 700),
+      mode: item.mode,
+    })),
+    sources: input.sources.map((item, index) => ({
+      id: `S${index + 1}`,
+      title: item.title,
+      source: item.source,
+      publishedAt: item.publishedAt,
+      url: item.url,
+      relevance: Number(item.relevance.toFixed(3)),
+    })),
+  };
+
+  return [
+    "You are an institutional research copilot for public equities.",
+    "You must be concise, evidence-first, and risk-first.",
+    "Use ONLY provided context and sources. If evidence is weak, explicitly say so.",
+    "Output markdown using exact sections:",
+    "### Direct Answer",
+    "### Evidence",
+    "### Risks / Counterpoints",
+    "### Action Plan",
+    "### Source Trail",
+    "In Source Trail, cite sources as [S1], [S2], etc and include full URL for each citation used.",
+    `Context: ${JSON.stringify(payload)}`,
+  ].join("\n");
+}
+
+function deterministicCopilotFallback(input: {
+  query: string;
+  symbol: string;
+  packet: ResearchDecisionPacket | null;
+  sources: CopilotSource[];
+}) {
+  const packet = input.packet;
+  const sourceLines = input.sources.slice(0, 3).map((item, index) => {
+    const link = item.url || "#";
+    return `- [S${index + 1}] ${item.title} (${item.source}) ${link}`;
+  });
+
+  return [
+    "### Direct Answer",
+    packet
+      ? `${input.symbol} currently maps to **${packet.verdict}** (${packet.signalScore}/100 signal, ${Math.round(
+          packet.confidence
+        )}% confidence).`
+      : `Use a risk-first posture on ${input.symbol} until stronger confirmation appears.`,
+    "",
+    "### Evidence",
+    packet
+      ? `- Regime: ${packet.regime}\n- Key levels: support ${packet.keyLevels.support}, resistance ${packet.keyLevels.resistance}\n- Query: ${input.query}`
+      : `- Query: ${input.query}\n- Decision packet not available, so this answer is conservative.`,
+    "",
+    "### Risks / Counterpoints",
+    packet
+      ? `- Thesis invalidation: ${packet.actionPlan.invalidation}\n- Counter-thesis: ${packet.counterThesis.slice(0, 2).join(" ")}`
+      : "- No packet-derived invalidation is available yet.",
+    "",
+    "### Action Plan",
+    packet
+      ? `- Entry: ${packet.actionPlan.entry}\n- Stop: ${packet.actionPlan.stop}\n- Target: ${packet.actionPlan.target}\n- Sizing: ${packet.actionPlan.sizing}`
+      : `- Refresh context for ${input.symbol}\n- Generate decision pack\n- Re-ask this question with updated evidence`,
+    "",
+    "### Source Trail",
+    sourceLines.length ? sourceLines.join("\n") : "- No source links available in current context.",
+  ].join("\n");
+}
+
+function parseCopilotTurns(raw: string | null): CopilotTurn[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as CopilotTurn[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => item && typeof item.question === "string" && typeof item.answer === "string")
+      .slice(0, 30);
+  } catch {
+    return [];
+  }
+}
+
+function formatRelativeAge(value: string) {
+  const deltaSeconds = Math.max(0, Math.floor((Date.now() - Date.parse(value)) / 1000));
+  if (deltaSeconds < 60) return `${deltaSeconds}s ago`;
+  if (deltaSeconds < 3600) return `${Math.floor(deltaSeconds / 60)}m ago`;
+  if (deltaSeconds < 86_400) return `${Math.floor(deltaSeconds / 3600)}h ago`;
+  return `${Math.floor(deltaSeconds / 86_400)}d ago`;
+}
+
 export default function ResearchPanel() {
   const [primarySymbol, setPrimarySymbol] = useState("AAPL");
   const [compareSymbol, setCompareSymbol] = useState("");
@@ -213,6 +435,13 @@ export default function ResearchPanel() {
   const [error, setError] = useState("");
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [copilotQuestion, setCopilotQuestion] = useState("");
+  const [copilotTurns, setCopilotTurns] = useState<CopilotTurn[]>([]);
+  const [copilotBusy, setCopilotBusy] = useState(false);
+  const [copilotAutoRefresh, setCopilotAutoRefresh] = useState(true);
+  const [copilotDeepMode, setCopilotDeepMode] = useState(true);
+  const [copilotError, setCopilotError] = useState("");
+  const [copilotNotice, setCopilotNotice] = useState("");
 
   const loadContexts = useCallback(async () => {
     setContextLoading(true);
@@ -256,6 +485,31 @@ export default function ResearchPanel() {
   useEffect(() => {
     localStorage.setItem(WORKSPACES_KEY, JSON.stringify(workspaces.slice(0, 40)));
   }, [workspaces]);
+
+  const copilotThreadKey = useMemo(
+    () =>
+      [
+        normalizeSymbol(primarySymbol || "AAPL"),
+        normalizeSymbol(compareSymbol || "NONE"),
+        normalizeSymbol(benchmarkSymbol || "QQQ"),
+        mode,
+        horizon,
+        riskProfile,
+      ].join("|"),
+    [benchmarkSymbol, compareSymbol, horizon, mode, primarySymbol, riskProfile]
+  );
+
+  useEffect(() => {
+    const raw = localStorage.getItem(`${COPILOT_STORAGE_PREFIX}:${copilotThreadKey}`);
+    setCopilotTurns(parseCopilotTurns(raw));
+  }, [copilotThreadKey]);
+
+  useEffect(() => {
+    localStorage.setItem(
+      `${COPILOT_STORAGE_PREFIX}:${copilotThreadKey}`,
+      JSON.stringify(copilotTurns.slice(0, 30))
+    );
+  }, [copilotThreadKey, copilotTurns]);
 
   const quickPrompts = useMemo(
     () => [
@@ -308,22 +562,7 @@ export default function ResearchPanel() {
   }, [packet, primaryContext, benchmarkContext]);
 
   const feed = useMemo(() => {
-    const items = [
-      ...(primaryContext?.news ?? []),
-      ...(compareContext?.news.slice(0, 6) ?? []),
-      ...(benchmarkContext?.news.slice(0, 6) ?? []),
-    ];
-
-    const deduped = new Map<string, (typeof items)[number]>();
-    items.forEach((item) => {
-      if (!deduped.has(item.title)) {
-        deduped.set(item.title, item);
-      }
-    });
-
-    return [...deduped.values()]
-      .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt))
-      .slice(0, 20);
+    return buildUnifiedFeed(primaryContext, compareContext, benchmarkContext);
   }, [primaryContext, compareContext, benchmarkContext]);
 
   const primarySeries = useMemo(
@@ -348,22 +587,49 @@ export default function ResearchPanel() {
     [benchmarkContext]
   );
 
-  const handleGenerate = async () => {
-    if (!primaryContext) {
-      setError("Primary symbol context is not available yet.");
-      return;
-    }
-
+  const handleGenerate = async (
+    overrideQuestion?: string,
+    source: "manual" | "followup" = "manual"
+  ) => {
     setGenerating(true);
     setError("");
     setNotice("");
     setRawAnswer("");
 
+    const effectiveQuestion = (overrideQuestion ?? question).trim();
+    if (overrideQuestion) {
+      setQuestion(overrideQuestion);
+    }
+
+    let nextPrimary = primaryContext;
+    let nextCompare = compareContext;
+    let nextBenchmark = benchmarkContext;
+
+    if (!nextPrimary) {
+      try {
+        const [primary, compare, benchmark] = await Promise.all([
+          fetchSymbolContext(primarySymbol),
+          compareSymbol.trim() ? fetchSymbolContext(compareSymbol) : Promise.resolve(null),
+          fetchSymbolContext(benchmarkSymbol || "QQQ"),
+        ]);
+        nextPrimary = primary;
+        nextCompare = compare;
+        nextBenchmark = benchmark;
+        setPrimaryContext(primary);
+        setCompareContext(compare);
+        setBenchmarkContext(benchmark);
+      } catch {
+        setError("Primary symbol context is not available yet.");
+        setGenerating(false);
+        return;
+      }
+    }
+
     const fallback = buildResearchDecisionPacket({
-      primary: primaryContext,
-      compare: compareContext,
-      benchmark: benchmarkContext,
-      question,
+      primary: nextPrimary,
+      compare: nextCompare,
+      benchmark: nextBenchmark,
+      question: effectiveQuestion,
       catalyst,
       mode,
       horizon,
@@ -382,11 +648,11 @@ export default function ResearchPanel() {
       includeMacro,
       includeFlow,
       catalyst,
-      question,
+      question: effectiveQuestion,
       fallback,
-      primaryContext,
-      compareContext,
-      benchmarkContext,
+      primaryContext: nextPrimary,
+      compareContext: nextCompare,
+      benchmarkContext: nextBenchmark,
     });
 
     try {
@@ -435,7 +701,11 @@ export default function ResearchPanel() {
         if (json) {
           setPacket(coerceDecisionPacket(json, fallback));
           setRawAnswer(answer);
-          setNotice("Decision pack generated with AI + deterministic risk engine.");
+          setNotice(
+            source === "followup"
+              ? "Follow-up generated with AI + deterministic risk engine."
+              : "Decision pack generated with AI + deterministic risk engine."
+          );
           return;
         }
       }
@@ -443,13 +713,21 @@ export default function ResearchPanel() {
       if (candidates.length > 0) {
         setPacket(fallback);
         setRawAnswer(candidates[0]);
-        setNotice("AI response received. Deterministic engine normalized the decision packet.");
+        setNotice(
+          source === "followup"
+            ? "Follow-up generated. Deterministic engine normalized the AI output."
+            : "AI response received. Deterministic engine normalized the decision packet."
+        );
         return;
       }
 
       setPacket(fallback);
       setRawAnswer("No AI response received. Deterministic decision engine output generated.");
-      setNotice("Decision pack generated in deterministic mode.");
+      setNotice(
+        source === "followup"
+          ? "Follow-up generated in deterministic mode."
+          : "Decision pack generated in deterministic mode."
+      );
     } finally {
       setGenerating(false);
     }
@@ -541,6 +819,224 @@ export default function ResearchPanel() {
     const message = `Research handoff queued: ${normalizeSymbol(primarySymbol)} (${suggestedSide.toUpperCase()})`;
     createLocalAlert("EXEC", message, "execution");
     setNotice(message);
+  };
+
+  const copilotQuickPrompts = useMemo(
+    () => [
+      `What is the highest-conviction setup for ${normalizeSymbol(primarySymbol)} in the next ${horizon}?`,
+      `Give me a skeptical bear-case stress test for ${normalizeSymbol(primarySymbol)}.`,
+      `What are the top 3 invalidation triggers before committing capital?`,
+      `Compare ${normalizeSymbol(primarySymbol)}${
+        compareSymbol ? ` vs ${normalizeSymbol(compareSymbol)}` : " against a sector peer"
+      } and propose a paired hedge.`,
+    ],
+    [compareSymbol, horizon, primarySymbol]
+  );
+
+  const sourceRankPreview = useMemo(
+    () =>
+      rankCopilotSources(
+        (copilotQuestion || question || packet?.executiveSummary || "").trim(),
+        feed,
+        packet
+      ),
+    [copilotQuestion, feed, packet, question]
+  );
+
+  const citationTrail = useMemo(() => {
+    if (!packet) return [];
+    return packet.citations.slice(0, 8).map((citation) => {
+      const lowered = citation.toLowerCase().trim();
+      const linked = feed.find((item) => {
+        const title = item.title.toLowerCase().trim();
+        return title.includes(lowered) || lowered.includes(title);
+      });
+      return {
+        citation,
+        linked,
+      };
+    });
+  }, [feed, packet]);
+
+  const handleClearCopilotThread = () => {
+    setCopilotTurns([]);
+    setCopilotNotice("Copilot thread cleared.");
+    setCopilotError("");
+    localStorage.removeItem(`${COPILOT_STORAGE_PREFIX}:${copilotThreadKey}`);
+  };
+
+  const handleAskCopilot = async (overrideQuestion?: string) => {
+    const userQuestion = (overrideQuestion ?? copilotQuestion).trim();
+    if (!userQuestion) {
+      setCopilotError("Enter a copilot question first.");
+      return;
+    }
+
+    setCopilotBusy(true);
+    setCopilotError("");
+    setCopilotNotice("");
+
+    let nextPrimary = primaryContext;
+    let nextCompare = compareContext;
+    let nextBenchmark = benchmarkContext;
+
+    const needsRefresh =
+      copilotAutoRefresh ||
+      !nextPrimary ||
+      !nextBenchmark ||
+      (copilotDeepMode && Boolean(compareSymbol.trim()) && !nextCompare);
+
+    if (needsRefresh) {
+      try {
+        const [primary, compare, benchmark] = await Promise.all([
+          fetchSymbolContext(primarySymbol),
+          compareSymbol.trim() ? fetchSymbolContext(compareSymbol) : Promise.resolve(null),
+          fetchSymbolContext(benchmarkSymbol || "QQQ"),
+        ]);
+        nextPrimary = primary;
+        nextCompare = compare;
+        nextBenchmark = benchmark;
+        setPrimaryContext(primary);
+        setCompareContext(compare);
+        setBenchmarkContext(benchmark);
+      } catch {
+        // Fall through with existing state.
+      }
+    }
+
+    if (!nextPrimary) {
+      setCopilotBusy(false);
+      setCopilotError("Primary context unavailable. Refresh context and retry.");
+      return;
+    }
+
+    const effectivePacket =
+      packet ||
+      buildResearchDecisionPacket({
+        primary: nextPrimary,
+        compare: nextCompare,
+        benchmark: nextBenchmark,
+        question: userQuestion,
+        catalyst,
+        mode,
+        horizon,
+        riskProfile,
+        includeMacro,
+        includeFlow,
+      });
+
+    const effectiveFeed = buildUnifiedFeed(nextPrimary, nextCompare, nextBenchmark);
+    const rankedSources = rankCopilotSources(userQuestion, effectiveFeed, effectivePacket);
+    const prompt = buildCopilotPrompt({
+      query: userQuestion,
+      primarySymbol: normalizeSymbol(primarySymbol),
+      compareSymbol: normalizeSymbol(compareSymbol),
+      benchmarkSymbol: normalizeSymbol(benchmarkSymbol || "QQQ"),
+      mode,
+      horizon,
+      riskProfile,
+      includeMacro,
+      includeFlow,
+      catalyst,
+      packet: copilotDeepMode ? effectivePacket : null,
+      sources: rankedSources,
+      history: copilotTurns,
+    });
+
+    let answer = "";
+    let responseMode: CopilotTurn["mode"] = "deterministic";
+
+    try {
+      try {
+        const localResponse = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: prompt, symbol: normalizeSymbol(primarySymbol) }),
+        });
+
+        if (localResponse.ok) {
+          const data = await localResponse.json();
+          const candidate = String(data?.answer ?? "").trim();
+          if (candidate) {
+            answer = candidate;
+            responseMode = data?.mode === "deterministic" ? "deterministic" : "live";
+          }
+        }
+      } catch {
+        // continue to remote
+      }
+
+      if (!answer && API_BASE) {
+        try {
+          const remoteResponse = await fetch(`${API_BASE}/ask`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: prompt, symbol: normalizeSymbol(primarySymbol) }),
+          });
+          if (remoteResponse.ok) {
+            const data = await remoteResponse.json();
+            const candidate = String(data?.answer ?? "").trim();
+            if (candidate) {
+              answer = candidate;
+              responseMode = "live";
+            }
+          }
+        } catch {
+          // deterministic fallback below
+        }
+      }
+
+      if (!answer) {
+        answer = deterministicCopilotFallback({
+          query: userQuestion,
+          symbol: normalizeSymbol(primarySymbol),
+          packet: effectivePacket,
+          sources: rankedSources,
+        });
+        responseMode = "deterministic";
+      }
+    } catch (copilotFailure) {
+      answer = deterministicCopilotFallback({
+        query: userQuestion,
+        symbol: normalizeSymbol(primarySymbol),
+        packet: effectivePacket,
+        sources: rankedSources,
+      });
+      responseMode = "deterministic";
+      setCopilotError(copilotFailure instanceof Error ? copilotFailure.message : "Copilot fallback engaged.");
+    } finally {
+      setCopilotBusy(false);
+    }
+
+    setCopilotTurns((current) =>
+      [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          question: userQuestion,
+          answer,
+          createdAt: new Date().toISOString(),
+          mode: responseMode,
+          sources: rankedSources,
+        },
+        ...current,
+      ].slice(0, 30)
+    );
+    setCopilotQuestion("");
+    setCopilotNotice(
+      responseMode === "live"
+        ? "Copilot generated a live response with ranked source trail."
+        : "Copilot generated a deterministic fallback response."
+    );
+  };
+
+  const handleRunFollowUp = (followUp: string) => {
+    setQuestion(followUp);
+    void handleGenerate(followUp, "followup");
+  };
+
+  const handleAskFollowUp = (followUp: string) => {
+    setCopilotQuestion(followUp);
+    void handleAskCopilot(followUp);
   };
 
   const modeSummary = modeLabel(mode);
@@ -666,7 +1162,7 @@ export default function ResearchPanel() {
 
             <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={handleGenerate}
+                onClick={() => void handleGenerate()}
                 disabled={generating || contextLoading || !primaryContext}
                 className="inline-flex items-center gap-2 rounded-lg bg-[var(--accent)] text-white px-4 py-2 text-sm font-semibold disabled:opacity-60"
               >
@@ -917,15 +1413,60 @@ export default function ResearchPanel() {
 
               <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/25 p-3">
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] muted">Follow-Ups</div>
-                <div className="mt-2 flex flex-wrap gap-2">
+                <div className="mt-2 grid sm:grid-cols-2 gap-2">
                   {packet.followUps.map((item) => (
-                    <button
+                    <div
                       key={item}
-                      onClick={() => setQuestion(item)}
-                      className="text-xs rounded-full control-surface px-3 py-1.5 bg-white/70 dark:bg-black/20"
+                      className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2.5 py-2 text-xs"
                     >
-                      {item}
-                    </button>
+                      <div className="font-medium leading-snug">{item}</div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <button
+                          onClick={() => handleRunFollowUp(item)}
+                          disabled={generating}
+                          className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] text-white px-2 py-1 text-[11px] font-semibold disabled:opacity-60"
+                        >
+                          <Sparkles size={11} />
+                          Run Follow-Up
+                        </button>
+                        <button
+                          onClick={() => handleAskFollowUp(item)}
+                          disabled={copilotBusy}
+                          className="inline-flex items-center gap-1 rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/20 px-2 py-1 text-[11px] disabled:opacity-60"
+                        >
+                          <MessageSquareText size={11} />
+                          Ask Copilot
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/25 p-3">
+                <div className="text-xs font-semibold uppercase tracking-[0.14em] muted">Citation Trail</div>
+                <div className="mt-2 space-y-1.5">
+                  {citationTrail.length === 0 && <div className="text-xs muted">No citations available.</div>}
+                  {citationTrail.map((item) => (
+                    <div
+                      key={item.citation}
+                      className="rounded-md control-surface bg-white/70 dark:bg-black/20 px-2.5 py-2 text-xs"
+                    >
+                      <div className="font-medium">{item.citation}</div>
+                      {item.linked ? (
+                        <a
+                          href={item.linked.url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
+                        >
+                          <Link2 size={10} />
+                          {item.linked.source} · {formatDate(item.linked.publishedAt)}
+                        </a>
+                      ) : (
+                        <div className="mt-1 text-[11px] muted">No linked source found in current feed.</div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>
@@ -1021,24 +1562,189 @@ export default function ResearchPanel() {
           </section>
 
           <section className="surface-glass rounded-2xl p-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
+                <MessageSquareText size={15} />
+                Research Copilot
+              </h3>
+              <span className="text-[11px] muted">{copilotTurns.length} turns</span>
+            </div>
+
+            <p className="text-[11px] muted mt-1">
+              Multi-turn copilot with context memory, ranked evidence, and deterministic failover.
+            </p>
+
+            <div className="mt-3 grid sm:grid-cols-2 gap-2 text-[11px]">
+              <label className="inline-flex items-center gap-1.5 rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={copilotAutoRefresh}
+                  onChange={(event) => setCopilotAutoRefresh(event.target.checked)}
+                />
+                Auto Refresh Context
+              </label>
+              <label className="inline-flex items-center gap-1.5 rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <input
+                  type="checkbox"
+                  checked={copilotDeepMode}
+                  onChange={(event) => setCopilotDeepMode(event.target.checked)}
+                />
+                Deep Packet Context
+              </label>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {copilotQuickPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  onClick={() => {
+                    setCopilotQuestion(prompt);
+                    void handleAskCopilot(prompt);
+                  }}
+                  disabled={copilotBusy}
+                  className="text-[11px] rounded-full control-surface bg-white/70 dark:bg-black/20 px-2.5 py-1 disabled:opacity-60"
+                >
+                  {prompt.length > 84 ? `${prompt.slice(0, 84)}...` : prompt}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                value={copilotQuestion}
+                onChange={(event) => setCopilotQuestion(event.target.value)}
+                placeholder="Ask copilot to challenge, validate, or optimize this thesis..."
+                className="flex-1 rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-xs"
+              />
+              <button
+                onClick={() => void handleAskCopilot()}
+                disabled={copilotBusy}
+                className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold disabled:opacity-60"
+              >
+                {copilotBusy ? <Loader2 size={13} className="animate-spin" /> : <Compass size={13} />}
+                Ask
+              </button>
+              <button
+                onClick={handleClearCopilotThread}
+                className="inline-flex items-center gap-1 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/20 px-2.5 py-2 text-xs"
+              >
+                <Eraser size={12} />
+                Clear
+              </button>
+            </div>
+
+            {(copilotNotice || copilotError) && (
+              <div
+                className={`mt-3 rounded-lg px-3 py-2 text-[11px] ${
+                  copilotError
+                    ? "border border-red-300/55 bg-red-500/10 text-red-600 dark:text-red-300"
+                    : "border border-emerald-300/55 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                }`}
+              >
+                {copilotError || copilotNotice}
+              </div>
+            )}
+
+            <div className="mt-3 space-y-2">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] muted">Source Match Engine</div>
+              {sourceRankPreview.slice(0, 3).map((source, index) => (
+                <div key={`${source.title}-${index}`} className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2.5 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-xs font-medium line-clamp-2">{source.title}</div>
+                    <span className="text-[11px] muted">{Math.round(source.relevance * 100)}%</span>
+                  </div>
+                  <div className="mt-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-[var(--accent-2)] to-[var(--accent)]"
+                      style={{ width: `${Math.max(4, Math.round(source.relevance * 100))}%` }}
+                    />
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px] muted">
+                    <span>{source.source}</span>
+                    <span>{formatDate(source.publishedAt)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-3 space-y-2 max-h-[320px] overflow-y-auto pr-1">
+              {!copilotTurns.length && <div className="text-xs muted">No copilot turns yet.</div>}
+              {copilotTurns.map((turn) => (
+                <div key={turn.id} className="rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5">
+                  <div className="text-xs font-semibold">{turn.question}</div>
+                  <div className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed">{turn.answer}</div>
+                  <div className="mt-2 flex items-center justify-between gap-2 text-[11px] muted">
+                    <span>{formatRelativeAge(turn.createdAt)}</span>
+                    <span
+                      className={`rounded-full px-2 py-0.5 ${
+                        turn.mode === "live"
+                          ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200"
+                          : "bg-amber-500/15 text-amber-700 dark:text-amber-200"
+                      }`}
+                    >
+                      {turn.mode === "live" ? "Live AI" : "Deterministic"}
+                    </span>
+                  </div>
+                  {turn.sources.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {turn.sources.slice(0, 3).map((source) => (
+                        <a
+                          key={`${turn.id}-${source.title}`}
+                          href={source.url || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 px-2 py-0.5 text-[11px]"
+                        >
+                          <Link2 size={10} />
+                          {source.source}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="surface-glass rounded-2xl p-4">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Newspaper size={15} />
               Intelligence Feed
             </h3>
             <div className="mt-3 space-y-2 max-h-[280px] overflow-y-auto pr-1">
               {feed.map((item, index) => (
-                <a
+                <div
                   key={`${item.title}-${index}`}
-                  href={item.url || "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5"
+                  className="rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5"
                 >
                   <div className="text-xs font-medium leading-snug">{item.title}</div>
                   <div className="text-[11px] muted mt-1">
                     {item.source} · {formatDate(item.publishedAt)}
                   </div>
-                </a>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const prompt = `Use this headline for thesis update: ${item.title}`;
+                        setCopilotQuestion(prompt);
+                        void handleAskCopilot(prompt);
+                      }}
+                      disabled={copilotBusy}
+                      className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] text-white px-2 py-1 text-[11px] font-semibold disabled:opacity-60"
+                    >
+                      <MessageSquareText size={10} />
+                      Analyze
+                    </button>
+                    <a
+                      href={item.url || "#"}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1 text-[11px]"
+                    >
+                      <Link2 size={10} />
+                      Source
+                    </a>
+                  </div>
+                </div>
               ))}
               {!feed.length && <div className="text-xs muted">No feed items available.</div>}
             </div>
