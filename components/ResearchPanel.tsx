@@ -440,8 +440,15 @@ export default function ResearchPanel() {
         }
       }
 
+      if (candidates.length > 0) {
+        setPacket(fallback);
+        setRawAnswer(candidates[0]);
+        setNotice("AI response received. Deterministic engine normalized the decision packet.");
+        return;
+      }
+
       setPacket(fallback);
-      setRawAnswer("AI response unavailable. Deterministic decision engine output generated.");
+      setRawAnswer("No AI response received. Deterministic decision engine output generated.");
       setNotice("Decision pack generated in deterministic mode.");
     } finally {
       setGenerating(false);
