@@ -178,6 +178,49 @@ button:active {
   animation: surfaceDrift 22s ease-in-out infinite alternate;
 }
 
+.research-shell {
+  position: relative;
+}
+
+.research-hero {
+  overflow: hidden;
+}
+
+.research-hero-glow {
+  position: absolute;
+  inset: -36% -12% auto;
+  height: 68%;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--accent-2) 28%, transparent),
+    color-mix(in srgb, var(--accent) 18%, transparent),
+    color-mix(in srgb, var(--accent-3) 18%, transparent)
+  );
+  filter: blur(52px);
+  opacity: 0.45;
+}
+
+.research-card {
+  backdrop-filter: blur(22px) saturate(145%);
+}
+
+.holo-chip {
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
+  background: color-mix(in srgb, var(--surface-emphasis) 88%, transparent);
+  color: var(--ink-muted);
+  padding: 0.2rem 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.holo-chip-live {
+  border-color: color-mix(in srgb, var(--positive) 40%, transparent);
+  background: color-mix(in srgb, var(--positive) 14%, transparent);
+  color: color-mix(in srgb, var(--positive) 86%, white);
+}
+
 .surface-panel {
   background: var(--surface-strong);
   border: 1px solid var(--surface-border);

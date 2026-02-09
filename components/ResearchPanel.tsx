@@ -96,6 +96,9 @@ type CopilotTurn = {
   streaming?: boolean;
 };
 
+type CopilotDepth = "fast" | "balanced" | "deep";
+type CopilotStyle = "concise" | "balanced" | "deep";
+
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -136,6 +139,12 @@ function modeLabel(mode: ResearchMode) {
   if (mode === "risk") return "Risk Stress";
   if (mode === "macro") return "Macro";
   return "Thesis";
+}
+
+function sourceLimitForDepth(depth: CopilotDepth) {
+  if (depth === "fast") return 6;
+  if (depth === "deep") return 12;
+  return 8;
 }
 
 function dataModeLabel(
@@ -260,7 +269,8 @@ function tokenize(value: string) {
 function rankCopilotSources(
   query: string,
   feed: NewsItem[],
-  packet: ResearchDecisionPacket | null
+  packet: ResearchDecisionPacket | null,
+  limit = 6
 ): CopilotSource[] {
   const queryTokens = new Set(tokenize(query));
   const cited = new Set((packet?.citations ?? []).map((item) => item.toLowerCase().trim()));
@@ -290,7 +300,7 @@ function rankCopilotSources(
       };
     })
     .sort((a, b) => b.relevance - a.relevance)
-    .slice(0, 6);
+    .slice(0, limit);
 }
 
 function buildCopilotPrompt(input: {
@@ -307,6 +317,9 @@ function buildCopilotPrompt(input: {
   packet: ResearchDecisionPacket | null;
   sources: CopilotSource[];
   history: CopilotTurn[];
+  webDepth: CopilotDepth;
+  citationStrict: boolean;
+  style: CopilotStyle;
 }) {
   const payload = {
     query: input.query,
@@ -340,6 +353,11 @@ function buildCopilotPrompt(input: {
       a: item.answer.slice(0, 700),
       mode: item.mode,
     })),
+    qualityControls: {
+      webDepth: input.webDepth,
+      citationStrict: input.citationStrict,
+      style: input.style,
+    },
     sources: input.sources.map((item, index) => ({
       id: `S${index + 1}`,
       title: item.title,
@@ -351,16 +369,19 @@ function buildCopilotPrompt(input: {
   };
 
   return [
-    "You are an institutional research copilot for public equities.",
-    "You must be concise, evidence-first, and risk-first.",
-    "Use ONLY provided context and sources. If evidence is weak, explicitly say so.",
+    "You are SMC Alpha Copilot, an institutional-grade equity research assistant.",
+    "Prioritize factual correctness over fluency. Be direct, tactical, and risk-first.",
+    "Use ONLY provided context and sources. Never fabricate data. If evidence is weak, explicitly say insufficient evidence.",
+    "Every factual claim must include source IDs like [S1], [S2].",
     "Output markdown using exact sections:",
     "### Direct Answer",
     "### Evidence",
     "### Risks / Counterpoints",
     "### Action Plan",
+    "### Verification",
     "### Source Trail",
-    "In Source Trail, cite sources as [S1], [S2], etc and include full URL for each citation used.",
+    "In Verification include: confidence (0-100), what is uncertain, and what to verify next.",
+    "In Source Trail include full URL for each citation used.",
     `Context: ${JSON.stringify(payload)}`,
   ].join("\n");
 }
@@ -529,8 +550,12 @@ export default function ResearchPanel() {
   const [copilotBusy, setCopilotBusy] = useState(false);
   const [copilotAutoRefresh, setCopilotAutoRefresh] = useState(true);
   const [copilotDeepMode, setCopilotDeepMode] = useState(true);
+  const [copilotDepth, setCopilotDepth] = useState<CopilotDepth>("balanced");
+  const [copilotStyle, setCopilotStyle] = useState<CopilotStyle>("balanced");
+  const [copilotStrictCitations, setCopilotStrictCitations] = useState(true);
   const [copilotError, setCopilotError] = useState("");
   const [copilotNotice, setCopilotNotice] = useState("");
+  const [lastFollowUpPrompt, setLastFollowUpPrompt] = useState("");
 
   const loadContexts = useCallback(async () => {
     setContextLoading(true);
@@ -929,10 +954,16 @@ export default function ResearchPanel() {
       rankCopilotSources(
         (copilotQuestion || question || packet?.executiveSummary || "").trim(),
         feed,
-        packet
+        packet,
+        sourceLimitForDepth(copilotDepth)
       ),
-    [copilotQuestion, feed, packet, question]
+    [copilotDepth, copilotQuestion, feed, packet, question]
   );
+
+  const latestFollowUpTurn = useMemo(() => {
+    if (!lastFollowUpPrompt) return null;
+    return copilotTurns.find((turn) => turn.question.trim() === lastFollowUpPrompt.trim()) ?? null;
+  }, [copilotTurns, lastFollowUpPrompt]);
 
   const citationTrail = useMemo(() => {
     if (!packet) return [];
@@ -1017,7 +1048,12 @@ export default function ResearchPanel() {
       });
 
     const effectiveFeed = buildUnifiedFeed(nextPrimary, nextCompare, nextBenchmark);
-    const rankedSources = rankCopilotSources(userQuestion, effectiveFeed, effectivePacket);
+    const rankedSources = rankCopilotSources(
+      userQuestion,
+      effectiveFeed,
+      effectivePacket,
+      sourceLimitForDepth(copilotDepth)
+    );
     const prompt = buildCopilotPrompt({
       query: userQuestion,
       primarySymbol: normalizeSymbol(primarySymbol),
@@ -1032,6 +1068,9 @@ export default function ResearchPanel() {
       packet: copilotDeepMode ? effectivePacket : null,
       sources: rankedSources,
       history: copilotTurns,
+      webDepth: copilotDepth,
+      citationStrict: copilotStrictCitations,
+      style: copilotStyle,
     });
 
     const turnId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1076,6 +1115,8 @@ export default function ResearchPanel() {
           retrievalQuery: userQuestion,
           symbol: normalizeSymbol(primarySymbol),
           sources: rankedSources,
+          webDepth: copilotDepth,
+          citationStrict: copilotStrictCitations,
         }),
       });
 
@@ -1205,11 +1246,17 @@ export default function ResearchPanel() {
 
   const handleRunFollowUp = (followUp: string) => {
     setQuestion(followUp);
-    void handleGenerate(followUp, "followup");
+    setLastFollowUpPrompt(followUp);
+    setCopilotQuestion(followUp);
+    setCopilotNotice("Running follow-up in Research Copilot...");
+    document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    void handleAskCopilot(followUp);
   };
 
   const handleAskFollowUp = (followUp: string) => {
+    setLastFollowUpPrompt(followUp);
     setCopilotQuestion(followUp);
+    document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
     void handleAskCopilot(followUp);
   };
 
@@ -1217,12 +1264,13 @@ export default function ResearchPanel() {
   const dataMode = dataModeLabel(primaryContext, compareContext, benchmarkContext);
 
   return (
-    <div className="space-y-4">
-      <section className="surface-glass rounded-2xl p-5 sm:p-6 fade-up">
+    <div className="space-y-4 research-shell">
+      <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-up research-hero">
+        <div className="research-hero-glow" />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-lg font-semibold section-title inline-flex items-center gap-2">
             <BrainCircuit size={18} />
-            Research Decision Engine
+            Neural Research Deck
           </h2>
           <div className="flex items-center gap-2 text-xs">
             <span className={`rounded-full px-2.5 py-1 ${dataMode === "Remote" ? "badge-positive" : "badge-neutral"}`}>
@@ -1230,6 +1278,14 @@ export default function ResearchPanel() {
             </span>
             <span className="rounded-full px-2.5 py-1 badge-neutral">Mode: {modeSummary}</span>
           </div>
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="holo-chip">Web Depth: {copilotDepth}</span>
+          <span className="holo-chip">Style: {copilotStyle}</span>
+          <span className={`holo-chip ${copilotStrictCitations ? "holo-chip-live" : ""}`}>
+            Citations: {copilotStrictCitations ? "Strict" : "Flexible"}
+          </span>
+          <span className="holo-chip">Source Pool: {sourceRankPreview.length}</span>
         </div>
 
         <div className="mt-4 grid xl:grid-cols-[1.35fr_1fr] gap-4">
@@ -1319,6 +1375,41 @@ export default function ResearchPanel() {
                   onChange={(event) => setIncludeFlow(event.target.checked)}
                 />
                 Flow
+              </label>
+            </div>
+
+            <div className="grid sm:grid-cols-3 gap-2">
+              <label className="text-[11px] rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
+                <div className="muted mb-1">Copilot Web Depth</div>
+                <select
+                  value={copilotDepth}
+                  onChange={(event) => setCopilotDepth(event.target.value as CopilotDepth)}
+                  className="w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1.5"
+                >
+                  <option value="fast">Fast</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="deep">Deep Retrieval</option>
+                </select>
+              </label>
+              <label className="text-[11px] rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
+                <div className="muted mb-1">Answer Style</div>
+                <select
+                  value={copilotStyle}
+                  onChange={(event) => setCopilotStyle(event.target.value as CopilotStyle)}
+                  className="w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1.5"
+                >
+                  <option value="concise">Concise</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="deep">Deep Dive</option>
+                </select>
+              </label>
+              <label className="text-[11px] inline-flex items-center justify-between gap-2 rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
+                <span>Strict Citation Verification</span>
+                <input
+                  type="checkbox"
+                  checked={copilotStrictCitations}
+                  onChange={(event) => setCopilotStrictCitations(event.target.checked)}
+                />
               </label>
             </div>
 
@@ -1443,7 +1534,7 @@ export default function ResearchPanel() {
       </section>
 
       <div className="grid xl:grid-cols-[1.5fr_1fr] gap-4">
-        <section className="surface-glass rounded-2xl p-5 sm:p-6 fade-in">
+        <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card">
           <h3 className="font-semibold section-title text-lg inline-flex items-center gap-2">
             <Target size={16} />
             Institutional Decision Pack
@@ -1615,6 +1706,37 @@ export default function ResearchPanel() {
                     </div>
                   ))}
                 </div>
+                <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/20 p-2.5">
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] muted">
+                    Follow-Up Answer Console
+                  </div>
+                  {!latestFollowUpTurn && (
+                    <div className="mt-1 text-xs muted">
+                      Run a follow-up and the answer will stream here immediately.
+                    </div>
+                  )}
+                  {latestFollowUpTurn && (
+                    <div className="mt-1">
+                      <div className="text-xs font-semibold">{latestFollowUpTurn.question}</div>
+                      <div className="text-[11px] mt-1 whitespace-pre-wrap leading-relaxed">
+                        {latestFollowUpTurn.answer ||
+                          (latestFollowUpTurn.streaming ? "Streaming follow-up answer..." : "No answer yet.")}
+                      </div>
+                      <div className="mt-1 flex items-center gap-2 text-[11px] muted">
+                        {latestFollowUpTurn.streaming && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-200 px-2 py-0.5">
+                            <Loader2 size={10} className="animate-spin" />
+                            Streaming
+                          </span>
+                        )}
+                        <span>
+                          {latestFollowUpTurn.mode === "live" ? "Live answer" : "Deterministic fallback"} ·{" "}
+                          {formatRelativeAge(latestFollowUpTurn.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/25 p-3">
@@ -1655,7 +1777,7 @@ export default function ResearchPanel() {
         </section>
 
         <aside className="space-y-4">
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Zap size={15} />
               Signal Matrix
@@ -1680,7 +1802,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <ArrowRightLeft size={15} />
               Factor Decomposition
@@ -1707,7 +1829,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <FlaskConical size={15} />
               Shock Lab
@@ -1735,7 +1857,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card" id="research-copilot-panel">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
                 <MessageSquareText size={15} />
@@ -1765,6 +1887,14 @@ export default function ResearchPanel() {
                 />
                 Deep Packet Context
               </label>
+            </div>
+
+            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+              <span className="holo-chip">Depth: {copilotDepth}</span>
+              <span className="holo-chip">Style: {copilotStyle}</span>
+              <span className={`holo-chip ${copilotStrictCitations ? "holo-chip-live" : ""}`}>
+                Citation Guard: {copilotStrictCitations ? "On" : "Off"}
+              </span>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -1938,7 +2068,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Newspaper size={15} />
               Intelligence Feed
@@ -1982,7 +2112,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
                 <Library size={15} />
@@ -2025,7 +2155,7 @@ export default function ResearchPanel() {
             </div>
           </section>
 
-          <section className="surface-glass rounded-2xl p-4 text-xs muted inline-flex items-center gap-1">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card text-xs muted inline-flex items-center gap-1">
             <ShieldAlert size={13} />
             Validate every output before execution. This workspace is decision support, not financial advice.
           </section>

@@ -8,8 +8,8 @@ export default function ResearchPage() {
     <AuthGuard>
       <PageShell
         eyebrow="Research"
-        title="AI Research Terminal"
-        subtitle="Blend live news context with natural-language intelligence for deeper stock-level due diligence."
+        title="Neural Research Deck"
+        subtitle="Perplexity-grade market intelligence with streaming answers, verified citations, and execution-ready decision maps."
       >
         <ResearchPanel />
       </PageShell>
