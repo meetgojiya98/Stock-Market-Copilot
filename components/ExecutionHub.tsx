@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import AttributionRiskLab from "./AttributionRiskLab";
 import BacktestingLab from "./BacktestingLab";
+import ThesisMemoryLab from "./ThesisMemoryLab";
 import { createLocalAlert, fetchWatchlistData } from "../lib/data-client";
 import {
   cancelPaperOrder,
@@ -47,7 +48,7 @@ const ROADMAP_QUEUE = [
   { label: "Paper Trading + Order Simulator", state: "Live" },
   { label: "Strategy Backtesting Lab", state: "Live" },
   { label: "Attribution + Risk Decomposition", state: "Live" },
-  { label: "AI Thesis Memory + Versioning", state: "Queued" },
+  { label: "AI Thesis Memory + Versioning", state: "Live" },
   { label: "Automation Layer (No-Code Rules)", state: "Queued" },
   { label: "Broker Integrations", state: "Queued" },
   { label: "Collaboration + Sharing", state: "Queued" },
@@ -936,6 +937,14 @@ export default function ExecutionHub() {
       <AttributionRiskLab
         ledger={ledger}
         quotes={quotes}
+      />
+
+      <ThesisMemoryLab
+        symbols={[
+          ...watchlist.map((item) => item.symbol),
+          ...ledger.positions.map((item) => item.symbol),
+        ]}
+        defaultSymbol={activeSymbol || watchlist[0]?.symbol || ledger.positions[0]?.symbol}
       />
     </div>
   );
