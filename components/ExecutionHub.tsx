@@ -83,6 +83,11 @@ function formatTimestamp(value?: string) {
   });
 }
 
+function orderAgeMinutes(createdAt: string) {
+  const ageMs = Math.max(0, Date.now() - Date.parse(createdAt));
+  return Math.floor(ageMs / 60_000);
+}
+
 function uniqueSymbols(ledger: PaperTradingLedger, watchlist: WatchlistItem[], activeSymbol: string) {
   const symbols = new Set<string>();
   watchlist.forEach((item) => symbols.add(item.symbol));
@@ -176,6 +181,11 @@ export default function ExecutionHub() {
   const [activeSeries, setActiveSeries] = useState<MarketSeriesPoint[]>([]);
   const [seriesSource, setSeriesSource] = useState<"local" | "remote" | "synthetic">("local");
   const [workspaceView, setWorkspaceView] = useState<ExecutionView>("desk");
+  const [orderSymbolFilter, setOrderSymbolFilter] = useState("ALL");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<PaperOrder["status"] | "all">("all");
+  const [orderSideFilter, setOrderSideFilter] = useState<PaperOrderSide | "all">("all");
+  const [staleMinutes, setStaleMinutes] = useState(90);
+  const [bulkCancelBusy, setBulkCancelBusy] = useState(false);
 
   const ledgerRef = useRef<PaperTradingLedger | null>(null);
   const watchlistRef = useRef<WatchlistItem[]>([]);
@@ -350,6 +360,34 @@ export default function ExecutionHub() {
   const completedOrders = useMemo(
     () => (ledger ? ledger.orders.filter((item) => item.status !== "open") : []),
     [ledger]
+  );
+
+  const orderSymbols = useMemo(() => {
+    if (!ledger) return [];
+    return Array.from(new Set(ledger.orders.map((item) => item.symbol))).sort();
+  }, [ledger]);
+
+  const filteredOrders = useMemo(() => {
+    if (!ledger) return [];
+    return ledger.orders.filter((order) => {
+      if (orderSymbolFilter !== "ALL" && order.symbol !== orderSymbolFilter) return false;
+      if (orderStatusFilter !== "all" && order.status !== orderStatusFilter) return false;
+      if (orderSideFilter !== "all" && order.side !== orderSideFilter) return false;
+      return true;
+    });
+  }, [ledger, orderSideFilter, orderStatusFilter, orderSymbolFilter]);
+
+  const filteredOpenOrders = useMemo(
+    () => filteredOrders.filter((order) => order.status === "open"),
+    [filteredOrders]
+  );
+
+  const staleOrderIds = useMemo(
+    () =>
+      filteredOpenOrders
+        .filter((order) => orderAgeMinutes(order.createdAt) >= staleMinutes)
+        .map((order) => order.id),
+    [filteredOpenOrders, staleMinutes]
   );
 
   const fillRate = useMemo(() => {
@@ -605,6 +643,50 @@ export default function ExecutionHub() {
     createLocalAlert("SIM", "A paper order was canceled.", "execution");
   };
 
+  const handleBulkCancel = async (orderIds: string[], label: string) => {
+    if (!orderIds.length) {
+      setNotice(`No open orders found for ${label}.`);
+      setError("");
+      return;
+    }
+
+    setBulkCancelBusy(true);
+    setError("");
+
+    try {
+      let latest = ledgerRef.current ?? ledger;
+      let cancelled = 0;
+      let failed = 0;
+
+      for (const orderId of orderIds) {
+        const result = await cancelPaperOrder(orderId);
+        latest = result.data;
+        if (result.ok) {
+          cancelled += 1;
+        } else {
+          failed += 1;
+        }
+      }
+
+      if (latest) {
+        ledgerRef.current = latest;
+        setLedger(latest);
+      }
+
+      if (cancelled > 0) {
+        const note = `Canceled ${cancelled} open order${cancelled === 1 ? "" : "s"} (${label}).`;
+        setNotice(note);
+        createLocalAlert("SIM", note, "execution");
+      }
+
+      if (failed > 0) {
+        setError(`${failed} order${failed === 1 ? "" : "s"} could not be canceled.`);
+      }
+    } finally {
+      setBulkCancelBusy(false);
+    }
+  };
+
   const handleReset = async () => {
     if (!window.confirm("Reset the simulator ledger? This clears paper orders and positions.")) return;
 
@@ -784,9 +866,8 @@ export default function ExecutionHub() {
         ))}
       </div>
 
-      {(workspaceView === "desk" || workspaceView === "orders") && (
-      <div className={workspaceView === "orders" ? "grid xl:grid-cols-1 gap-4" : "grid xl:grid-cols-[1.55fr_1fr] gap-4"}>
-        {workspaceView === "desk" && (
+      {workspaceView === "desk" && (
+      <div className="grid xl:grid-cols-[1.55fr_1fr] gap-4">
         <div className="space-y-4">
           <section className="card-elevated rounded-xl p-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -1175,53 +1256,9 @@ export default function ExecutionHub() {
             </div>
           </section>
         </div>
-        )}
 
         <div className="space-y-4">
-          {workspaceView === "desk" && <ExecutionPlaybooksLab onApply={handleApplyPlaybook} />}
-
-          <section className="card-elevated rounded-xl p-4">
-            <h3 className="section-title text-base flex items-center gap-2">
-              <Clock3 size={15} />
-              Open Orders
-            </h3>
-            <p className="text-xs muted mt-1">Queued limit orders that auto-fill when prices cross.</p>
-
-            <ul className="mt-3 space-y-2">
-              {openOrders.length === 0 && (
-                <li className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-xs muted">
-                  No open orders.
-                </li>
-              )}
-
-              {openOrders.map((order) => (
-                <li key={order.id} className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className={`text-sm font-semibold ${sideClass(order.side)}`}>
-                      {order.side.toUpperCase()} {order.symbol}
-                    </span>
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(order.status)}`}>
-                      {order.status.toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="text-xs muted mt-1">
-                    {order.quantity} shares @ {formatMoney(order.requestedPrice)} ({sourceLabel(order.ideaSource)})
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-2">
-                    <span className="text-[11px] muted">{formatTimestamp(order.createdAt)}</span>
-                    <button
-                      onClick={() => handleCancelOrder(order.id)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 px-2.5 py-1 text-[11px] text-red-600 dark:text-red-300"
-                    >
-                      <XCircle size={11} />
-                      Cancel
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </section>
-
+          <ExecutionPlaybooksLab onApply={handleApplyPlaybook} />
         </div>
       </div>
       )}
@@ -1229,11 +1266,106 @@ export default function ExecutionHub() {
       {workspaceView === "orders" && (
       <div className="space-y-4">
         <section className="card-elevated rounded-xl p-4">
-          <h3 className="section-title text-base flex items-center gap-2">
-            <ListOrdered size={15} />
-            Order Blotter
-          </h3>
-          <p className="text-xs muted mt-1">Recent paper executions with slippage and realized P/L.</p>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="section-title text-base flex items-center gap-2">
+              <ListOrdered size={15} />
+              Order Blotter
+            </h3>
+            <span className="text-xs rounded-full px-2 py-0.5 badge-neutral">
+              {filteredOrders.length} shown / {ledger.orders.length} total
+            </span>
+          </div>
+          <p className="text-xs muted mt-1">Filter, triage, and cancel stale/open paper orders in one workspace.</p>
+
+          <div className="mt-3 grid sm:grid-cols-2 xl:grid-cols-5 gap-2">
+            <label className="text-xs space-y-1">
+              <div className="muted">Symbol Filter</div>
+              <select
+                value={orderSymbolFilter}
+                onChange={(event) => setOrderSymbolFilter(event.target.value)}
+                className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-2.5 py-2 text-xs"
+              >
+                <option value="ALL">All symbols</option>
+                {orderSymbols.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-xs space-y-1">
+              <div className="muted">Side Filter</div>
+              <select
+                value={orderSideFilter}
+                onChange={(event) => setOrderSideFilter(event.target.value as PaperOrderSide | "all")}
+                className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-2.5 py-2 text-xs"
+              >
+                <option value="all">All sides</option>
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+            </label>
+
+            <label className="text-xs space-y-1">
+              <div className="muted">Status Filter</div>
+              <select
+                value={orderStatusFilter}
+                onChange={(event) => setOrderStatusFilter(event.target.value as PaperOrder["status"] | "all")}
+                className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-2.5 py-2 text-xs"
+              >
+                <option value="all">All statuses</option>
+                <option value="open">Open</option>
+                <option value="filled">Filled</option>
+                <option value="rejected">Rejected</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+
+            <label className="text-xs space-y-1">
+              <div className="muted">Stale Threshold (min)</div>
+              <input
+                type="number"
+                min={5}
+                step={5}
+                value={staleMinutes}
+                onChange={(event) => setStaleMinutes(Math.max(5, Number(event.target.value) || 5))}
+                className="w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-2.5 py-2 text-xs"
+              />
+            </label>
+
+            <div className="text-xs space-y-1">
+              <div className="muted">Bulk Actions</div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handleBulkCancel(filteredOpenOrders.map((order) => order.id), "current filter")}
+                  disabled={bulkCancelBusy}
+                  className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-600 dark:text-red-300 disabled:opacity-60"
+                >
+                  <XCircle size={11} />
+                  Cancel Filtered Open ({filteredOpenOrders.length})
+                </button>
+                <button
+                  onClick={() => handleBulkCancel(staleOrderIds, `stale >= ${staleMinutes}m`)}
+                  disabled={bulkCancelBusy}
+                  className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 px-2.5 py-1.5 text-[11px] text-red-600 dark:text-red-300 disabled:opacity-60"
+                >
+                  <Clock3 size={11} />
+                  Cancel Stale ({staleOrderIds.length})
+                </button>
+                <button
+                  onClick={() => {
+                    setOrderSymbolFilter("ALL");
+                    setOrderStatusFilter("all");
+                    setOrderSideFilter("all");
+                  }}
+                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2.5 py-1.5 text-[11px]"
+                >
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
 
           <div className="mt-3 overflow-auto">
             <table className="w-full text-sm">
@@ -1246,19 +1378,21 @@ export default function ExecutionHub() {
                   <th className="text-right py-2">Fill</th>
                   <th className="text-right py-2">Slippage</th>
                   <th className="text-right py-2">Realized</th>
+                  <th className="text-right py-2">Age</th>
                   <th className="text-right py-2">Status</th>
+                  <th className="text-right py-2">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {ledger.orders.length === 0 && (
+                {filteredOrders.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="py-6 text-center text-xs muted">
-                      No paper orders yet.
+                    <td colSpan={10} className="py-6 text-center text-xs muted">
+                      No orders match the current filter.
                     </td>
                   </tr>
                 )}
 
-                {ledger.orders.slice(0, 24).map((order) => (
+                {filteredOrders.slice(0, 40).map((order) => (
                   <tr key={order.id} className="border-t border-[var(--surface-border)]">
                     <td className="py-2 text-xs muted">{formatTimestamp(order.filledAt || order.createdAt)}</td>
                     <td className="py-2">
@@ -1277,11 +1411,25 @@ export default function ExecutionHub() {
                     <td className={`py-2 text-right metric-value ${(order.realizedPnl ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
                       {order.realizedPnl !== undefined ? formatMoney(order.realizedPnl) : "—"}
                     </td>
+                    <td className="py-2 text-right text-xs muted">{orderAgeMinutes(order.createdAt)}m</td>
                     <td className="py-2 text-right">
                       <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(order.status)}`}>
                         {order.status === "filled" && <CheckCircle2 size={10} className="inline mr-1" />}
                         {order.status.toUpperCase()}
                       </span>
+                    </td>
+                    <td className="py-2 text-right">
+                      {order.status === "open" ? (
+                        <button
+                          onClick={() => handleCancelOrder(order.id)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 px-2 py-1 text-[11px] text-red-600 dark:text-red-300"
+                        >
+                          <XCircle size={11} />
+                          Cancel
+                        </button>
+                      ) : (
+                        <span className="text-[11px] muted">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
