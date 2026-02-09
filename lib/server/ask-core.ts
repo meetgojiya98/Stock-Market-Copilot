@@ -32,6 +32,11 @@ const ASK_TIMEOUT_MS = (() => {
   return Math.floor(parsed);
 })();
 
+const DIRECT_LLM_API_KEY =
+  process.env.DIRECT_LLM_API_KEY || process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || "";
+const DIRECT_LLM_BASE = normalizeBase(process.env.DIRECT_LLM_BASE) || "https://api.groq.com/openai/v1";
+const DIRECT_LLM_MODEL = (process.env.DIRECT_LLM_MODEL || "llama-3.1-8b-instant").trim();
+
 export function normalizeSymbol(value: unknown) {
   if (typeof value !== "string") return "";
   return value.trim().toUpperCase();
@@ -81,6 +86,95 @@ export function deterministicFallbackAnswer(
   ].join("\n");
 }
 
+function looksLikeEmptyAnswer(answer: string) {
+  const text = answer.trim().toLowerCase();
+  return !text || text === "no answer." || text === "no answer";
+}
+
+function buildDirectPrompt(query: string, symbol: string, sources: BaseSource[]) {
+  const sourceLines = sources
+    .slice(0, 8)
+    .map((item, index) => `- [S${index + 1}] ${item.title} (${item.source}) ${item.url || "#"}`)
+    .join("\n");
+
+  return [
+    "You are an institutional-grade market research copilot.",
+    "Be precise and risk-first. Do not fabricate facts.",
+    "Use markdown sections:",
+    "### Direct Answer",
+    "### Evidence",
+    "### Risks / Counterpoints",
+    "### Action Plan",
+    "### Source Trail",
+    `Symbol: ${symbol || "N/A"}`,
+    `Question: ${query || "Provide a risk-first setup."}`,
+    sourceLines ? `Sources:\n${sourceLines}` : "Sources: none provided",
+  ].join("\n");
+}
+
+async function fetchDirectLlmAnswer(
+  query: string,
+  symbol: string,
+  sources: BaseSource[]
+): Promise<{ answer: string; detail: string } | null> {
+  if (!DIRECT_LLM_API_KEY || !DIRECT_LLM_MODEL || !DIRECT_LLM_BASE) {
+    return null;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), ASK_TIMEOUT_MS);
+  try {
+    const response = await fetch(`${DIRECT_LLM_BASE}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${DIRECT_LLM_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: DIRECT_LLM_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are a concise, factual financial research assistant.",
+          },
+          {
+            role: "user",
+            content: buildDirectPrompt(query, symbol, sources),
+          },
+        ],
+        temperature: 0.2,
+        max_tokens: 700,
+      }),
+      signal: controller.signal,
+    });
+
+    const contentType = response.headers.get("content-type") || "";
+    const payload: Record<string, unknown> = contentType.includes("application/json")
+      ? ((await response.json().catch(() => ({}))) as Record<string, unknown>)
+      : { detail: await response.text().catch(() => "") };
+
+    if (!response.ok) {
+      const detail = String(payload?.detail ?? "").trim() || `Direct LLM request failed (${response.status}).`;
+      throw new Error(detail);
+    }
+
+    const choices = Array.isArray(payload?.choices) ? payload.choices : [];
+    const first = choices[0] as Record<string, unknown> | undefined;
+    const message = first?.message as Record<string, unknown> | undefined;
+    const answer = String(message?.content ?? "").trim();
+    if (looksLikeEmptyAnswer(answer)) {
+      throw new Error("Direct LLM response was empty.");
+    }
+
+    return {
+      answer,
+      detail: `Direct model response via ${DIRECT_LLM_MODEL}.`,
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function fetchAskAnswer(
   payload: Record<string, unknown>,
   query: string,
@@ -113,16 +207,19 @@ export async function fetchAskAnswer(
       }
 
       const answer = String(data?.answer ?? "").trim();
-      if (!answer) {
+      if (looksLikeEmptyAnswer(answer)) {
         lastDetail = "AI response was empty.";
         continue;
       }
-
+      const responseMode =
+        (data?.mode === "deterministic" ? "deterministic" : "live") as "live" | "deterministic";
+      if (responseMode === "deterministic") {
+        lastDetail = String(data?.detail ?? "").trim() || "Remote backend returned deterministic mode.";
+        continue;
+      }
       return {
         answer,
-        mode: (data?.mode === "deterministic" ? "deterministic" : "live") as
-          | "live"
-          | "deterministic",
+        mode: responseMode,
         detail: String(data?.detail ?? ""),
       };
     } catch (error) {
@@ -133,6 +230,19 @@ export async function fetchAskAnswer(
       }
       lastDetail = error instanceof Error ? error.message : "AI service is unavailable.";
     }
+  }
+
+  try {
+    const direct = await fetchDirectLlmAnswer(query, symbol, sources);
+    if (direct?.answer) {
+      return {
+        answer: direct.answer,
+        mode: "live" as const,
+        detail: direct.detail,
+      };
+    }
+  } catch (error) {
+    lastDetail = error instanceof Error ? error.message : "Direct LLM fallback failed.";
   }
 
   return {
