@@ -8,7 +8,6 @@ import {
   Bot,
   BriefcaseBusiness,
   Gauge,
-  LineChart,
   LogIn,
   LogOut,
   Menu,
@@ -21,7 +20,8 @@ import {
   X,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
-import { clearAuthSession, getAuthModeLabel } from "../lib/auth-client";
+import DynamicBackdrop from "./DynamicBackdrop";
+import { clearAuthSession } from "../lib/auth-client";
 
 type NavLink = {
   name: string;
@@ -73,7 +73,6 @@ export default function Header() {
 
   const [dark, setDark] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
-  const [authModeLabel, setAuthModeLabel] = useState("Remote Mode");
   const [menuOpen, setMenuOpen] = useState(false);
   const [clockTick, setClockTick] = useState(0);
 
@@ -96,7 +95,6 @@ export default function Header() {
   useEffect(() => {
     const checkLogin = () => {
       setLoggedIn(Boolean(localStorage.getItem("access_token")));
-      setAuthModeLabel(getAuthModeLabel());
     };
 
     checkLogin();
@@ -131,8 +129,9 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 fade-in">
-      <div className="border-b soft-divider backdrop-blur-2xl bg-[color-mix(in_srgb,var(--surface-strong)_82%,transparent)]">
-        <div className="pro-container py-3.5 flex items-center justify-between gap-2 xl:gap-3">
+      <div className="border-b soft-divider backdrop-blur-2xl bg-[color-mix(in_srgb,var(--surface-strong)_82%,transparent)] relative overflow-hidden">
+        <DynamicBackdrop variant="mesh" className="opacity-45" />
+        <div className="pro-container py-3.5 flex items-center justify-between gap-2 xl:gap-3 relative z-[1]">
           <div className="flex items-center gap-3 min-w-0">
             <button
               className="control-surface px-2.5 py-1.5 inline-flex items-center"
@@ -149,12 +148,6 @@ export default function Header() {
               <span className="rounded-full px-2.5 py-1 border soft-divider bg-white/70 dark:bg-black/30 muted">
                 {marketMeta.time} ET
               </span>
-              {loggedIn && (
-                <span className="rounded-full px-2.5 py-1 badge-neutral inline-flex items-center gap-1">
-                  <LineChart size={11} />
-                  {authModeLabel}
-                </span>
-              )}
             </div>
           </div>
 
@@ -238,7 +231,6 @@ export default function Header() {
           <div className="pro-container py-3 grid gap-2 rise-stagger">
             <div className="text-[11px] muted rounded-xl border soft-divider bg-white/70 dark:bg-black/25 px-3 py-2">
               {marketMeta.statusLabel} - {marketMeta.time} ET
-              {loggedIn ? ` - ${authModeLabel}` : ""}
             </div>
 
             {NAV_LINKS.map((link) => {

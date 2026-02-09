@@ -85,6 +85,7 @@ body::before {
   filter: blur(72px);
   pointer-events: none;
   z-index: -2;
+  animation: canvasFloatA 26s ease-in-out infinite alternate;
 }
 
 body::after {
@@ -97,6 +98,7 @@ body::after {
   background: radial-gradient(circle, rgba(25, 116, 174, 0.22) 0%, rgba(25, 116, 174, 0) 68%);
   pointer-events: none;
   z-index: -2;
+  animation: canvasFloatB 30s ease-in-out infinite alternate;
 }
 
 a {
@@ -510,5 +512,29 @@ textarea::placeholder {
   }
   100% {
     transform: translate3d(-4%, 6%, 0) rotate(-4deg);
+  }
+}
+
+@keyframes canvasFloatA {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate3d(3vw, 2vh, 0) rotate(3deg);
+  }
+  100% {
+    transform: translate3d(-2vw, -2vh, 0) rotate(-2deg);
+  }
+}
+
+@keyframes canvasFloatB {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-3vw, -2vh, 0) scale(1.03);
+  }
+  100% {
+    transform: translate3d(2vw, 2vh, 0) scale(0.97);
   }
 }
