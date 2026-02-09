@@ -1,10 +1,17 @@
 "use client";
-import { useState, useEffect } from "react";
 
-// 1. Type for each item in watchlist/trending
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Star, TrendingUp, Trash2 } from "lucide-react";
+import {
+  addPortfolioPosition,
+  addWatchlistSymbol,
+  fetchTrendingData,
+  fetchWatchlistData,
+  removeWatchlistSymbol,
+} from "../lib/data-client";
+
 type WatchlistItem = {
   symbol: string;
-  // add other fields if you expect them!
 };
 
 type TrendingItem = {
@@ -12,90 +19,295 @@ type TrendingItem = {
   count: number;
 };
 
+type PriceMeta = {
+  price: number;
+  changePct: number;
+};
+
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
+const WATCH_NOTES_KEY = "smc_watch_notes_v1";
+
+function formatMoney(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
+function formatPercent(value: number) {
+  const sign = value > 0 ? "+" : "";
+  return `${sign}${value.toFixed(2)}%`;
+}
+
+async function fetchQuote(symbol: string): Promise<PriceMeta> {
+  if (API_BASE) {
+    try {
+      const response = await fetch(`${API_BASE}/price/${symbol}`, { cache: "no-store" });
+      if (response.ok) {
+        const data = await response.json();
+        const price = Number(data?.price);
+        const changePct = Number(data?.change ?? 0);
+        if (Number.isFinite(price) && price > 0) {
+          return {
+            price,
+            changePct: Number.isFinite(changePct) ? changePct : 0,
+          };
+        }
+      }
+    } catch {
+      // Fall through.
+    }
+  }
+
+  try {
+    const response = await fetch(`/api/stocks/price?symbol=${symbol}`, { cache: "no-store" });
+    if (response.ok) {
+      const data = await response.json();
+      const price = Number(data?.price);
+      const changePct = Number(data?.change ?? 0);
+      if (Number.isFinite(price) && price > 0) {
+        return {
+          price,
+          changePct: Number.isFinite(changePct) ? changePct : 0,
+        };
+      }
+    }
+  } catch {
+    // Use zero fallback.
+  }
+
+  return { price: 0, changePct: 0 };
+}
+
 export default function WatchlistPanel() {
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [symbol, setSymbol] = useState("");
-  const [prices, setPrices] = useState<{ [key: string]: number }>({});
+  const [prices, setPrices] = useState<Record<string, PriceMeta>>({});
   const [trending, setTrending] = useState<TrendingItem[]>([]);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [error, setError] = useState("");
+  const [dataMode, setDataMode] = useState<"remote" | "local">("remote");
 
-  const fetchWatchlist = async () => {
-    const token = localStorage.getItem("access_token");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/watchlist`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const wl = await res.json();
-    setWatchlist(wl);
+  const sortedWatchlist = useMemo(
+    () =>
+      [...watchlist].sort((a, b) => {
+        const changeA = prices[a.symbol]?.changePct ?? 0;
+        const changeB = prices[b.symbol]?.changePct ?? 0;
+        return Math.abs(changeB) - Math.abs(changeA);
+      }),
+    [watchlist, prices]
+  );
 
-    // Fetch live prices
-    for (const row of wl) {
-      fetch(`${process.env.NEXT_PUBLIC_API_BASE}/price/${row.symbol}`)
-        .then(r => r.json())
-        .then(p => setPrices(prices => ({ ...prices, [row.symbol]: p.price })));
-    }
+  const refreshPrices = async (symbols: string[]) => {
+    const unique = [...new Set(symbols)];
+    const entries = await Promise.all(unique.map(async (item) => [item, await fetchQuote(item)] as const));
+    setPrices(Object.fromEntries(entries));
   };
 
-  useEffect(() => { fetchWatchlist(); }, []);
+  const loadWatchlist = async () => {
+    setError("");
+    const token = localStorage.getItem("access_token") || undefined;
 
-  // Trending stocks
+    const [watchResult, trendResult] = await Promise.all([
+      fetchWatchlistData(token),
+      fetchTrendingData(token),
+    ]);
+
+    setWatchlist(watchResult.data);
+    setTrending(trendResult.data);
+    setDataMode(watchResult.mode);
+
+    if (watchResult.detail) {
+      setError(`Switched to Local Mode: ${watchResult.detail}`);
+    }
+
+    await refreshPrices(watchResult.data.map((row) => row.symbol));
+  };
+
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_BASE}/trending`).then(r => r.json()).then(setTrending);
+    loadWatchlist();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleAdd = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const token = localStorage.getItem("access_token");
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/watchlist`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol }),
-    });
-    setSymbol("");
-    fetchWatchlist();
-  };  
+  useEffect(() => {
+    const raw = localStorage.getItem(WATCH_NOTES_KEY);
+    if (!raw) return;
 
-  const handleRemove = async (sym: string) => {
-    const token = localStorage.getItem("access_token");
-    await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/watchlist?symbol=${sym}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    fetchWatchlist();
-  };   
+    try {
+      const parsed = JSON.parse(raw) as Record<string, string>;
+      if (parsed && typeof parsed === "object") {
+        setNotes(parsed);
+      }
+    } catch {
+      localStorage.removeItem(WATCH_NOTES_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(WATCH_NOTES_KEY, JSON.stringify(notes));
+  }, [notes]);
+
+  useEffect(() => {
+    if (!watchlist.length) return;
+    const interval = window.setInterval(() => {
+      refreshPrices(watchlist.map((row) => row.symbol));
+    }, 45_000);
+    return () => window.clearInterval(interval);
+  }, [watchlist]);
+
+  const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const normalized = symbol.trim().toUpperCase();
+    if (!normalized) return;
+
+    const token = localStorage.getItem("access_token") || undefined;
+    const result = await addWatchlistSymbol(normalized, token);
+    setDataMode(result.mode);
+
+    if (!result.ok) {
+      setError(result.detail || "Unable to add symbol.");
+      return;
+    }
+
+    setSymbol("");
+    if (result.detail) {
+      setError(`Saved in Local Mode: ${result.detail}`);
+    }
+    loadWatchlist();
+  };
+
+  const handleRemove = async (watchSymbol: string) => {
+    const token = localStorage.getItem("access_token") || undefined;
+    const result = await removeWatchlistSymbol(watchSymbol, token);
+    setDataMode(result.mode);
+
+    if (!result.ok) {
+      setError(result.detail || "Unable to remove symbol.");
+      return;
+    }
+
+    loadWatchlist();
+  };
+
+  const handlePromote = async (watchSymbol: string) => {
+    const token = localStorage.getItem("access_token") || undefined;
+    const result = await addPortfolioPosition(watchSymbol, 1, token);
+    setDataMode(result.mode);
+
+    if (!result.ok) {
+      setError(result.detail || "Unable to move symbol to portfolio.");
+      return;
+    }
+
+    setError(`${watchSymbol} added to portfolio (1 share baseline).`);
+  };
 
   return (
-    <div className="bg-white dark:bg-zinc-900 p-6 rounded-xl shadow text-black dark:text-white">
-      <h3 className="font-semibold mb-3 text-orange-700 dark:text-orange-400">Watchlist</h3>
-      <form onSubmit={handleAdd} className="flex gap-2 mb-2">
-        <input
-          className="border px-2 py-1 rounded bg-white dark:bg-zinc-800 text-black dark:text-white"
-          value={symbol}
-          onChange={e => setSymbol(e.target.value.toUpperCase())}
-          placeholder="Symbol"
-          required
-        />
-        <button type="submit" className="bg-orange-500 text-white px-4 py-1 rounded">Add</button>
-      </form>
-      <ul className="mb-4">
-        {watchlist.map(row => (
-          <li key={row.symbol} className="flex justify-between items-center border-b border-zinc-200 dark:border-zinc-800 py-2">
-            <span>
-              {row.symbol}
-              {prices[row.symbol] &&
-                <span className="text-gray-500 dark:text-gray-400 ml-2">${prices[row.symbol].toFixed(2)}</span>
-              }
-            </span>
-            <button onClick={() => handleRemove(row.symbol)} className="text-red-500 text-xs">Remove</button>
-          </li>
-        ))}
-      </ul>
-      <h4 className="text-orange-700 dark:text-orange-400 font-semibold mb-1 mt-4">Trending Stocks</h4>
-      <ul>
-        {trending.map((row, i) => (
-          <li key={row.symbol} className="text-gray-700 dark:text-gray-300 text-sm">
-            {i + 1}. {row.symbol} ({row.count} owners)
-          </li>
-        ))}
-      </ul>
+    <div className="grid xl:grid-cols-[1.55fr_1fr] gap-4">
+      <div className="space-y-4">
+        <form onSubmit={handleAdd} className="card-elevated rounded-xl p-4 flex flex-wrap gap-2 items-center">
+          <input
+            value={symbol}
+            onChange={(event) => setSymbol(event.target.value.toUpperCase())}
+            placeholder="Add symbol"
+            className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm min-w-[180px]"
+            required
+          />
+          <button className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-3 py-2 text-sm font-semibold">
+            <Plus size={14} />
+            Add to Watchlist
+          </button>
+
+          <span className={`text-xs ml-auto rounded-full px-2.5 py-1 ${dataMode === "remote" ? "badge-positive" : "badge-neutral"}`}>
+            {dataMode === "remote" ? "Remote Data" : "Local Data"}
+          </span>
+        </form>
+
+        {error && <div className="text-sm text-red-600 dark:text-red-300">{error}</div>}
+
+        <div className="space-y-2">
+          {sortedWatchlist.length === 0 && (
+            <div className="card-elevated rounded-xl p-4 text-sm muted">
+              Watchlist is empty. Add symbols to start monitoring.
+            </div>
+          )}
+
+          {sortedWatchlist.map((item) => {
+            const meta = prices[item.symbol] ?? { price: 0, changePct: 0 };
+            const note = notes[item.symbol] || "";
+
+            return (
+              <div
+                key={item.symbol}
+                className="card-elevated rounded-xl p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-semibold text-base">{item.symbol}</div>
+                    <div className="text-xs muted mt-0.5">
+                      {meta.price > 0 ? formatMoney(meta.price) : "Price unavailable"}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${meta.changePct >= 0 ? "badge-positive" : "badge-negative"}`}>
+                      {formatPercent(meta.changePct)}
+                    </span>
+                    <button
+                      onClick={() => handlePromote(item.symbol)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-emerald-400/45 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 text-xs"
+                    >
+                      <TrendingUp size={13} />
+                      Add to Portfolio
+                    </button>
+                    <button
+                      onClick={() => handleRemove(item.symbol)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-2.5 py-1 text-xs"
+                    >
+                      <Trash2 size={13} />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  value={note}
+                  onChange={(event) =>
+                    setNotes((current) => ({
+                      ...current,
+                      [item.symbol]: event.target.value,
+                    }))
+                  }
+                  placeholder="Add thesis note, trigger, or reminder"
+                  className="mt-3 w-full rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-xs min-h-[68px]"
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <aside className="card-elevated rounded-xl p-4">
+        <h3 className="font-semibold section-title flex items-center gap-2">
+          <Star size={15} />
+          Trending Symbols
+        </h3>
+        <p className="text-xs muted mt-1">Most active names across watchlists and portfolios.</p>
+
+        <ul className="mt-3 space-y-2">
+          {trending.map((item, index) => (
+            <li
+              key={`${item.symbol}-${index}`}
+              className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-sm flex items-center justify-between"
+            >
+              <span className="font-semibold">{index + 1}. {item.symbol}</span>
+              <span className="text-xs muted">{item.count} score</span>
+            </li>
+          ))}
+        </ul>
+      </aside>
     </div>
   );
 }

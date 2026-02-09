@@ -1,13 +1,17 @@
 "use client";
 import AuthGuard from "../../components/AuthGuard";
 import AuditTimeline from "../../components/AuditTimeline";
+import PageShell from "../../components/PageShell";
 export default function AuditPage() {
   return (
     <AuthGuard>
-      <div className="max-w-3xl mx-auto py-12">
-        <h2 className="text-2xl font-bold mb-6">Full Audit & History</h2>
+      <PageShell
+        eyebrow="Audit"
+        title="Activity & Audit Trail"
+        subtitle="Full event history across portfolio actions, watchlist updates, and alert activity."
+      >
         <AuditTimeline />
-      </div>
+      </PageShell>
     </AuthGuard>
   );
 }

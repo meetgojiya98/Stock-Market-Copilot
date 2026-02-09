@@ -3,26 +3,29 @@ import AuthGuard from "../../components/AuthGuard";
 import { useEffect, useState } from "react";
 import PortfolioTable from "../../components/PortfolioTable";
 import AdvancedAnalyticsPanel from "../../components/AdvancedAnalyticsPanel";
+import PageShell from "../../components/PageShell";
+import { fetchPortfolioData } from "../../lib/data-client";
 
 export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState([]);
   const fetchPortfolio = async () => {
     const token = localStorage.getItem("access_token");
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/portfolio`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setPortfolio(await res.json());
+    const result = await fetchPortfolioData(token || undefined);
+    setPortfolio(result.data as never[]);
   };
   useEffect(() => { fetchPortfolio(); }, []);
   return (
     <AuthGuard>
-      <div className="max-w-xl mx-auto py-12">
-        <h2 className="text-2xl font-bold mb-6">Your Portfolio</h2>
-        <PortfolioTable onPortfolioChange={fetchPortfolio} />  
-        <div className="mt-8">
+      <PageShell
+        eyebrow="Portfolio"
+        title="Portfolio Command Deck"
+        subtitle="Track positions, monitor exposure, and inspect analytics in one integrated workspace."
+      >
+        <div className="space-y-6">
+          <PortfolioTable onPortfolioChange={fetchPortfolio} />
           <AdvancedAnalyticsPanel portfolio={portfolio} />
         </div>
-      </div>
+      </PageShell>
     </AuthGuard>
   );
 }

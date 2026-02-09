@@ -2,6 +2,8 @@
 import AuthGuard from "../../components/AuthGuard";
 import { useEffect, useState } from "react";
 import AdvancedAnalyticsPanel from "../../components/AdvancedAnalyticsPanel";
+import PageShell from "../../components/PageShell";
+import { fetchPortfolioData } from "../../lib/data-client";
 
 export default function AnalyticsPage() {
   const [portfolio, setPortfolio] = useState([]);
@@ -9,20 +11,21 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchPortfolio = async () => {
       const token = localStorage.getItem("access_token");
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/portfolio`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setPortfolio(await res.json());
+      const result = await fetchPortfolioData(token || undefined);
+      setPortfolio(result.data as never[]);
     };
     fetchPortfolio();
   }, []);
 
   return (
     <AuthGuard>
-      <div className="max-w-xl mx-auto py-12">
-        <h2 className="text-2xl font-bold mb-6">Portfolio Analytics</h2>
+      <PageShell
+        eyebrow="Analytics"
+        title="Advanced Risk & Performance Analytics"
+        subtitle="Analyze beta, alpha, Sharpe profile, and sector concentration for your current portfolio."
+      >
         <AdvancedAnalyticsPanel portfolio={portfolio} />
-      </div>
+      </PageShell>
     </AuthGuard>
   );
 }

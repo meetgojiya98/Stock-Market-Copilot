@@ -1,0 +1,47 @@
+<svg width="720" height="720" viewBox="0 0 720 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="90" y1="70" x2="640" y2="650" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#07131A"/>
+      <stop offset="0.55" stop-color="#0A2128"/>
+      <stop offset="1" stop-color="#09151D"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="220" y1="180" x2="520" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20D6B4"/>
+      <stop offset="0.5" stop-color="#36C7FF"/>
+      <stop offset="1" stop-color="#FF7A3F"/>
+    </linearGradient>
+    <linearGradient id="line" x1="160" y1="460" x2="566" y2="238" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#30FFA8"/>
+      <stop offset="0.5" stop-color="#69D7FF"/>
+      <stop offset="1" stop-color="#FF9960"/>
+    </linearGradient>
+    <filter id="softGlow" x="120" y="120" width="480" height="480" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="26" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.13 0 0 0 0 0.83 0 0 0 0 0.77 0 0 0 0.35 0"/>
+    </filter>
+  </defs>
+
+  <rect x="30" y="30" width="660" height="660" rx="170" fill="url(#bg)"/>
+
+  <g opacity="0.45">
+    <rect x="114" y="126" width="492" height="492" rx="124" stroke="#3B5560" stroke-width="2"/>
+    <rect x="152" y="164" width="416" height="416" rx="104" stroke="#2A3F49" stroke-width="2"/>
+  </g>
+
+  <g filter="url(#softGlow)">
+    <circle cx="360" cy="360" r="146" fill="url(#beam)" opacity="0.65"/>
+  </g>
+
+  <circle cx="360" cy="360" r="206" stroke="url(#beam)" stroke-width="20" opacity="0.85"/>
+  <circle cx="360" cy="360" r="162" stroke="#5FA1B2" stroke-opacity="0.35" stroke-width="2"/>
+  <circle cx="360" cy="360" r="124" stroke="#7BBFD0" stroke-opacity="0.45" stroke-width="2"/>
+
+  <path d="M160 450L254 392L315 428L395 308L484 352L560 236" stroke="url(#line)" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <circle cx="160" cy="450" r="16" fill="#2B4D56" stroke="#35DDBD" stroke-width="8"/>
+  <circle cx="254" cy="392" r="16" fill="#2B4D56" stroke="#5CD8E8" stroke-width="8"/>
+  <circle cx="315" cy="428" r="16" fill="#2B4D56" stroke="#38C0FF" stroke-width="8"/>
+  <circle cx="395" cy="308" r="16" fill="#2B4D56" stroke="#75D5FF" stroke-width="8"/>
+  <circle cx="484" cy="352" r="16" fill="#2B4D56" stroke="#84D1FF" stroke-width="8"/>
+  <circle cx="560" cy="236" r="16" fill="#2B4D56" stroke="#FF8C57" stroke-width="8"/>
+</svg>

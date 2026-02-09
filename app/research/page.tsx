@@ -1,13 +1,18 @@
 "use client";
 import AuthGuard from "../../components/AuthGuard";
 import ResearchPanel from "../../components/ResearchPanel";
+import PageShell from "../../components/PageShell";
 
 export default function ResearchPage() {
   return (
     <AuthGuard>
-      <div className="max-w-xl mx-auto py-12">
+      <PageShell
+        eyebrow="Research"
+        title="AI Research Terminal"
+        subtitle="Blend live news context with natural-language intelligence for deeper stock-level due diligence."
+      >
         <ResearchPanel />
-      </div>
+      </PageShell>
     </AuthGuard>
   );
 }

@@ -1,67 +1,71 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: { label: "Email", type: "email" },  // NextAuth sends 'username'
-        password: { label: "Password", type: "password" }
+        username: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      // credentials type explicitly allows for undefined, so we type it
       async authorize(credentials) {
-        // Defensive: ensure we never return id as undefined
+        if (!API_BASE) return null;
+
         const username = credentials?.username ?? "";
         const password = credentials?.password ?? "";
         if (!username || !password) return null;
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            username,
-            password
-          })
-        });        
+        let res: Response;
+        try {
+          res = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              username,
+              password,
+            }),
+          });
+        } catch {
+          return null;
+        }
 
         if (!res.ok) return null;
         const data = await res.json();
 
-        // If login is valid, return a user object with required string properties
         if (data.access_token) {
           return {
-            id: username,           // id MUST be a string
-            name: username,         // name MUST be a string
-            email: username,        // email MUST be a string
-            accessToken: data.access_token as string // mark as string for type
-          } as any; // Type assertion to avoid TypeScript adapter/NextAuth type confusion
+            id: username,
+            name: username,
+            email: username,
+            accessToken: data.access_token as string,
+          } as any;
         }
         return null;
-      }
-    })
+      },
+    }),
   ],
   pages: {
     signIn: "/login",
-    signOut: "/logout"
+    signOut: "/logout",
   },
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Only set accessToken if user is defined
       if (user && "accessToken" in user) {
         token.accessToken = (user as any).accessToken;
       }
       return token;
     },
     async session({ session, token }) {
-      // Expose accessToken on client session
       (session as any).accessToken = token.accessToken;
       return session;
-    }
-  }
+    },
+  },
 });
 
 export { handler as GET, handler as POST };

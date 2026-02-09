@@ -16,7 +16,14 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   if (checking) {
-    return <div className="text-center py-16">Checking authentication...</div>;
+    return (
+      <div className="pro-container py-16">
+        <div className="surface-glass rounded-2xl p-6 text-center muted text-sm inline-flex items-center gap-2">
+          <span className="pulse-dot" />
+          Checking authentication...
+        </div>
+      </div>
+    );
   }
   return <>{children}</>;
 }

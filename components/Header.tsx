@@ -1,124 +1,282 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { Moon, Sun, LogOut, User } from "lucide-react";
 
-const NAV_LINKS = [
-  { name: "Home", href: "/" },
-  { name: "Portfolio", href: "/portfolio", protected: true },
-  { name: "Notifications", href: "/notifications", protected: true },
-  { name: "Watchlist", href: "/watchlist", protected: true },
-  { name: "Analytics", href: "/analytics" },
-  { name: "Research", href: "/research" },
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  Activity,
+  BellPlus,
+  Bot,
+  BriefcaseBusiness,
+  Gauge,
+  LineChart,
+  LogIn,
+  LogOut,
+  Menu,
+  MoonStar,
+  ScanSearch,
+  Sparkles,
+  SunMedium,
+  UserRound,
+  X,
+} from "lucide-react";
+import BrandLogo from "./BrandLogo";
+import { clearAuthSession, getAuthModeLabel } from "../lib/auth-client";
+
+type NavLink = {
+  name: string;
+  href: string;
+  icon: ReactNode;
+  protected?: boolean;
+};
+
+const NAV_LINKS: NavLink[] = [
+  { name: "Home", href: "/", icon: <Gauge size={16} /> },
+  {
+    name: "Portfolio",
+    href: "/portfolio",
+    icon: <BriefcaseBusiness size={16} />,
+    protected: true,
+  },
+  { name: "Watchlist", href: "/watchlist", icon: <ScanSearch size={16} />, protected: true },
+  { name: "Analytics", href: "/analytics", icon: <Activity size={16} />, protected: true },
+  { name: "Research", href: "/research", icon: <Bot size={16} />, protected: true },
+  { name: "Alerts", href: "/notifications", icon: <BellPlus size={16} />, protected: true },
 ];
 
+function getMarketMeta() {
+  const nowInNY = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "America/New_York",
+    })
+  );
+
+  const day = nowInNY.getDay();
+  const mins = nowInNY.getHours() * 60 + nowInNY.getMinutes();
+  const isWeekday = day >= 1 && day <= 5;
+  const isOpen = isWeekday && mins >= 570 && mins < 960;
+
+  return {
+    time: nowInNY.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+    }),
+    isOpen,
+    statusLabel: isOpen ? "US Market Open" : "US Market Closed",
+  };
+}
+
 export default function Header() {
-  const [dark, setDark] = useState(false);
-  const [loggedIn, setLoggedIn] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  // Theme handling
+  const [dark, setDark] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [authModeLabel, setAuthModeLabel] = useState("Remote Mode");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [clockTick, setClockTick] = useState(0);
+
   useEffect(() => {
-    const theme = localStorage.getItem("theme");
-    setDark(theme === "dark");
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setDark(savedTheme === "dark");
+      return;
+    }
+
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    setDark(prefersDark);
   }, []);
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
     localStorage.setItem("theme", dark ? "dark" : "light");
   }, [dark]);
 
-  // Login state on route change and storage events
   useEffect(() => {
-    const checkLogin = () => setLoggedIn(!!localStorage.getItem("access_token"));
+    const checkLogin = () => {
+      setLoggedIn(Boolean(localStorage.getItem("access_token")));
+      setAuthModeLabel(getAuthModeLabel());
+    };
+
     checkLogin();
     window.addEventListener("storage", checkLogin);
+
     return () => window.removeEventListener("storage", checkLogin);
   }, [pathname]);
 
-  // Navigation handler for protected links
-  const handleNav = (href: string, isProtected: boolean) => {
-    if (isProtected && !localStorage.getItem("access_token")) {
+  useEffect(() => {
+    const id = window.setInterval(() => setClockTick((value) => value + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const marketMeta = useMemo(() => getMarketMeta(), [clockTick]);
+
+  const navigate = (href: string, protectedRoute?: boolean) => {
+    if (protectedRoute && !localStorage.getItem("access_token")) {
       router.push("/login");
-    } else {
-      router.push(href);
+      return;
     }
+
+    router.push(href);
+    setMenuOpen(false);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
+    clearAuthSession();
     setLoggedIn(false);
+    setMenuOpen(false);
     router.push("/login");
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full flex items-center justify-between px-8 py-4 backdrop-blur bg-white/80 dark:bg-zinc-950/90 shadow-md border-b border-zinc-200 dark:border-zinc-800 transition-colors">
-      <div
-        className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#fb923c] via-[#ff9100] to-[#fbe7b6] dark:from-[#ffe082] dark:via-[#ff9100] dark:to-[#fb923c] select-none cursor-pointer"
-        onClick={() => router.push("/")}
-      >
-        Stock Market Copilot
+    <header className="sticky top-0 z-50 fade-in">
+      <div className="border-b soft-divider backdrop-blur-2xl bg-[color-mix(in_srgb,var(--surface-strong)_82%,transparent)]">
+        <div className="pro-container py-3.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              className="control-surface px-2.5 py-1.5 inline-flex items-center"
+              onClick={() => navigate("/")}
+            >
+              <BrandLogo size={38} withWordmark showTagline={false} />
+            </button>
+
+            <div className="hidden xl:flex items-center gap-2 text-[11px]">
+              <span className="rounded-full px-2.5 py-1 border soft-divider bg-white/70 dark:bg-black/30 inline-flex items-center gap-1">
+                {marketMeta.isOpen && <span className="pulse-dot" />}
+                {marketMeta.statusLabel}
+              </span>
+              <span className="rounded-full px-2.5 py-1 border soft-divider bg-white/70 dark:bg-black/30 muted">
+                {marketMeta.time} ET
+              </span>
+              {loggedIn && (
+                <span className="rounded-full px-2.5 py-1 badge-neutral inline-flex items-center gap-1">
+                  <LineChart size={11} />
+                  {authModeLabel}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <nav className="hidden lg:flex items-center gap-1.5 rounded-2xl p-1.5 border soft-divider bg-[color-mix(in_srgb,var(--surface)_82%,transparent)]">
+            {NAV_LINKS.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <button
+                  key={link.href}
+                  onClick={() => navigate(link.href, link.protected)}
+                  className={`px-3 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
+                    active
+                      ? "bg-gradient-to-r from-[var(--accent)] via-orange-500 to-[var(--accent-2)] text-white shadow"
+                      : "control-surface"
+                  }`}
+                >
+                  {link.icon}
+                  {link.name}
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => navigate("/research", true)}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-2)] to-cyan-500 text-white text-sm font-semibold shadow"
+            >
+              <Sparkles size={14} />
+              AI Lab
+            </button>
+
+            <button
+              aria-label="Toggle theme"
+              className="h-10 w-10 rounded-xl control-surface grid place-items-center"
+              onClick={() => setDark((value) => !value)}
+            >
+              {dark ? <SunMedium size={18} /> : <MoonStar size={18} />}
+            </button>
+
+            {!loggedIn ? (
+              <button
+                className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl control-surface text-sm font-semibold"
+                onClick={() => navigate("/login")}
+              >
+                <LogIn size={15} />
+                Sign In
+              </button>
+            ) : (
+              <>
+                <button
+                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl control-surface text-sm font-semibold"
+                  onClick={() => navigate("/profile", true)}
+                >
+                  <UserRound size={15} />
+                  Profile
+                </button>
+                <button
+                  className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold"
+                  onClick={handleLogout}
+                >
+                  <LogOut size={15} />
+                  Logout
+                </button>
+              </>
+            )}
+
+            <button
+              aria-label="Open navigation"
+              className="lg:hidden h-10 w-10 rounded-xl control-surface grid place-items-center"
+              onClick={() => setMenuOpen((value) => !value)}
+            >
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
+        </div>
       </div>
-      <nav className="flex gap-1 md:gap-4 items-center">
-        {NAV_LINKS.map(link => (
-          <button
-            key={link.href}
-            className={`px-3 py-2 rounded-lg text-sm font-medium transition 
-              ${pathname === link.href
-                ? "bg-gradient-to-r from-orange-500 to-yellow-400 text-white shadow"
-                : "text-zinc-700 hover:text-orange-600 dark:text-zinc-200 dark:hover:text-orange-400"}`}
-            onClick={() => handleNav(link.href, !!link.protected)}
-          >
-            {link.name}
-          </button>
-        ))}
-      </nav>
-      <div className="flex items-center gap-2 ml-4">
-        <button
-          className="rounded-full bg-zinc-100 dark:bg-zinc-800 hover:bg-orange-400 hover:text-white dark:hover:bg-orange-400 dark:hover:text-zinc-900 p-2 transition"
-          aria-label="Toggle dark mode"
-          onClick={() => setDark(d => !d)}
-        >
-          {dark ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-        {!loggedIn && (
-          <>
-            <button
-              className="px-4 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-yellow-400 text-white font-bold shadow hover:opacity-90 transition"
-              onClick={() => router.push("/login")}
-            >
-              Sign In
-            </button>
-            <button
-              className="px-4 py-2 rounded-lg border border-orange-500 text-orange-600 font-bold hover:bg-orange-50 transition"
-              onClick={() => router.push("/signup")}
-            >
-              Sign Up
-            </button>
-          </>
-        )}
-        {loggedIn && (
-          <>
-            <button
-              className="flex items-center px-3 py-2 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-orange-700 dark:text-orange-300 font-medium hover:bg-orange-50 dark:hover:bg-orange-900 transition"
-              onClick={() => router.push("/profile")}
-            >
-              <User className="mr-1" size={18} /> Profile
-            </button>
-            <button
-              className="flex items-center px-3 py-2 rounded-lg bg-red-50 dark:bg-zinc-900 text-red-600 font-bold hover:bg-red-200 dark:hover:bg-red-950 transition"
-              onClick={handleLogout}
-            >
-              <LogOut className="mr-1" size={18} /> Logout
-            </button>
-          </>
-        )}
-      </div>
-      <style jsx global>{`
-        body {
-          font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-        }
-      `}</style>
+
+      {menuOpen && (
+        <div className="lg:hidden border-b soft-divider bg-[color-mix(in_srgb,var(--surface-strong)_88%,transparent)] backdrop-blur-xl">
+          <div className="pro-container py-3 grid gap-2 rise-stagger">
+            <div className="text-[11px] muted rounded-xl border soft-divider bg-white/70 dark:bg-black/25 px-3 py-2">
+              {marketMeta.statusLabel} - {marketMeta.time} ET
+              {loggedIn ? ` - ${authModeLabel}` : ""}
+            </div>
+
+            {NAV_LINKS.map((link) => {
+              const active = pathname === link.href;
+              return (
+                <button
+                  key={link.href}
+                  onClick={() => navigate(link.href, link.protected)}
+                  className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition inline-flex items-center gap-2 ${
+                    active
+                      ? "bg-gradient-to-r from-[var(--accent)] via-orange-500 to-[var(--accent-2)] text-white"
+                      : "control-surface"
+                  }`}
+                >
+                  {link.icon}
+                  {link.name}
+                </button>
+              );
+            })}
+
+            {!loggedIn ? (
+              <button
+                className="w-full text-left px-3 py-2.5 rounded-xl bg-[var(--accent-2)] text-white text-sm font-semibold inline-flex items-center gap-2"
+                onClick={() => navigate("/login")}
+              >
+                <LogIn size={15} />
+                Sign In
+              </button>
+            ) : (
+              <button
+                className="w-full text-left px-3 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold inline-flex items-center gap-2"
+                onClick={handleLogout}
+              >
+                <LogOut size={15} />
+                Logout
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
