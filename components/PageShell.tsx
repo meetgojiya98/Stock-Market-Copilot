@@ -6,14 +6,25 @@ type PageShellProps = {
   title: string;
   subtitle?: string;
   eyebrow?: string;
+  heroBackdrop?: "aurora" | "mesh" | "trading";
+  bodyBackdrop?: "aurora" | "mesh" | "trading";
+  badges?: string[];
   children: ReactNode;
 };
 
-export default function PageShell({ title, subtitle, eyebrow, children }: PageShellProps) {
+export default function PageShell({
+  title,
+  subtitle,
+  eyebrow,
+  heroBackdrop = "aurora",
+  bodyBackdrop = "mesh",
+  badges = ["Execution-grade UX", "Realtime + AI"],
+  children,
+}: PageShellProps) {
   return (
     <div className="pro-container py-8 sm:py-10 space-y-5">
       <section className="surface-glass dynamic-surface page-hero p-5 sm:p-7 fade-up">
-        <DynamicBackdrop variant="aurora" />
+        <DynamicBackdrop variant={heroBackdrop} />
         <div className="relative z-[1]">
           {eyebrow && (
             <div className="text-[11px] uppercase tracking-[0.18em] muted font-semibold">{eyebrow}</div>
@@ -22,8 +33,11 @@ export default function PageShell({ title, subtitle, eyebrow, children }: PageSh
           <div className="mt-2 flex items-start justify-between gap-3 flex-wrap">
             <h1 className="text-2xl sm:text-[2rem] font-semibold leading-tight section-title max-w-4xl">{title}</h1>
             <div className="flex items-center gap-2 text-xs">
-              <span className="badge-neutral rounded-full px-2.5 py-1">Execution-grade UX</span>
-              <span className="badge-neutral rounded-full px-2.5 py-1">Realtime + AI</span>
+              {badges.slice(0, 3).map((badge) => (
+                <span key={badge} className="badge-neutral rounded-full px-2.5 py-1">
+                  {badge}
+                </span>
+              ))}
             </div>
           </div>
 
@@ -33,7 +47,7 @@ export default function PageShell({ title, subtitle, eyebrow, children }: PageSh
       </section>
 
       <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-6 fade-up relative overflow-hidden">
-        <DynamicBackdrop variant="mesh" />
+        <DynamicBackdrop variant={bodyBackdrop} />
         <div className="relative z-[1]">{children}</div>
       </section>
     </div>

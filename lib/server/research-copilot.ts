@@ -6,6 +6,7 @@ export type CopilotSource = {
   publishedAt: string;
   snippet: string;
   relevance: number;
+  authority: number;
   channel: "local" | "google-news" | "duckduckgo" | "finnhub";
 };
 
@@ -68,18 +69,70 @@ function sourceKey(source: { title: string; url: string }) {
   return `${source.title.toLowerCase().trim()}|${source.url.toLowerCase().trim()}`;
 }
 
+const TRUSTED_HOST_SCORES: Array<[RegExp, number]> = [
+  [/reuters\.com$/i, 0.96],
+  [/bloomberg\.com$/i, 0.95],
+  [/wsj\.com$/i, 0.94],
+  [/ft\.com$/i, 0.92],
+  [/sec\.gov$/i, 0.99],
+  [/(finance|markets)\.yahoo\.com$/i, 0.83],
+  [/marketwatch\.com$/i, 0.82],
+  [/fool\.com$/i, 0.73],
+  [/investing\.com$/i, 0.76],
+  [/cnbc\.com$/i, 0.85],
+  [/duckduckgo\.com$/i, 0.62],
+  [/news\.google\.com$/i, 0.62],
+  [/finnhub\.io$/i, 0.84],
+];
+
+const TRUSTED_SOURCE_SCORES: Array<[RegExp, number]> = [
+  [/reuters/i, 0.96],
+  [/bloomberg/i, 0.95],
+  [/wall street journal|wsj/i, 0.94],
+  [/financial times|ft/i, 0.92],
+  [/sec/i, 0.99],
+  [/yahoo/i, 0.83],
+  [/marketwatch/i, 0.82],
+  [/cnbc/i, 0.85],
+  [/finnhub/i, 0.84],
+  [/duckduckgo/i, 0.62],
+  [/google news/i, 0.62],
+];
+
+function extractHostname(url: string) {
+  if (!url) return "";
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname.toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+function authorityScore(source: string, url: string) {
+  const host = extractHostname(url);
+  const sourceName = normalizeText(source).toLowerCase();
+  const hostMatch = TRUSTED_HOST_SCORES.find(([pattern]) => pattern.test(host));
+  const sourceMatch = TRUSTED_SOURCE_SCORES.find(([pattern]) => pattern.test(sourceName));
+  const hostScore = hostMatch ? hostMatch[1] : 0.58;
+  const sourceScore = sourceMatch ? sourceMatch[1] : 0.58;
+  return Math.max(0.4, Math.min(1, hostScore * 0.62 + sourceScore * 0.38));
+}
+
 function asSource(entry: SourceInput, channel: CopilotSource["channel"]): CopilotSource | null {
   const title = normalizeText(entry.title);
   const url = safeUrl(entry.url);
   if (!title) return null;
+  const source = normalizeText(entry.source) || "Unknown";
   return {
     id: "",
     title,
-    source: normalizeText(entry.source) || "Unknown",
+    source,
     url,
     publishedAt: normalizeDate(entry.publishedAt),
     snippet: normalizeText(entry.snippet),
     relevance: Math.max(0, Math.min(1, toFinite(entry.relevance) || 0)),
+    authority: authorityScore(source, url),
     channel,
   };
 }
@@ -160,6 +213,7 @@ async function fetchDuckDuckGo(query: string) {
         publishedAt: new Date().toISOString(),
         snippet: abstractText,
         relevance: 0.45,
+        authority: authorityScore(normalizeText(payload?.AbstractSource) || "DuckDuckGo", abstractUrl),
         channel: "duckduckgo",
       });
     }
@@ -177,6 +231,7 @@ async function fetchDuckDuckGo(query: string) {
         publishedAt: new Date().toISOString(),
         snippet: item.text,
         relevance: 0.35,
+        authority: authorityScore("DuckDuckGo", item.firstUrl),
         channel: "duckduckgo",
       });
     });
@@ -251,7 +306,10 @@ export function mergeAndRankSources(
   all.forEach((item) => {
     const key = sourceKey(item);
     const existing = deduped.get(key);
-    if (!existing || item.relevance > existing.relevance) {
+    if (
+      !existing ||
+      item.relevance + item.authority * 0.35 > existing.relevance + existing.authority * 0.35
+    ) {
       deduped.set(key, item);
     }
   });
@@ -263,10 +321,14 @@ export function mergeAndRankSources(
       const overlap = baseTokens.reduce((count, token) => (queryTokens.has(token) ? count + 1 : count), 0);
       const overlapScore = queryTokens.size ? overlap / queryTokens.size : 0;
       const score =
-        item.relevance * 0.45 + overlapScore * 0.4 + recencyScore(item.publishedAt) * 0.15;
+        item.relevance * 0.36 +
+        overlapScore * 0.34 +
+        recencyScore(item.publishedAt) * 0.12 +
+        item.authority * 0.18;
       return {
         ...item,
         relevance: Math.max(0, Math.min(1, score)),
+        authority: Math.max(0, Math.min(1, item.authority)),
       };
     })
     .sort((a, b) => b.relevance - a.relevance)
@@ -302,6 +364,7 @@ export function computeGroundingMetrics(answer: string, sources: CopilotSource[]
     return {
       groundingConfidence: 0,
       citationVerificationScore: 0,
+      sourceAuthorityScore: 0,
       citationUsage: { used: 0, verified: 0, total: 0 },
     };
   }
@@ -331,19 +394,23 @@ export function computeGroundingMetrics(answer: string, sources: CopilotSource[]
   const freshness =
     sources.reduce((sum, source) => sum + recencyScore(source.publishedAt), 0) /
     Math.max(1, sources.length);
+  const authority =
+    sources.reduce((sum, source) => sum + Math.max(0, Math.min(1, source.authority)), 0) /
+    Math.max(1, sources.length);
 
   const citationVerificationScore = Math.min(
     1,
-    citationCoverage * 0.35 + citationPrecision * 0.35 + urlValidity * 0.3
+    citationCoverage * 0.3 + citationPrecision * 0.25 + urlValidity * 0.2 + authority * 0.25
   );
   const groundingConfidence = Math.min(
     1,
-    supportScore * 0.55 + citationVerificationScore * 0.3 + freshness * 0.15
+    supportScore * 0.45 + citationVerificationScore * 0.25 + freshness * 0.15 + authority * 0.15
   );
 
   return {
     groundingConfidence: Number((groundingConfidence * 100).toFixed(1)),
     citationVerificationScore: Number((citationVerificationScore * 100).toFixed(1)),
+    sourceAuthorityScore: Number((authority * 100).toFixed(1)),
     citationUsage: {
       used: cited.length,
       verified,

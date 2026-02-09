@@ -26,6 +26,7 @@ import {
 import { createLocalAlert } from "../lib/data-client";
 import { pushResearchIdeaTicket } from "../lib/research-handoff";
 import AdvancedMarketChart from "./AdvancedMarketChart";
+import DynamicBackdrop from "./DynamicBackdrop";
 import {
   buildResearchDecisionPacket,
   coerceDecisionPacket,
@@ -70,6 +71,7 @@ type CopilotSource = {
   source: string;
   publishedAt: string;
   relevance: number;
+  authority?: number;
   snippet?: string;
   channel?: string;
 };
@@ -77,6 +79,7 @@ type CopilotSource = {
 type CopilotMetrics = {
   groundingConfidence: number;
   citationVerificationScore: number;
+  sourceAuthorityScore?: number;
   citationUsage: {
     used: number;
     verified: number;
@@ -121,10 +124,32 @@ function formatDate(value: string) {
   });
 }
 
+function sourceDomain(url: string) {
+  if (!url) return "unknown";
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return "unknown";
+  }
+}
+
 function scoreClass(score: number) {
   if (score >= 70) return "text-[var(--positive)]";
   if (score <= 40) return "text-[var(--negative)]";
   return "text-[var(--warning)]";
+}
+
+function sourceAuthorityClass(score: number) {
+  if (score >= 80) return "badge-positive";
+  if (score <= 55) return "badge-negative";
+  return "badge-neutral";
+}
+
+function summarizeAnswer(value: string, limit = 760) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (trimmed.length <= limit) return trimmed;
+  return `${trimmed.slice(0, limit).trimEnd()}...`;
 }
 
 function convictionClass(conviction: ResearchDecisionPacket["conviction"]) {
@@ -451,6 +476,7 @@ function parseCopilotSources(raw: unknown): CopilotSource[] {
       source,
       publishedAt,
       relevance: Math.max(0, Math.min(1, toFiniteNumber(row.relevance))),
+      authority: Math.max(0, Math.min(1, toFiniteNumber(row.authority))),
       snippet: String(row.snippet ?? "").trim(),
       channel: String(row.channel ?? "").trim() || undefined,
     };
@@ -469,6 +495,7 @@ function parseCopilotMetrics(raw: unknown): CopilotMetrics | undefined {
   return {
     groundingConfidence: Math.max(0, Math.min(100, toFiniteNumber(row.groundingConfidence))),
     citationVerificationScore: Math.max(0, Math.min(100, toFiniteNumber(row.citationVerificationScore))),
+    sourceAuthorityScore: Math.max(0, Math.min(100, toFiniteNumber(row.sourceAuthorityScore))),
     citationUsage: {
       used: Math.max(0, Math.floor(toFiniteNumber(citationUsageRaw.used))),
       verified: Math.max(0, Math.floor(toFiniteNumber(citationUsageRaw.verified))),
@@ -964,6 +991,22 @@ export default function ResearchPanel() {
     if (!lastFollowUpPrompt) return null;
     return copilotTurns.find((turn) => turn.question.trim() === lastFollowUpPrompt.trim()) ?? null;
   }, [copilotTurns, lastFollowUpPrompt]);
+
+  const latestCopilotTurn = copilotTurns[0] ?? null;
+  const latestTurnSources = latestCopilotTurn?.sources.slice(0, 6) ?? [];
+  const latestTurnPreview = summarizeAnswer(latestCopilotTurn?.answer ?? "", 860);
+  const qualitySnapshot = latestCopilotTurn?.metrics;
+
+  const verificationQueue = useMemo(() => {
+    const prompts = [
+      `What could invalidate this thesis for ${normalizeSymbol(primarySymbol)} in the next 5 sessions?`,
+      `List the highest-risk assumptions in your previous answer and quantify likely impact.`,
+      `Which claims are least-supported by current sources and what data should we pull next?`,
+      `Provide a short-vs-long playbook for ${normalizeSymbol(primarySymbol)} with explicit triggers.`,
+    ];
+    const packetPrompts = packet?.followUps.slice(0, 2) ?? [];
+    return [...packetPrompts, ...prompts].slice(0, 6);
+  }, [packet?.followUps, primarySymbol]);
 
   const citationTrail = useMemo(() => {
     if (!packet) return [];
@@ -1533,6 +1576,125 @@ export default function ResearchPanel() {
         </div>
       </section>
 
+      <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-in research-card research-intel-board">
+        <DynamicBackdrop variant="trading" className="opacity-[0.85]" />
+        <div className="relative z-[1] grid lg:grid-cols-[1.55fr_1fr] gap-4">
+          <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
+                <Compass size={15} />
+                Institutional Answer Workspace
+              </h3>
+              <div className="flex items-center gap-2 text-[11px]">
+                <span className="holo-chip">Thread: {copilotTurns.length}</span>
+                <span className={`holo-chip ${latestCopilotTurn?.mode === "live" ? "holo-chip-live" : ""}`}>
+                  {latestCopilotTurn?.mode === "live" ? "Live Inference" : "Deterministic"}
+                </span>
+              </div>
+            </div>
+
+            {!latestCopilotTurn && (
+              <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-3 text-sm muted">
+                Ask a research question to start the answer workspace. Responses stream with source grounding and
+                verification metrics.
+              </div>
+            )}
+
+            {latestCopilotTurn && (
+              <div className="mt-3 space-y-3">
+                <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-3">
+                  <div className="text-xs font-semibold">{latestCopilotTurn.question}</div>
+                  <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{latestTurnPreview}</div>
+                </div>
+
+                {qualitySnapshot && (
+                  <div className="grid sm:grid-cols-3 gap-2">
+                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
+                      <div className="text-[11px] muted">Grounding</div>
+                      <div className={`text-sm font-semibold ${scoreClass(qualitySnapshot.groundingConfidence)}`}>
+                        {Math.round(qualitySnapshot.groundingConfidence)}%
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
+                      <div className="text-[11px] muted">Citation Verify</div>
+                      <div
+                        className={`text-sm font-semibold ${scoreClass(qualitySnapshot.citationVerificationScore)}`}
+                      >
+                        {Math.round(qualitySnapshot.citationVerificationScore)}%
+                      </div>
+                    </div>
+                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
+                      <div className="text-[11px] muted">Source Authority</div>
+                      <div className={`text-sm font-semibold ${scoreClass(qualitySnapshot.sourceAuthorityScore ?? 0)}`}>
+                        {Math.round(qualitySnapshot.sourceAuthorityScore ?? 0)}%
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] muted">Cross-Examination Prompts</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {verificationQueue.map((prompt) => (
+                      <button
+                        key={prompt}
+                        onClick={() => {
+                          setCopilotQuestion(prompt);
+                          void handleAskCopilot(prompt);
+                        }}
+                        disabled={copilotBusy}
+                        className="rounded-full border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 px-2.5 py-1 text-[11px] disabled:opacity-60"
+                      >
+                        {prompt.length > 96 ? `${prompt.slice(0, 96)}...` : prompt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
+            <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
+              <Library size={15} />
+              Source Intelligence Board
+            </h3>
+            <div className="mt-3 space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              {!latestTurnSources.length && (
+                <div className="text-xs muted">No sources in the current answer yet. Ask to build evidence.</div>
+              )}
+              {latestTurnSources.map((source, index) => (
+                <div
+                  key={`${source.id || source.title}-${index}`}
+                  className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5"
+                >
+                  <div className="text-xs font-medium line-clamp-2">{source.title}</div>
+                  <div className="mt-1 flex items-center gap-1.5 text-[11px]">
+                    <span className={`rounded-full px-2 py-0.5 ${sourceAuthorityClass((source.authority ?? 0.6) * 100)}`}>
+                      Authority {Math.round((source.authority ?? 0.6) * 100)}
+                    </span>
+                    <span className="holo-chip">Relevance {Math.round(source.relevance * 100)}</span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px] muted">
+                    <span>{source.source}</span>
+                    <span>{sourceDomain(source.url)}</span>
+                  </div>
+                  <a
+                    href={source.url || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
+                  >
+                    <Link2 size={10} />
+                    Open Source
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="grid xl:grid-cols-[1.5fr_1fr] gap-4">
         <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card">
           <h3 className="font-semibold section-title text-lg inline-flex items-center gap-2">
@@ -1867,7 +2029,7 @@ export default function ResearchPanel() {
             </div>
 
             <p className="text-[11px] muted mt-1">
-              Multi-turn copilot with streaming output, live web retrieval, and grounding verification.
+              Institutional-grade copilot with streaming synthesis, web retrieval depth controls, and citation audits.
             </p>
 
             <div className="mt-3 grid sm:grid-cols-2 gap-2 text-[11px]">

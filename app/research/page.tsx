@@ -10,6 +10,9 @@ export default function ResearchPage() {
         eyebrow="Research"
         title="Neural Research Deck"
         subtitle="Perplexity-grade market intelligence with streaming answers, verified citations, and execution-ready decision maps."
+        heroBackdrop="trading"
+        bodyBackdrop="trading"
+        badges={["Institutional AI", "Live Web Retrieval", "Grounded Citations"]}
       >
         <ResearchPanel />
       </PageShell>

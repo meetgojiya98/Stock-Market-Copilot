@@ -205,6 +205,23 @@ button:active {
   backdrop-filter: blur(22px) saturate(145%);
 }
 
+.research-intel-board {
+  position: relative;
+}
+
+.research-intel-board::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--surface-border) 25%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--surface-border) 22%, transparent) 1px, transparent 1px);
+  background-size: 26px 26px;
+  opacity: 0.24;
+}
+
 .holo-chip {
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
