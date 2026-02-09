@@ -26,25 +26,25 @@
 }
 
 .dark {
-  --bg-canvas: #0a0f1a;
-  --bg-soft: #101827;
-  --bg-deep: #151e30;
-  --ink: #e7eef9;
-  --ink-muted: #93a4bf;
-  --surface: rgba(16, 24, 38, 0.9);
-  --surface-strong: rgba(19, 29, 45, 0.95);
-  --surface-emphasis: rgba(24, 35, 54, 0.97);
-  --surface-border: rgba(152, 170, 196, 0.16);
-  --surface-border-strong: rgba(152, 170, 196, 0.24);
-  --accent: #65b4ff;
-  --accent-2: #5ed7ae;
-  --accent-3: #f7b25c;
-  --positive: #59d8a3;
-  --negative: #ff8d98;
-  --warning: #f0c57a;
-  --shadow-sm: 0 8px 22px rgba(4, 8, 15, 0.4);
-  --shadow-lg: 0 26px 80px rgba(4, 8, 15, 0.54);
-  --shadow-xl: 0 56px 150px rgba(4, 8, 15, 0.64);
+  --bg-canvas: #0f141a;
+  --bg-soft: #151b23;
+  --bg-deep: #1d2530;
+  --ink: #e7eef6;
+  --ink-muted: #95a6ba;
+  --surface: rgba(21, 29, 38, 0.9);
+  --surface-strong: rgba(25, 35, 46, 0.95);
+  --surface-emphasis: rgba(30, 42, 55, 0.97);
+  --surface-border: rgba(160, 177, 196, 0.16);
+  --surface-border-strong: rgba(160, 177, 196, 0.26);
+  --accent: #43b5ff;
+  --accent-2: #8fd14f;
+  --accent-3: #ff9a5a;
+  --positive: #66d58f;
+  --negative: #ff8890;
+  --warning: #efc25f;
+  --shadow-sm: 0 8px 20px rgba(2, 7, 12, 0.4);
+  --shadow-lg: 0 24px 74px rgba(2, 7, 12, 0.54);
+  --shadow-xl: 0 52px 140px rgba(2, 7, 12, 0.64);
 }
 
 * {
@@ -74,8 +74,9 @@ body {
 
 .dark body {
   background:
-    radial-gradient(circle at 14% -12%, rgba(84, 141, 214, 0.09), transparent 40%),
-    radial-gradient(circle at 86% -10%, rgba(80, 190, 150, 0.08), transparent 34%),
+    radial-gradient(circle at 14% -12%, rgba(67, 181, 255, 0.1), transparent 40%),
+    radial-gradient(circle at 86% -10%, rgba(143, 209, 79, 0.08), transparent 34%),
+    radial-gradient(circle at 50% 108%, rgba(255, 154, 90, 0.07), transparent 46%),
     linear-gradient(150deg, var(--bg-soft) 0%, var(--bg-canvas) 54%, var(--bg-deep) 100%);
 }
 
@@ -117,12 +118,12 @@ body::after {
 }
 
 .dark body::before {
-  opacity: 0.24;
+  opacity: 0.2;
   filter: blur(92px);
 }
 
 .dark body::after {
-  opacity: 0.18;
+  opacity: 0.14;
 }
 
 a {
@@ -517,7 +518,12 @@ button:active {
 
 .dark .topbar-shell {
   border-color: color-mix(in srgb, var(--surface-border) 62%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 98%, transparent);
+  background: linear-gradient(
+      148deg,
+      color-mix(in srgb, var(--surface-strong) 96%, var(--accent) 4%),
+      color-mix(in srgb, var(--surface) 92%, var(--accent-2) 4%)
+    ),
+    color-mix(in srgb, var(--surface-strong) 98%, transparent);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.34);
 }
 
@@ -664,7 +670,7 @@ button:active {
 
 .dark .topbar-mobile-sheet {
   border-color: color-mix(in srgb, var(--surface-border) 60%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 98%, transparent);
+  background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
 }
 
 .topbar-mobile-meta {
@@ -743,7 +749,10 @@ button:active {
 }
 
 .dark .mission-hero {
-  background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
+    radial-gradient(circle at 86% 4%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 36%),
+    color-mix(in srgb, var(--surface-strong) 96%, transparent);
 }
 
 .mission-hero-content {
@@ -916,7 +925,7 @@ textarea::placeholder {
 .dark .dynamic-backdrop--mesh,
 .dark .dynamic-backdrop--trading {
   mix-blend-mode: normal;
-  opacity: 0.34;
+  opacity: 0.26;
 }
 
 .dark .dynamic-surface::after {
