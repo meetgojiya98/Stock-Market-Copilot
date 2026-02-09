@@ -162,13 +162,17 @@ async function fetchGoogleNews(query: string) {
             normalizeText(found?.[1]).replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "")
           );
         };
+        const description = tag("description");
+        const directLinkMatch = description.match(/href="([^"]+)"/i);
+        const directLink = safeUrl(decodeHtml(directLinkMatch?.[1] ?? ""));
+        const preferredUrl = directLink || tag("link");
         return asSource(
           {
             title: tag("title"),
-            url: tag("link"),
+            url: preferredUrl,
             source: tag("source") || "Google News",
             publishedAt: tag("pubDate"),
-            snippet: tag("description"),
+            snippet: description,
             relevance: 0.5,
           },
           "google-news"

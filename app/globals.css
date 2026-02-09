@@ -3,48 +3,48 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #eff3f7;
-  --bg-soft: #f8fbff;
-  --bg-deep: #d5e1eb;
-  --ink: #061121;
-  --ink-muted: #4e617a;
-  --surface: rgba(255, 255, 255, 0.72);
-  --surface-strong: rgba(255, 255, 255, 0.9);
-  --surface-emphasis: rgba(255, 255, 255, 0.96);
-  --surface-border: rgba(6, 17, 33, 0.12);
-  --surface-border-strong: rgba(6, 17, 33, 0.2);
-  --accent: #ec7a19;
-  --accent-2: #0f8d84;
-  --accent-3: #1974ae;
-  --positive: #0b9c66;
-  --negative: #de3a36;
-  --warning: #b7791f;
-  --shadow-sm: 0 4px 14px rgba(6, 17, 33, 0.06);
-  --shadow-lg: 0 20px 60px rgba(6, 17, 33, 0.12);
-  --shadow-xl: 0 36px 110px rgba(6, 17, 33, 0.16);
-  --radius-card: 1.15rem;
+  --bg-canvas: #eef3f8;
+  --bg-soft: #f8fbfe;
+  --bg-deep: #d3dce8;
+  --ink: #0f1b2e;
+  --ink-muted: #5f728b;
+  --surface: rgba(244, 249, 255, 0.76);
+  --surface-strong: rgba(251, 253, 255, 0.93);
+  --surface-emphasis: rgba(255, 255, 255, 0.98);
+  --surface-border: rgba(16, 30, 54, 0.13);
+  --surface-border-strong: rgba(16, 30, 54, 0.23);
+  --accent: #0f6df2;
+  --accent-2: #06a894;
+  --accent-3: #f08a00;
+  --positive: #0b9f6d;
+  --negative: #dc3f46;
+  --warning: #b67a13;
+  --shadow-sm: 0 6px 18px rgba(17, 32, 56, 0.07);
+  --shadow-lg: 0 24px 70px rgba(17, 32, 56, 0.14);
+  --shadow-xl: 0 48px 130px rgba(17, 32, 56, 0.18);
+  --radius-card: 1.1rem;
 }
 
 .dark {
-  --bg-canvas: #040c14;
-  --bg-soft: #091420;
-  --bg-deep: #112233;
-  --ink: #eff7ff;
-  --ink-muted: #9eb4ca;
-  --surface: rgba(8, 22, 36, 0.68);
-  --surface-strong: rgba(10, 28, 45, 0.9);
-  --surface-emphasis: rgba(13, 31, 47, 0.96);
-  --surface-border: rgba(158, 180, 202, 0.2);
-  --surface-border-strong: rgba(158, 180, 202, 0.3);
-  --accent: #ff9a44;
-  --accent-2: #1cb5a8;
-  --accent-3: #4ab0ee;
-  --positive: #2bd284;
-  --negative: #f3726e;
-  --warning: #f4b463;
-  --shadow-sm: 0 4px 14px rgba(2, 8, 14, 0.35);
-  --shadow-lg: 0 20px 70px rgba(2, 8, 14, 0.46);
-  --shadow-xl: 0 40px 120px rgba(2, 8, 14, 0.62);
+  --bg-canvas: #06111d;
+  --bg-soft: #0c1b2d;
+  --bg-deep: #11263d;
+  --ink: #eef6ff;
+  --ink-muted: #9eb5cd;
+  --surface: rgba(12, 28, 46, 0.74);
+  --surface-strong: rgba(12, 30, 49, 0.92);
+  --surface-emphasis: rgba(14, 34, 55, 0.97);
+  --surface-border: rgba(174, 194, 214, 0.24);
+  --surface-border-strong: rgba(174, 194, 214, 0.34);
+  --accent: #6ca8ff;
+  --accent-2: #3fd3c2;
+  --accent-3: #ffad4b;
+  --positive: #3ad996;
+  --negative: #ff8088;
+  --warning: #f5be60;
+  --shadow-sm: 0 8px 22px rgba(3, 9, 16, 0.42);
+  --shadow-lg: 0 28px 90px rgba(3, 9, 16, 0.56);
+  --shadow-xl: 0 54px 150px rgba(3, 9, 16, 0.66);
 }
 
 * {
@@ -62,11 +62,12 @@ html {
 
 body {
   color: var(--ink);
-  font-family: "General Sans", "Sora", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: "Space Grotesk", "Sora", "Avenir Next", "Segoe UI", sans-serif;
   background:
-    radial-gradient(circle at 4% 0%, rgba(15, 141, 132, 0.22), transparent 34%),
-    radial-gradient(circle at 88% -4%, rgba(236, 122, 25, 0.24), transparent 36%),
-    linear-gradient(150deg, var(--bg-soft) 0%, var(--bg-canvas) 46%, var(--bg-deep) 100%);
+    radial-gradient(circle at 3% 0%, color-mix(in srgb, var(--accent-2) 25%, transparent), transparent 36%),
+    radial-gradient(circle at 84% -4%, color-mix(in srgb, var(--accent-3) 20%, transparent), transparent 34%),
+    radial-gradient(circle at 52% 112%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 44%),
+    linear-gradient(146deg, var(--bg-soft) 0%, var(--bg-canvas) 50%, var(--bg-deep) 100%);
   transition: background 0.45s ease, color 0.3s ease, filter 0.3s ease;
   text-rendering: optimizeLegibility;
 }
@@ -74,31 +75,35 @@ body {
 body::before {
   content: "";
   position: fixed;
-  inset: -34vh -26vw auto;
-  height: 76vh;
+  inset: -36vh -22vw auto;
+  height: 74vh;
   background: linear-gradient(
-    112deg,
-    rgba(15, 141, 132, 0.24),
-    rgba(236, 122, 25, 0.12),
-    rgba(25, 116, 174, 0.06)
+    108deg,
+    color-mix(in srgb, var(--accent) 22%, transparent),
+    color-mix(in srgb, var(--accent-2) 16%, transparent),
+    color-mix(in srgb, var(--accent-3) 13%, transparent)
   );
-  filter: blur(72px);
+  filter: blur(86px);
   pointer-events: none;
   z-index: -2;
-  animation: canvasFloatA 26s ease-in-out infinite alternate;
+  animation: canvasFloatA 30s ease-in-out infinite alternate;
 }
 
 body::after {
   content: "";
   position: fixed;
-  inset: auto -40vw -38vh;
-  width: 78vw;
-  height: 76vh;
+  inset: auto -36vw -40vh;
+  width: 76vw;
+  height: 72vh;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(25, 116, 174, 0.22) 0%, rgba(25, 116, 174, 0) 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 23%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 0%, transparent) 68%
+  );
   pointer-events: none;
   z-index: -2;
-  animation: canvasFloatB 30s ease-in-out infinite alternate;
+  animation: canvasFloatB 34s ease-in-out infinite alternate;
 }
 
 a {
@@ -142,11 +147,11 @@ button:active {
 .surface-glass {
   position: relative;
   background:
-    linear-gradient(150deg, rgba(255, 255, 255, 0.36), rgba(255, 255, 255, 0.06)),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.02)),
     var(--surface);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-card);
-  backdrop-filter: blur(20px) saturate(140%);
+  border-radius: calc(var(--radius-card) + 0.1rem);
+  backdrop-filter: blur(24px) saturate(155%);
   box-shadow: var(--shadow-lg);
 }
 
@@ -155,8 +160,8 @@ button:active {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  opacity: 0.35;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, rgba(255, 255, 255, 0.18));
+  opacity: 0.6;
   pointer-events: none;
 }
 
@@ -168,18 +173,22 @@ button:active {
 .dynamic-surface::after {
   content: "";
   position: absolute;
-  inset: -55% -20%;
+  inset: -62% -22%;
   pointer-events: none;
   background:
-    radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent-2) 24%, transparent), transparent 46%),
-    radial-gradient(circle at 82% 30%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 42%),
-    radial-gradient(circle at 60% 78%, color-mix(in srgb, var(--accent-3) 18%, transparent), transparent 48%);
-  opacity: 0.34;
-  animation: surfaceDrift 22s ease-in-out infinite alternate;
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 44%),
+    radial-gradient(circle at 84% 20%, color-mix(in srgb, var(--accent-2) 22%, transparent), transparent 40%),
+    radial-gradient(circle at 58% 84%, color-mix(in srgb, var(--accent-3) 20%, transparent), transparent 50%);
+  opacity: 0.42;
+  animation: surfaceDrift 26s ease-in-out infinite alternate;
 }
 
 .research-shell {
   position: relative;
+}
+
+.research-vx-shell {
+  container-type: inline-size;
 }
 
 .research-hero {
@@ -203,6 +212,59 @@ button:active {
 
 .research-card {
   backdrop-filter: blur(22px) saturate(145%);
+}
+
+.quantum-surface {
+  position: relative;
+  isolation: isolate;
+}
+
+.quantum-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--accent) 7%, transparent),
+    color-mix(in srgb, var(--accent-2) 7%, transparent),
+    color-mix(in srgb, var(--accent-3) 6%, transparent)
+  );
+  opacity: 0.7;
+}
+
+.mission-nav {
+  display: inline-flex;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 85%, transparent);
+  background: color-mix(in srgb, var(--surface-emphasis) 84%, transparent);
+}
+
+.mission-tab {
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--ink-muted);
+  border: 1px solid transparent;
+}
+
+.mission-tab:hover {
+  border-color: color-mix(in srgb, var(--accent) 36%, transparent);
+  color: var(--ink);
+}
+
+.mission-tab-active {
+  color: white;
+  border-color: color-mix(in srgb, var(--accent) 52%, transparent);
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--accent) 88%, transparent),
+    color-mix(in srgb, var(--accent-2) 88%, transparent)
+  );
 }
 
 .research-intel-board {
@@ -241,37 +303,38 @@ button:active {
 .surface-panel {
   background: var(--surface-strong);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-card);
+  border-radius: calc(var(--radius-card) + 0.02rem);
   box-shadow: var(--shadow-sm);
 }
 
 .card-elevated {
   background: var(--surface-emphasis);
   border: 1px solid var(--surface-border);
-  border-radius: calc(var(--radius-card) - 0.1rem);
+  border-radius: calc(var(--radius-card) - 0.08rem);
   box-shadow: var(--shadow-sm);
 }
 
 .control-surface {
   border: 1px solid var(--surface-border);
-  background: color-mix(in srgb, var(--surface-emphasis) 88%, transparent);
-  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--surface-emphasis) 84%, transparent);
+  border-radius: 0.8rem;
   transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
 }
 
 .control-surface:hover {
-  border-color: color-mix(in srgb, var(--accent-3) 40%, var(--surface-border));
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--surface-border));
+  background: color-mix(in srgb, var(--surface-emphasis) 88%, var(--accent) 2%);
 }
 
 .control-surface:focus-within {
-  border-color: color-mix(in srgb, var(--accent-2) 56%, var(--surface-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-2) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 56%, var(--surface-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .section-title {
   letter-spacing: -0.02em;
   color: var(--ink);
-  font-weight: 640;
+  font-weight: 650;
 }
 
 .muted {

@@ -101,6 +101,7 @@ type CopilotTurn = {
 
 type CopilotDepth = "fast" | "balanced" | "deep";
 type CopilotStyle = "concise" | "balanced" | "deep";
+type WorkspaceView = "command" | "synthesis" | "forensics";
 
 function formatMoney(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -130,6 +131,17 @@ function sourceDomain(url: string) {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return "unknown";
+  }
+}
+
+function extractUrlFromText(value: string) {
+  const match = value.match(/https?:\/\/[^\s)]+/i);
+  if (!match) return "";
+  try {
+    const parsed = new URL(match[0]);
+    return parsed.toString();
+  } catch {
+    return "";
   }
 }
 
@@ -553,6 +565,7 @@ export default function ResearchPanel() {
   const [benchmarkSymbol, setBenchmarkSymbol] = useState("QQQ");
   const [question, setQuestion] = useState("");
   const [catalyst, setCatalyst] = useState("next earnings / macro print");
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>("synthesis");
 
   const [mode, setMode] = useState<ResearchMode>("thesis");
   const [horizon, setHorizon] = useState<HorizonMode>("swing");
@@ -1008,20 +1021,68 @@ export default function ResearchPanel() {
     return [...packetPrompts, ...prompts].slice(0, 6);
   }, [packet?.followUps, primarySymbol]);
 
+  const followUpAnswerMap = useMemo(() => {
+    const map = new Map<string, CopilotTurn>();
+    if (!packet?.followUps.length) return map;
+
+    packet.followUps.forEach((followUp) => {
+      const target = followUp.trim().toLowerCase();
+      const match = copilotTurns.find((turn) => turn.question.trim().toLowerCase() === target);
+      if (match) {
+        map.set(followUp, match);
+      }
+    });
+
+    return map;
+  }, [copilotTurns, packet?.followUps]);
+
   const citationTrail = useMemo(() => {
     if (!packet) return [];
+    const sourceCandidates = [
+      ...latestTurnSources,
+      ...sourceRankPreview,
+      ...feed.map((item) => ({
+        title: item.title,
+        url: item.url,
+        source: item.source,
+        publishedAt: item.publishedAt,
+        relevance: 0.5,
+        authority: 0.6,
+      })),
+    ];
+
     return packet.citations.slice(0, 8).map((citation) => {
+      const directUrl = extractUrlFromText(citation);
+      if (directUrl) {
+        return {
+          citation,
+          linked: {
+            title: citation,
+            source: sourceDomain(directUrl),
+            url: directUrl,
+            publishedAt: new Date().toISOString(),
+          },
+        };
+      }
+
       const lowered = citation.toLowerCase().trim();
-      const linked = feed.find((item) => {
-        const title = item.title.toLowerCase().trim();
+      const linked = sourceCandidates.find((item) => {
+        const title = (item.title || "").toLowerCase().trim();
         return title.includes(lowered) || lowered.includes(title);
       });
       return {
         citation,
-        linked,
+        linked: linked
+          ? {
+              title: linked.title,
+              source: linked.source,
+              url: linked.url,
+              publishedAt: linked.publishedAt,
+            }
+          : null,
       };
     });
-  }, [feed, packet]);
+  }, [feed, latestTurnSources, packet, sourceRankPreview]);
 
   const handleClearCopilotThread = () => {
     setCopilotTurns([]);
@@ -1070,8 +1131,32 @@ export default function ResearchPanel() {
     }
 
     if (!nextPrimary) {
+      const fallbackSources = rankCopilotSources(
+        userQuestion,
+        feed,
+        packet,
+        sourceLimitForDepth(copilotDepth)
+      );
+      const fallbackAnswer = deterministicCopilotFallback({
+        query: userQuestion,
+        symbol: normalizeSymbol(primarySymbol),
+        packet,
+        sources: fallbackSources,
+      });
+      const fallbackTurn: CopilotTurn = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        question: userQuestion,
+        answer: fallbackAnswer,
+        createdAt: new Date().toISOString(),
+        mode: "deterministic",
+        sources: fallbackSources,
+        detail: "Primary context unavailable. Deterministic follow-up answer generated.",
+      };
+
+      setCopilotTurns((current) => [fallbackTurn, ...current].slice(0, 30));
       setCopilotBusy(false);
-      setCopilotError("Primary context unavailable. Refresh context and retry.");
+      setCopilotQuestion("");
+      setCopilotError("Primary context unavailable. Returned deterministic answer.");
       return;
     }
 
@@ -1288,6 +1373,7 @@ export default function ResearchPanel() {
   };
 
   const handleRunFollowUp = (followUp: string) => {
+    setWorkspaceView("synthesis");
     setQuestion(followUp);
     setLastFollowUpPrompt(followUp);
     setCopilotQuestion(followUp);
@@ -1297,6 +1383,7 @@ export default function ResearchPanel() {
   };
 
   const handleAskFollowUp = (followUp: string) => {
+    setWorkspaceView("synthesis");
     setLastFollowUpPrompt(followUp);
     setCopilotQuestion(followUp);
     document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1305,15 +1392,21 @@ export default function ResearchPanel() {
 
   const modeSummary = modeLabel(mode);
   const dataMode = dataModeLabel(primaryContext, compareContext, benchmarkContext);
+  const viewSummary =
+    workspaceView === "command"
+      ? "Configure symbols, risk controls, and execution parameters."
+      : workspaceView === "forensics"
+      ? "Interrogate sources, citations, and evidence quality."
+      : "Run live research synthesis and cross-examination.";
 
   return (
-    <div className="space-y-4 research-shell">
-      <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-up research-hero">
+    <div className="space-y-4 research-shell research-vx-shell">
+      <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-up research-hero quantum-surface">
         <div className="research-hero-glow" />
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <h2 className="text-lg font-semibold section-title inline-flex items-center gap-2">
             <BrainCircuit size={18} />
-            Neural Research Deck
+            Institutional Research Nexus
           </h2>
           <div className="flex items-center gap-2 text-xs">
             <span className={`rounded-full px-2.5 py-1 ${dataMode === "Remote" ? "badge-positive" : "badge-neutral"}`}>
@@ -1322,6 +1415,7 @@ export default function ResearchPanel() {
             <span className="rounded-full px-2.5 py-1 badge-neutral">Mode: {modeSummary}</span>
           </div>
         </div>
+        <p className="mt-2 text-xs muted">{viewSummary}</p>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
           <span className="holo-chip">Web Depth: {copilotDepth}</span>
           <span className="holo-chip">Style: {copilotStyle}</span>
@@ -1329,6 +1423,27 @@ export default function ResearchPanel() {
             Citations: {copilotStrictCitations ? "Strict" : "Flexible"}
           </span>
           <span className="holo-chip">Source Pool: {sourceRankPreview.length}</span>
+        </div>
+
+        <div className="mt-3 mission-nav">
+          <button
+            onClick={() => setWorkspaceView("command")}
+            className={`mission-tab ${workspaceView === "command" ? "mission-tab-active" : ""}`}
+          >
+            Command Deck
+          </button>
+          <button
+            onClick={() => setWorkspaceView("synthesis")}
+            className={`mission-tab ${workspaceView === "synthesis" ? "mission-tab-active" : ""}`}
+          >
+            Synthesis Lab
+          </button>
+          <button
+            onClick={() => setWorkspaceView("forensics")}
+            className={`mission-tab ${workspaceView === "forensics" ? "mission-tab-active" : ""}`}
+          >
+            Evidence Forensics
+          </button>
         </div>
 
         <div className="mt-4 grid xl:grid-cols-[1.35fr_1fr] gap-4">
@@ -1576,7 +1691,8 @@ export default function ResearchPanel() {
         </div>
       </section>
 
-      <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-in research-card research-intel-board">
+      {workspaceView !== "command" && (
+        <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-in research-card research-intel-board quantum-surface">
         <DynamicBackdrop variant="trading" className="opacity-[0.85]" />
         <div className="relative z-[1] grid lg:grid-cols-[1.55fr_1fr] gap-4">
           <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
@@ -1693,10 +1809,20 @@ export default function ResearchPanel() {
             </div>
           </div>
         </div>
-      </section>
+        </section>
+      )}
 
-      <div className="grid xl:grid-cols-[1.5fr_1fr] gap-4">
-        <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card">
+      <div
+        className={`grid gap-4 ${
+          workspaceView === "forensics"
+            ? "xl:grid-cols-[1.1fr_1.2fr]"
+            : workspaceView === "command"
+            ? "xl:grid-cols-[1.25fr_1fr]"
+            : "xl:grid-cols-[1.5fr_1fr]"
+        }`}
+      >
+        {workspaceView !== "forensics" && (
+          <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card quantum-surface">
           <h3 className="font-semibold section-title text-lg inline-flex items-center gap-2">
             <Target size={16} />
             Institutional Decision Pack
@@ -1850,7 +1976,7 @@ export default function ResearchPanel() {
                       <div className="mt-2 flex items-center gap-2">
                         <button
                           onClick={() => handleRunFollowUp(item)}
-                          disabled={generating}
+                          disabled={generating || copilotBusy}
                           className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] text-white px-2 py-1 text-[11px] font-semibold disabled:opacity-60"
                         >
                           <Sparkles size={11} />
@@ -1865,6 +1991,17 @@ export default function ResearchPanel() {
                           Ask Copilot
                         </button>
                       </div>
+                      {followUpAnswerMap.has(item) && (
+                        <div className="mt-2 rounded-md border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                          <div className="text-[11px] leading-relaxed">
+                            {summarizeAnswer(followUpAnswerMap.get(item)?.answer ?? "", 220)}
+                          </div>
+                          <div className="mt-1 text-[10px] muted">
+                            {followUpAnswerMap.get(item)?.mode === "live" ? "Live answer" : "Deterministic"} ·{" "}
+                            {formatRelativeAge(followUpAnswerMap.get(item)?.createdAt ?? new Date().toISOString())}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1913,7 +2050,7 @@ export default function ResearchPanel() {
                       <div className="font-medium">{item.citation}</div>
                       {item.linked ? (
                         <a
-                          href={item.linked.url || "#"}
+                          href={item.linked.url || `https://www.google.com/search?q=${encodeURIComponent(item.citation)}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
@@ -1936,10 +2073,12 @@ export default function ResearchPanel() {
               {rawAnswer}
             </div>
           )}
-        </section>
+          </section>
+        )}
 
         <aside className="space-y-4">
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
+          {workspaceView !== "forensics" && (
+            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Zap size={15} />
               Signal Matrix
@@ -1962,9 +2101,11 @@ export default function ResearchPanel() {
                 </div>
               ))}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
+          {workspaceView === "command" && (
+            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <ArrowRightLeft size={15} />
               Factor Decomposition
@@ -1989,9 +2130,11 @@ export default function ResearchPanel() {
                 </div>
               ))}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
+          {workspaceView === "command" && (
+            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <FlaskConical size={15} />
               Shock Lab
@@ -2017,9 +2160,14 @@ export default function ResearchPanel() {
                 </div>
               ))}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card" id="research-copilot-panel">
+          {workspaceView !== "command" && (
+            <section
+              className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface"
+              id="research-copilot-panel"
+            >
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
                 <MessageSquareText size={15} />
@@ -2228,9 +2376,11 @@ export default function ResearchPanel() {
                 </div>
               ))}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
+          {workspaceView !== "command" && (
+            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Newspaper size={15} />
               Intelligence Feed
@@ -2272,9 +2422,11 @@ export default function ResearchPanel() {
               ))}
               {!feed.length && <div className="text-xs muted">No feed items available.</div>}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card">
+          {workspaceView !== "synthesis" && (
+            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
                 <Library size={15} />
@@ -2315,9 +2467,10 @@ export default function ResearchPanel() {
               ))}
               {!workspaces.length && <div className="text-xs muted">No saved workspaces yet.</div>}
             </div>
-          </section>
+            </section>
+          )}
 
-          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card text-xs muted inline-flex items-center gap-1">
+          <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface text-xs muted inline-flex items-center gap-1">
             <ShieldAlert size={13} />
             Validate every output before execution. This workspace is decision support, not financial advice.
           </section>

@@ -129,14 +129,11 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 fade-in">
-      <div className="border-b soft-divider backdrop-blur-2xl bg-[color-mix(in_srgb,var(--surface-strong)_82%,transparent)] relative overflow-hidden">
-        <DynamicBackdrop variant="mesh" className="opacity-45" />
+      <div className="border-b soft-divider backdrop-blur-3xl bg-[color-mix(in_srgb,var(--surface-strong)_74%,transparent)] relative overflow-hidden">
+        <DynamicBackdrop variant="trading" className="opacity-50" />
         <div className="pro-container py-3.5 flex items-center justify-between gap-2 xl:gap-3 relative z-[1]">
           <div className="flex items-center gap-3 min-w-0">
-            <button
-              className="control-surface px-2.5 py-1.5 inline-flex items-center"
-              onClick={() => navigate("/")}
-            >
+            <button className="control-surface px-2.5 py-1.5 inline-flex items-center" onClick={() => navigate("/")}>
               <BrandLogo size={38} withWordmark showTagline={false} />
             </button>
 
@@ -151,7 +148,7 @@ export default function Header() {
             </div>
           </div>
 
-          <nav className="hidden lg:flex flex-1 min-w-0 items-center gap-1.5 rounded-2xl p-1.5 border soft-divider bg-[color-mix(in_srgb,var(--surface)_82%,transparent)] overflow-x-auto no-scrollbar">
+          <nav className="hidden lg:flex flex-1 min-w-0 items-center gap-1.5 rounded-2xl p-1.5 border soft-divider bg-[color-mix(in_srgb,var(--surface)_78%,transparent)] overflow-x-auto no-scrollbar">
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
               return (
@@ -160,7 +157,7 @@ export default function Header() {
                   onClick={() => navigate(link.href, link.protected)}
                   className={`shrink-0 px-3 py-2 rounded-xl text-sm font-medium transition flex items-center gap-2 ${
                     active
-                      ? "bg-gradient-to-r from-[var(--accent)] via-orange-500 to-[var(--accent-2)] text-white shadow"
+                      ? "bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-[var(--accent-3)] text-white shadow"
                       : "control-surface"
                   }`}
                 >
@@ -174,10 +171,10 @@ export default function Header() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => navigate("/research", true)}
-              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent-2)] to-cyan-500 text-white text-xs xl:text-sm font-semibold shadow"
+              className="hidden sm:inline-flex items-center gap-1.5 px-2.5 xl:px-3.5 py-2 rounded-xl bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white text-xs xl:text-sm font-semibold shadow"
             >
               <Sparkles size={14} />
-              <span className="hidden xl:inline">AI Lab</span>
+              <span className="hidden xl:inline">Mission AI</span>
             </button>
 
             <button
@@ -227,7 +224,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden border-b soft-divider bg-[color-mix(in_srgb,var(--surface-strong)_88%,transparent)] backdrop-blur-xl">
+        <div className="lg:hidden border-b soft-divider bg-[color-mix(in_srgb,var(--surface-strong)_84%,transparent)] backdrop-blur-xl">
           <div className="pro-container py-3 grid gap-2 rise-stagger">
             <div className="text-[11px] muted rounded-xl border soft-divider bg-white/70 dark:bg-black/25 px-3 py-2">
               {marketMeta.statusLabel} - {marketMeta.time} ET
@@ -241,7 +238,7 @@ export default function Header() {
                   onClick={() => navigate(link.href, link.protected)}
                   className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium transition inline-flex items-center gap-2 ${
                     active
-                      ? "bg-gradient-to-r from-[var(--accent)] via-orange-500 to-[var(--accent-2)] text-white"
+                      ? "bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-[var(--accent-3)] text-white"
                       : "control-surface"
                   }`}
                 >

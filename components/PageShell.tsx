@@ -16,9 +16,9 @@ export default function PageShell({
   title,
   subtitle,
   eyebrow,
-  heroBackdrop = "aurora",
-  bodyBackdrop = "mesh",
-  badges = ["Execution-grade UX", "Realtime + AI"],
+  heroBackdrop = "trading",
+  bodyBackdrop = "trading",
+  badges = ["Institutional UX", "Realtime Intelligence"],
   children,
 }: PageShellProps) {
   return (

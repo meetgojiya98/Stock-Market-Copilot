@@ -60,7 +60,7 @@ export default function MobileDock() {
       className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] w-[min(96vw,430px)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="surface-glass rounded-2xl px-2 py-2 border soft-divider">
+      <div className="surface-glass dynamic-surface rounded-2xl px-2 py-2 border soft-divider">
         <div className="grid grid-cols-6 gap-1">
           {ITEMS.map((item) => {
             const active = pathname === item.href;
@@ -70,7 +70,7 @@ export default function MobileDock() {
                 onClick={() => navigate(item)}
                 className={`rounded-xl px-1 py-2.5 text-[11px] font-medium flex flex-col items-center gap-1 transition ${
                   active
-                    ? "bg-gradient-to-r from-[var(--accent)] via-orange-500 to-[var(--accent-2)] text-white"
+                    ? "bg-gradient-to-r from-[var(--accent)] via-[var(--accent-2)] to-[var(--accent-3)] text-white"
                     : "control-surface"
                 }`}
               >
