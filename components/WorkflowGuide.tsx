@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Compass, Sparkles, X } from "lucide-react";
+import { ArrowRight, Compass, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 type GuideItem = {
@@ -18,6 +18,7 @@ type PageGuide = {
 };
 
 const GUIDE_KEY = "smc_workflow_guide_hidden_v1";
+const GUIDE_PROGRESS_KEY = "smc_workflow_guide_progress_v1";
 
 const CORE_FLOW: GuideItem[] = [
   { label: "Portfolio", href: "/portfolio", description: "Set holdings and baseline exposure." },
@@ -69,7 +70,7 @@ const PAGE_GUIDES: Record<string, PageGuide> = {
     steps: [
       "Load a research idea or pick a watchlist symbol.",
       "Apply playbook, review risk budget, then place paper order.",
-      "Use labs for backtest, attribution, and automation checks.",
+      "Open Orders + Insights to audit fill quality, then use labs for backtest and risk checks.",
     ],
     quickLinks: [
       { label: "Go to Research", href: "/research", description: "Refine thesis before trading." },
@@ -93,11 +94,35 @@ const PAGE_GUIDES: Record<string, PageGuide> = {
 export default function WorkflowGuide() {
   const pathname = usePathname();
   const [hidden, setHidden] = useState(false);
+  const [visitedPaths, setVisitedPaths] = useState<string[]>([]);
 
   useEffect(() => {
     const value = typeof window !== "undefined" ? localStorage.getItem(GUIDE_KEY) : null;
     setHidden(value === "1");
+
+    const rawProgress =
+      typeof window !== "undefined" ? localStorage.getItem(GUIDE_PROGRESS_KEY) : null;
+    if (!rawProgress) return;
+    try {
+      const parsed = JSON.parse(rawProgress);
+      if (Array.isArray(parsed)) {
+        setVisitedPaths(parsed.filter((item): item is string => typeof item === "string"));
+      }
+    } catch {
+      localStorage.removeItem(GUIDE_PROGRESS_KEY);
+    }
   }, []);
+
+  useEffect(() => {
+    const current = CORE_FLOW.find((item) => pathname.startsWith(item.href));
+    if (!current) return;
+    setVisitedPaths((prev) => {
+      if (prev.includes(current.href)) return prev;
+      const next = [...prev, current.href];
+      localStorage.setItem(GUIDE_PROGRESS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, [pathname]);
 
   const currentStep = useMemo(() => {
     const index = CORE_FLOW.findIndex((item) => pathname.startsWith(item.href));
@@ -108,6 +133,23 @@ export default function WorkflowGuide() {
     const entry = Object.entries(PAGE_GUIDES).find(([key]) => pathname.startsWith(key));
     return entry ? entry[1] : null;
   }, [pathname]);
+
+  const completion = useMemo(() => {
+    const completed = CORE_FLOW.filter((item) => visitedPaths.includes(item.href)).length;
+    return {
+      completed,
+      total: CORE_FLOW.length,
+      pct: CORE_FLOW.length ? (completed / CORE_FLOW.length) * 100 : 0,
+    };
+  }, [visitedPaths]);
+
+  const nextStep = useMemo(() => {
+    for (let idx = currentStep + 1; idx < CORE_FLOW.length; idx += 1) {
+      const candidate = CORE_FLOW[idx];
+      if (!visitedPaths.includes(candidate.href)) return candidate;
+    }
+    return CORE_FLOW.find((item) => !visitedPaths.includes(item.href)) ?? null;
+  }, [currentStep, visitedPaths]);
 
   if (hidden) {
     return (
@@ -145,6 +187,30 @@ export default function WorkflowGuide() {
           <X size={11} />
           Hide
         </button>
+      </div>
+
+      <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2.5 py-2">
+        <div className="flex items-center justify-between gap-2 text-[11px]">
+          <span className="muted">Workflow completion</span>
+          <span className="font-semibold">
+            {completion.completed}/{completion.total}
+          </span>
+        </div>
+        <div className="mt-1 h-1.5 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-[var(--accent-2)] to-[var(--accent)]"
+            style={{ width: `${completion.pct}%` }}
+          />
+        </div>
+        {nextStep && (
+          <Link
+            href={nextStep.href}
+            className="mt-2 inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2.5 py-1 text-[11px] font-semibold"
+          >
+            Continue: {nextStep.label}
+            <ArrowRight size={11} />
+          </Link>
+        )}
       </div>
 
       <div className="mt-2 flex items-center gap-2 flex-wrap">

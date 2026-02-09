@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Clock3,
   FlaskConical,
-  Layers,
   ListOrdered,
   RefreshCw,
   RotateCcw,
@@ -22,6 +21,7 @@ import AutomationRulesLab from "./AutomationRulesLab";
 import BacktestingLab from "./BacktestingLab";
 import BrokerIntegrationsLab from "./BrokerIntegrationsLab";
 import CollaborationLab from "./CollaborationLab";
+import ExecutionInsightsPanel from "./ExecutionInsightsPanel";
 import ExecutionPlaybooksLab from "./ExecutionPlaybooksLab";
 import MobileExecutionLab from "./MobileExecutionLab";
 import StrategySweepLab from "./StrategySweepLab";
@@ -60,24 +60,6 @@ type QuoteMeta = {
 type ExecutionView = "desk" | "orders" | "labs";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
-
-const ROADMAP_QUEUE = [
-  { label: "Paper Trading + Order Simulator", state: "Live" },
-  { label: "Strategy Backtesting Lab", state: "Live" },
-  { label: "Attribution + Risk Decomposition", state: "Live" },
-  { label: "AI Thesis Memory + Versioning", state: "Live" },
-  { label: "Automation Layer (No-Code Rules)", state: "Live" },
-  { label: "Broker Integrations", state: "Live" },
-  { label: "Collaboration + Sharing", state: "Live" },
-  { label: "PWA + Mobile Execution UX", state: "Live" },
-  { label: "Research Decision Engine v2", state: "Live" },
-  { label: "Research-to-Execution Handoff Queue", state: "Live" },
-  { label: "Execution Playbooks + Risk Guardrails", state: "Live" },
-  { label: "Guided Workflow Onboarding", state: "Live" },
-  { label: "Advanced Multi-Indicator Charts", state: "Live" },
-  { label: "Strategy Sweep + Monte Carlo Optimizer", state: "Live" },
-  { label: "Adaptive Dynamic Background System", state: "Live" },
-];
 
 function normalizeSymbol(symbol: string) {
   return symbol.trim().toUpperCase();
@@ -442,6 +424,39 @@ export default function ExecutionHub() {
     return (estimatedRiskDollar / riskBudgetDollar) * 100;
   }, [estimatedRiskDollar, riskBudgetDollar]);
 
+  const stopPricePreview = useMemo(() => {
+    if (!activeQuote?.price || stopDistancePct <= 0) return 0;
+    return Math.max(0.01, activeQuote.price * (1 - stopDistancePct / 100));
+  }, [activeQuote?.price, stopDistancePct]);
+
+  const targetPricePreview = useMemo(() => {
+    if (!activeQuote?.price || takeProfitPct <= 0) return 0;
+    return Math.max(0.01, activeQuote.price * (1 + takeProfitPct / 100));
+  }, [activeQuote?.price, takeProfitPct]);
+
+  const rewardToRiskRatio = useMemo(() => {
+    if (stopDistancePct <= 0 || takeProfitPct <= 0) return 0;
+    return takeProfitPct / stopDistancePct;
+  }, [stopDistancePct, takeProfitPct]);
+
+  const riskSizedQuantity = useMemo(() => {
+    if (!activeQuote?.price || riskBudgetDollar <= 0 || stopDistancePct <= 0) return 0;
+    const perShareRisk =
+      activeQuote.price * (stopDistancePct / 100) +
+      (activeQuote.price * baseSlippageBps) / 10_000;
+    if (perShareRisk <= 0) return 0;
+    return Math.max(1, Math.floor(riskBudgetDollar / perShareRisk));
+  }, [activeQuote?.price, baseSlippageBps, riskBudgetDollar, stopDistancePct]);
+
+  const quoteAgeLabel = useMemo(() => {
+    if (!activeQuote?.asOf) return "Unknown";
+    const ageSeconds = Math.max(0, Math.floor((Date.now() - Date.parse(activeQuote.asOf)) / 1000));
+    if (ageSeconds < 30) return "Live now";
+    if (ageSeconds < 60) return `${ageSeconds}s ago`;
+    if (ageSeconds < 3600) return `${Math.floor(ageSeconds / 60)}m ago`;
+    return `${Math.floor(ageSeconds / 3600)}h ago`;
+  }, [activeQuote?.asOf]);
+
   const readinessChecks = useMemo(() => {
     const qty = Math.floor(Number(quantity));
     const hasLiveQuote = Boolean(activeQuote?.price && activeQuote.price > 0);
@@ -500,6 +515,17 @@ export default function ExecutionHub() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleAutoSizeQuantity = (ratio = 1) => {
+    const scaled = Math.floor(riskSizedQuantity * ratio);
+    if (!Number.isFinite(scaled) || scaled <= 0) {
+      setError("Unable to auto-size quantity without a live quote and valid risk budget.");
+      return;
+    }
+    setQuantity(String(Math.max(1, scaled)));
+    setError("");
+    setNotice(`Quantity auto-sized to ${Math.max(1, scaled)} shares (${Math.round(ratio * 100)}% risk budget).`);
   };
 
   const handleQuickTrade = async (
@@ -784,7 +810,7 @@ export default function ExecutionHub() {
         <span className="text-xs muted">Workspace View</span>
         {[
           { id: "desk", label: "Trade Desk" },
-          { id: "orders", label: "Orders + Queue" },
+          { id: "orders", label: "Orders + Insights" },
           { id: "labs", label: "Quant Labs" },
         ].map((tab) => (
           <button
@@ -947,8 +973,29 @@ export default function ExecutionHub() {
                 </div>
               </div>
 
-              <label className="text-xs space-y-1">
-                <div className="muted">Quantity</div>
+              <label className="text-xs space-y-1 sm:col-span-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <span className="muted">Quantity</span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleAutoSizeQuantity(0.5)}
+                      className="rounded-full border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2 py-0.5 text-[11px]"
+                    >
+                      50% Risk
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleAutoSizeQuantity(1)}
+                      className="rounded-full border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2 py-0.5 text-[11px]"
+                    >
+                      100% Risk
+                    </button>
+                    <span className="text-[11px] muted">
+                      Risk-sized: {riskSizedQuantity > 0 ? `${riskSizedQuantity} sh` : "—"}
+                    </span>
+                  </div>
+                </div>
                 <input
                   value={quantity}
                   onChange={(event) => setQuantity(event.target.value)}
@@ -1035,9 +1082,10 @@ export default function ExecutionHub() {
               <div className="sm:col-span-2 rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-xs">
                 <div className="flex items-center justify-between gap-2">
                   <span className="muted">Live quote</span>
-                  <span>
+                  <span className="text-right">
                     {activeQuote?.price ? formatMoney(activeQuote.price) : "Unavailable"}{" "}
                     {activeQuote?.price ? `(${formatPercent(activeQuote.changePct)})` : ""}
+                    <span className="block text-[11px] muted">{quoteAgeLabel}</span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-1">
@@ -1051,6 +1099,18 @@ export default function ExecutionHub() {
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <span className="muted">Estimated risk (stop + slippage)</span>
                   <span>{formatMoney(estimatedRiskDollar)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="muted">Projected stop / target</span>
+                  <span>
+                    {stopPricePreview > 0 && targetPricePreview > 0
+                      ? `${formatMoney(stopPricePreview)} / ${formatMoney(targetPricePreview)}`
+                      : "—"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-1">
+                  <span className="muted">Reward-to-risk ratio</span>
+                  <span>{rewardToRiskRatio > 0 ? `${rewardToRiskRatio.toFixed(2)}x` : "—"}</span>
                 </div>
                 <div className="flex items-center justify-between gap-2 mt-1">
                   <span className="muted">Risk budget utilization</span>
@@ -1268,102 +1328,79 @@ export default function ExecutionHub() {
             </ul>
           </section>
 
-          <section className="card-elevated rounded-xl p-4">
-            <h3 className="section-title text-base flex items-center gap-2">
-              <Layers size={15} />
-              Build Queue
-            </h3>
-            <p className="text-xs muted mt-1">Shipped in sequence from top to bottom.</p>
-            <ol className="mt-3 space-y-2">
-              {ROADMAP_QUEUE.map((item, index) => (
-                <li
-                  key={item.label}
-                  className={`rounded-lg px-3 py-2 text-sm border ${
-                    item.state === "Live"
-                      ? "border-emerald-400/50 bg-emerald-500/10"
-                      : "border-[var(--surface-border)] bg-white/75 dark:bg-black/25"
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span>{index + 1}. {item.label}</span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] ${
-                        item.state === "Live" ? "badge-positive" : "badge-neutral"
-                      }`}
-                    >
-                      {item.state}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
         </div>
       </div>
       )}
 
       {workspaceView === "orders" && (
-      <section className="card-elevated rounded-xl p-4">
-        <h3 className="section-title text-base flex items-center gap-2">
-          <ListOrdered size={15} />
-          Order Blotter
-        </h3>
-        <p className="text-xs muted mt-1">Recent paper executions with slippage and realized P/L.</p>
+      <div className="space-y-4">
+        <section className="card-elevated rounded-xl p-4">
+          <h3 className="section-title text-base flex items-center gap-2">
+            <ListOrdered size={15} />
+            Order Blotter
+          </h3>
+          <p className="text-xs muted mt-1">Recent paper executions with slippage and realized P/L.</p>
 
-        <div className="mt-3 overflow-auto">
-          <table className="w-full text-sm">
-            <thead className="text-xs muted">
-              <tr>
-                <th className="text-left py-2">Time</th>
-                <th className="text-left py-2">Order</th>
-                <th className="text-right py-2">Qty</th>
-                <th className="text-right py-2">Requested</th>
-                <th className="text-right py-2">Fill</th>
-                <th className="text-right py-2">Slippage</th>
-                <th className="text-right py-2">Realized</th>
-                <th className="text-right py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ledger.orders.length === 0 && (
+          <div className="mt-3 overflow-auto">
+            <table className="w-full text-sm">
+              <thead className="text-xs muted">
                 <tr>
-                  <td colSpan={8} className="py-6 text-center text-xs muted">
-                    No paper orders yet.
-                  </td>
+                  <th className="text-left py-2">Time</th>
+                  <th className="text-left py-2">Order</th>
+                  <th className="text-right py-2">Qty</th>
+                  <th className="text-right py-2">Requested</th>
+                  <th className="text-right py-2">Fill</th>
+                  <th className="text-right py-2">Slippage</th>
+                  <th className="text-right py-2">Realized</th>
+                  <th className="text-right py-2">Status</th>
                 </tr>
-              )}
+              </thead>
+              <tbody>
+                {ledger.orders.length === 0 && (
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-xs muted">
+                      No paper orders yet.
+                    </td>
+                  </tr>
+                )}
 
-              {ledger.orders.slice(0, 24).map((order) => (
-                <tr key={order.id} className="border-t border-[var(--surface-border)]">
-                  <td className="py-2 text-xs muted">{formatTimestamp(order.filledAt || order.createdAt)}</td>
-                  <td className="py-2">
-                    <span className={`font-semibold ${sideClass(order.side)}`}>
-                      {order.side.toUpperCase()}
-                    </span>{" "}
-                    {order.symbol}
-                    <span className="text-xs muted"> · {sourceLabel(order.ideaSource)}</span>
-                  </td>
-                  <td className="py-2 text-right metric-value">{order.quantity}</td>
-                  <td className="py-2 text-right metric-value">{formatMoney(order.requestedPrice)}</td>
-                  <td className="py-2 text-right metric-value">
-                    {order.fillPrice ? formatMoney(order.fillPrice) : "—"}
-                  </td>
-                  <td className="py-2 text-right metric-value">{order.slippageBps.toFixed(2)} bps</td>
-                  <td className={`py-2 text-right metric-value ${(order.realizedPnl ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                    {order.realizedPnl !== undefined ? formatMoney(order.realizedPnl) : "—"}
-                  </td>
-                  <td className="py-2 text-right">
-                    <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(order.status)}`}>
-                      {order.status === "filled" && <CheckCircle2 size={10} className="inline mr-1" />}
-                      {order.status.toUpperCase()}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+                {ledger.orders.slice(0, 24).map((order) => (
+                  <tr key={order.id} className="border-t border-[var(--surface-border)]">
+                    <td className="py-2 text-xs muted">{formatTimestamp(order.filledAt || order.createdAt)}</td>
+                    <td className="py-2">
+                      <span className={`font-semibold ${sideClass(order.side)}`}>
+                        {order.side.toUpperCase()}
+                      </span>{" "}
+                      {order.symbol}
+                      <span className="text-xs muted"> · {sourceLabel(order.ideaSource)}</span>
+                    </td>
+                    <td className="py-2 text-right metric-value">{order.quantity}</td>
+                    <td className="py-2 text-right metric-value">{formatMoney(order.requestedPrice)}</td>
+                    <td className="py-2 text-right metric-value">
+                      {order.fillPrice ? formatMoney(order.fillPrice) : "—"}
+                    </td>
+                    <td className="py-2 text-right metric-value">{order.slippageBps.toFixed(2)} bps</td>
+                    <td className={`py-2 text-right metric-value ${(order.realizedPnl ?? 0) >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                      {order.realizedPnl !== undefined ? formatMoney(order.realizedPnl) : "—"}
+                    </td>
+                    <td className="py-2 text-right">
+                      <span className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(order.status)}`}>
+                        {order.status === "filled" && <CheckCircle2 size={10} className="inline mr-1" />}
+                        {order.status.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <ExecutionInsightsPanel
+          ledger={ledger}
+          quotes={quotes}
+        />
+      </div>
       )}
 
       {workspaceView === "labs" && (
