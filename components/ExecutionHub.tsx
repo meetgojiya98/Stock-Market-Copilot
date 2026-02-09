@@ -15,6 +15,7 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
+import AttributionRiskLab from "./AttributionRiskLab";
 import BacktestingLab from "./BacktestingLab";
 import { createLocalAlert, fetchWatchlistData } from "../lib/data-client";
 import {
@@ -45,7 +46,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
 const ROADMAP_QUEUE = [
   { label: "Paper Trading + Order Simulator", state: "Live" },
   { label: "Strategy Backtesting Lab", state: "Live" },
-  { label: "Attribution + Risk Decomposition", state: "Queued" },
+  { label: "Attribution + Risk Decomposition", state: "Live" },
   { label: "AI Thesis Memory + Versioning", state: "Queued" },
   { label: "Automation Layer (No-Code Rules)", state: "Queued" },
   { label: "Broker Integrations", state: "Queued" },
@@ -930,6 +931,11 @@ export default function ExecutionHub() {
       <BacktestingLab
         watchlistSymbols={watchlist.map((item) => item.symbol)}
         defaultSymbol={activeSymbol || watchlist[0]?.symbol}
+      />
+
+      <AttributionRiskLab
+        ledger={ledger}
+        quotes={quotes}
       />
     </div>
   );
