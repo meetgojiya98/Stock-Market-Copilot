@@ -6,6 +6,7 @@ import {
   ArrowUpRight,
   CheckCircle2,
   Clock3,
+  FlaskConical,
   Layers,
   ListOrdered,
   RefreshCw,
@@ -35,6 +36,11 @@ import {
   resetPaperTradingLedger,
   submitPaperOrder,
 } from "../lib/paper-trading";
+import {
+  consumeResearchIdeaTicket,
+  fetchResearchIdeaTickets,
+  type ResearchIdeaTicket,
+} from "../lib/research-handoff";
 
 type WatchlistItem = {
   symbol: string;
@@ -57,6 +63,8 @@ const ROADMAP_QUEUE = [
   { label: "Broker Integrations", state: "Live" },
   { label: "Collaboration + Sharing", state: "Live" },
   { label: "PWA + Mobile Execution UX", state: "Live" },
+  { label: "Research Decision Engine v2", state: "Live" },
+  { label: "Research-to-Execution Handoff Queue", state: "Live" },
 ];
 
 function normalizeSymbol(symbol: string) {
@@ -174,6 +182,7 @@ export default function ExecutionHub() {
   const [submitting, setSubmitting] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [ideaQueue, setIdeaQueue] = useState<ResearchIdeaTicket[]>([]);
 
   const ledgerRef = useRef<PaperTradingLedger | null>(null);
   const watchlistRef = useRef<WatchlistItem[]>([]);
@@ -207,6 +216,11 @@ export default function ExecutionHub() {
     }));
 
     return next;
+  }, []);
+
+  const refreshIdeaQueue = useCallback(async () => {
+    const result = await fetchResearchIdeaTickets();
+    setIdeaQueue(result.data);
   }, []);
 
   const syncMarketData = useCallback(async () => {
@@ -281,6 +295,18 @@ export default function ExecutionHub() {
       cancelled = true;
     };
   }, [syncMarketData]);
+
+  useEffect(() => {
+    refreshIdeaQueue();
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key && event.key !== "smc_research_handoff_v1") return;
+      refreshIdeaQueue();
+    };
+
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [refreshIdeaQueue]);
 
   useEffect(() => {
     if (!ledger) return;
@@ -444,6 +470,25 @@ export default function ExecutionHub() {
         [normalized]: quote,
       }));
     }
+  };
+
+  const handleUseIdea = async (ticket: ResearchIdeaTicket) => {
+    await handleSeedSymbol(ticket.symbol, "research");
+    setIdeaSource("research");
+    setSide(ticket.suggestedSide);
+
+    const result = await consumeResearchIdeaTicket(ticket.id);
+    setIdeaQueue(result.data);
+
+    const message = `Research idea loaded: ${ticket.symbol} (${ticket.suggestedSide.toUpperCase()})`;
+    setNotice(message);
+    setError("");
+    createLocalAlert(ticket.symbol, message, "execution");
+  };
+
+  const handleDismissIdea = async (ticketId: string) => {
+    const result = await consumeResearchIdeaTicket(ticketId);
+    setIdeaQueue(result.data);
   };
 
   const handleCancelOrder = async (orderId: string) => {
@@ -854,6 +899,65 @@ export default function ExecutionHub() {
         </div>
 
         <div className="space-y-4">
+          <section className="card-elevated rounded-xl p-4">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="section-title text-base flex items-center gap-2">
+                <FlaskConical size={15} />
+                Research Handoff Queue
+              </h3>
+              <span className="text-xs rounded-full px-2 py-0.5 badge-neutral">{ideaQueue.length}</span>
+            </div>
+            <p className="text-xs muted mt-1">
+              Research decision packs sent from /research. Load one to pre-seed symbol and side.
+            </p>
+
+            <div className="mt-3 space-y-2 max-h-[240px] overflow-auto">
+              {ideaQueue.length === 0 && (
+                <div className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-xs muted">
+                  No queued research ideas.
+                </div>
+              )}
+
+              {ideaQueue.slice(0, 12).map((ticket) => (
+                <div
+                  key={ticket.id}
+                  className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="text-sm font-semibold">
+                      {ticket.symbol}
+                      {ticket.compareSymbol ? ` vs ${ticket.compareSymbol}` : ""}
+                    </div>
+                    <span className="text-[11px] rounded-full px-2 py-0.5 badge-neutral">
+                      {ticket.suggestedSide.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="text-xs muted mt-1">
+                    {ticket.verdict} · Confidence {Math.round(ticket.confidence)}% · Signal{" "}
+                    {Math.round(ticket.signalScore)}/100
+                  </div>
+                  <div className="text-[11px] muted mt-1 line-clamp-2">
+                    {ticket.question || ticket.catalyst || "Research handoff ticket"}
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button
+                      onClick={() => handleUseIdea(ticket)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-2.5 py-1 text-[11px] font-semibold"
+                    >
+                      Load
+                    </button>
+                    <button
+                      onClick={() => handleDismissIdea(ticket.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2.5 py-1 text-[11px]"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="card-elevated rounded-xl p-4">
             <h3 className="section-title text-base flex items-center gap-2">
               <Clock3 size={15} />
