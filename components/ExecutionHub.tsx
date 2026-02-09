@@ -16,7 +16,11 @@ import {
   XCircle,
 } from "lucide-react";
 import AttributionRiskLab from "./AttributionRiskLab";
+import AutomationRulesLab from "./AutomationRulesLab";
 import BacktestingLab from "./BacktestingLab";
+import BrokerIntegrationsLab from "./BrokerIntegrationsLab";
+import CollaborationLab from "./CollaborationLab";
+import MobileExecutionLab from "./MobileExecutionLab";
 import ThesisMemoryLab from "./ThesisMemoryLab";
 import { createLocalAlert, fetchWatchlistData } from "../lib/data-client";
 import {
@@ -49,10 +53,10 @@ const ROADMAP_QUEUE = [
   { label: "Strategy Backtesting Lab", state: "Live" },
   { label: "Attribution + Risk Decomposition", state: "Live" },
   { label: "AI Thesis Memory + Versioning", state: "Live" },
-  { label: "Automation Layer (No-Code Rules)", state: "Queued" },
-  { label: "Broker Integrations", state: "Queued" },
-  { label: "Collaboration + Sharing", state: "Queued" },
-  { label: "PWA + Mobile Execution UX", state: "Queued" },
+  { label: "Automation Layer (No-Code Rules)", state: "Live" },
+  { label: "Broker Integrations", state: "Live" },
+  { label: "Collaboration + Sharing", state: "Live" },
+  { label: "PWA + Mobile Execution UX", state: "Live" },
 ];
 
 function normalizeSymbol(symbol: string) {
@@ -366,6 +370,64 @@ export default function ExecutionHub() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleQuickTrade = async (
+    tradeSide: "buy" | "sell",
+    tradeQuantity: number
+  ): Promise<{ ok: boolean; detail?: string }> => {
+    const normalizedSymbol = normalizeSymbol(symbolRef.current || symbol);
+    const quantityValue = Math.max(1, Math.floor(tradeQuantity));
+
+    if (!normalizedSymbol) {
+      return {
+        ok: false,
+        detail: "No active symbol selected.",
+      };
+    }
+
+    let reference = quotes[normalizedSymbol]?.price ?? 0;
+    if (!reference) {
+      const quote = await fetchQuote(normalizedSymbol);
+      reference = quote.price;
+      setQuotes((current) => ({
+        ...current,
+        [normalizedSymbol]: quote,
+      }));
+    }
+
+    if (!reference || reference <= 0) {
+      return {
+        ok: false,
+        detail: "Live quote unavailable for quick action.",
+      };
+    }
+
+    const result = await submitPaperOrder({
+      symbol: normalizedSymbol,
+      side: tradeSide,
+      quantity: quantityValue,
+      orderType: "market",
+      referencePrice: reference,
+      baseSlippageBps,
+      ideaSource: "manual",
+    });
+
+    ledgerRef.current = result.data;
+    setLedger(result.data);
+
+    if (!result.ok) {
+      const message = result.detail || "Quick action order rejected.";
+      setError(message);
+      return { ok: false, detail: message };
+    }
+
+    const filled = result.order?.fillPrice ?? reference;
+    const message = `Quick action ${tradeSide.toUpperCase()} ${normalizedSymbol} ${quantityValue} @ ${formatMoney(filled)}.`;
+    setNotice(message);
+    createLocalAlert(normalizedSymbol, message, "execution");
+    await syncMarketData();
+    return { ok: true, detail: message };
   };
 
   const handleSeedSymbol = async (seeded: string, source: PaperIdeaSource) => {
@@ -845,7 +907,7 @@ export default function ExecutionHub() {
                 <li
                   key={item.label}
                   className={`rounded-lg px-3 py-2 text-sm border ${
-                    index === 0
+                    item.state === "Live"
                       ? "border-emerald-400/50 bg-emerald-500/10"
                       : "border-[var(--surface-border)] bg-white/75 dark:bg-black/25"
                   }`}
@@ -945,6 +1007,37 @@ export default function ExecutionHub() {
           ...ledger.positions.map((item) => item.symbol),
         ]}
         defaultSymbol={activeSymbol || watchlist[0]?.symbol || ledger.positions[0]?.symbol}
+      />
+
+      <AutomationRulesLab
+        ledger={ledger}
+        quotes={quotes}
+        symbols={[
+          ...watchlist.map((item) => item.symbol),
+          ...ledger.positions.map((item) => item.symbol),
+          activeSymbol,
+        ]}
+      />
+
+      <BrokerIntegrationsLab
+        ledger={ledger}
+        quotes={quotes}
+      />
+
+      <CollaborationLab
+        symbols={[
+          ...watchlist.map((item) => item.symbol),
+          ...ledger.positions.map((item) => item.symbol),
+          activeSymbol,
+        ]}
+      />
+
+      <MobileExecutionLab
+        activeSymbol={activeSymbol}
+        activePrice={activeQuote?.price ?? 0}
+        openOrders={openOrders.length}
+        onQuickTrade={handleQuickTrade}
+        onRefresh={handleRefresh}
       />
     </div>
   );
