@@ -13,6 +13,7 @@ import {
   LogOut,
   Menu,
   MoonStar,
+  Target,
   ScanSearch,
   Sparkles,
   SunMedium,
@@ -40,6 +41,7 @@ const NAV_LINKS: NavLink[] = [
   { name: "Watchlist", href: "/watchlist", icon: <ScanSearch size={16} />, protected: true },
   { name: "Analytics", href: "/analytics", icon: <Activity size={16} />, protected: true },
   { name: "Research", href: "/research", icon: <Bot size={16} />, protected: true },
+  { name: "Execution", href: "/execution", icon: <Target size={16} />, protected: true },
   { name: "Alerts", href: "/notifications", icon: <BellPlus size={16} />, protected: true },
 ];
 
