@@ -13,7 +13,6 @@ import {
   Link2,
   Loader2,
   MessageSquareText,
-  Newspaper,
   Plus,
   Save,
   Send,
@@ -146,6 +145,20 @@ function extractUrlFromText(value: string) {
 
 function isHttpUrl(value: string) {
   return /^https?:\/\//i.test(value.trim());
+}
+
+function buildSearchUrl(query: string) {
+  const cleaned = query
+    .replace(/\[(s\d+)\]/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!cleaned) return "";
+  return `https://www.google.com/search?q=${encodeURIComponent(cleaned)}`;
+}
+
+function resolveSourceLink(url: string, fallbackQuery: string) {
+  if (isHttpUrl(url)) return url.trim();
+  return buildSearchUrl(fallbackQuery);
 }
 
 function normalizeCitationKey(value: string) {
@@ -1103,15 +1116,20 @@ export default function ResearchPanel() {
       const directUrl = extractUrlFromText(citation);
       const linked = resolveLinkedSource(citation);
       const resolvedUrl = (linked?.url && isHttpUrl(linked.url) ? linked.url : "") || directUrl;
+      const fallbackUrl = resolvedUrl
+        ? ""
+        : buildSearchUrl(linked?.title || linked?.source || citation);
+      const externalUrl = resolvedUrl || fallbackUrl;
 
       return {
         citation,
-        linked: resolvedUrl
+        linked: externalUrl
           ? {
               title: linked?.title || citation,
-              source: linked?.source || sourceDomain(resolvedUrl),
-              url: resolvedUrl,
+              source: linked?.source || sourceDomain(externalUrl),
+              url: externalUrl,
               publishedAt: linked?.publishedAt || new Date().toISOString(),
+              fallback: !resolvedUrl,
             }
           : null,
       };
@@ -1123,6 +1141,12 @@ export default function ResearchPanel() {
     setCopilotNotice("Copilot thread cleared.");
     setCopilotError("");
     localStorage.removeItem(`${COPILOT_STORAGE_PREFIX}:${copilotThreadKey}`);
+  };
+
+  const scrollCopilotIntoView = () => {
+    requestAnimationFrame(() => {
+      document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const handleAskCopilot = async (overrideQuestion?: string) => {
@@ -1459,18 +1483,16 @@ export default function ResearchPanel() {
   };
 
   const handleRunFollowUp = (followUp: string) => {
-    setWorkspaceView("synthesis");
     setQuestion(followUp);
     setCopilotQuestion(followUp);
     setCopilotNotice("Running follow-up in Research Copilot...");
-    document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollCopilotIntoView();
     void handleAskCopilot(followUp);
   };
 
   const handleAskFollowUp = (followUp: string) => {
-    setWorkspaceView("synthesis");
     setCopilotQuestion(followUp);
-    document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollCopilotIntoView();
     void handleAskCopilot(followUp);
   };
 
@@ -1620,41 +1642,6 @@ export default function ResearchPanel() {
               </label>
             </div>
 
-            <div className="grid sm:grid-cols-3 gap-2">
-              <label className="text-[11px] rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
-                <div className="muted mb-1">Copilot Web Depth</div>
-                <select
-                  value={copilotDepth}
-                  onChange={(event) => setCopilotDepth(event.target.value as CopilotDepth)}
-                  className="w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1.5"
-                >
-                  <option value="fast">Fast</option>
-                  <option value="balanced">Balanced</option>
-                  <option value="deep">Deep Retrieval</option>
-                </select>
-              </label>
-              <label className="text-[11px] rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
-                <div className="muted mb-1">Answer Style</div>
-                <select
-                  value={copilotStyle}
-                  onChange={(event) => setCopilotStyle(event.target.value as CopilotStyle)}
-                  className="w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1.5"
-                >
-                  <option value="concise">Concise</option>
-                  <option value="balanced">Balanced</option>
-                  <option value="deep">Deep Dive</option>
-                </select>
-              </label>
-              <label className="text-[11px] inline-flex items-center justify-between gap-2 rounded-lg control-surface bg-white/75 dark:bg-black/20 px-2.5 py-2">
-                <span>Strict Citation Verification</span>
-                <input
-                  type="checkbox"
-                  checked={copilotStrictCitations}
-                  onChange={(event) => setCopilotStrictCitations(event.target.checked)}
-                />
-              </label>
-            </div>
-
             <div className="flex flex-wrap gap-2">
               {quickPrompts.map((prompt) => (
                 <button
@@ -1777,14 +1764,10 @@ export default function ResearchPanel() {
 
       <div
         className={`grid gap-4 ${
-          workspaceView === "forensics"
-            ? "xl:grid-cols-[1.18fr_1fr]"
-            : workspaceView === "command"
-            ? "xl:grid-cols-[1.34fr_1fr]"
-            : "xl:grid-cols-[1.42fr_1fr]"
+          workspaceView === "command" ? "xl:grid-cols-[1.34fr_1fr]" : "xl:grid-cols-1"
         }`}
       >
-        {workspaceView !== "forensics" && (
+        {workspaceView === "command" && (
           <section className="surface-glass dynamic-surface rounded-2xl p-5 sm:p-6 fade-in research-card quantum-surface">
           <h3 className="font-semibold section-title text-lg inline-flex items-center gap-2">
             <Target size={16} />
@@ -1988,7 +1971,8 @@ export default function ResearchPanel() {
                           className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
                         >
                           <Link2 size={10} />
-                          Open original source ({item.linked.source} · {formatDate(item.linked.publishedAt)})
+                          {item.linked.fallback ? "Search likely source" : "Open original source"} ({item.linked.source}{" "}
+                          · {formatDate(item.linked.publishedAt)})
                         </a>
                       ) : (
                         <div className="mt-1 text-[11px] muted">Original source URL unavailable for this citation.</div>
@@ -2004,7 +1988,7 @@ export default function ResearchPanel() {
         )}
 
         <aside className="space-y-4">
-          {workspaceView !== "forensics" && (
+          {workspaceView === "command" && (
             <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
               <Zap size={15} />
@@ -2090,11 +2074,10 @@ export default function ResearchPanel() {
             </section>
           )}
 
-          {workspaceView !== "command" && (
-            <section
-              className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface"
-              id="research-copilot-panel"
-            >
+          <section
+            className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface"
+            id="research-copilot-panel"
+          >
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
                 <MessageSquareText size={15} />
@@ -2104,7 +2087,7 @@ export default function ResearchPanel() {
             </div>
 
             <p className="text-[11px] muted mt-1">
-              Institutional-grade copilot with streaming synthesis, web retrieval depth controls, and citation audits.
+              Streaming responses, web retrieval depth control, source-grounding scores, and citation verification.
             </p>
 
             <div className="mt-3 grid sm:grid-cols-2 gap-2 text-[11px]">
@@ -2126,12 +2109,74 @@ export default function ResearchPanel() {
               </label>
             </div>
 
-            <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
-              <span className="holo-chip">Depth: {copilotDepth}</span>
-              <span className="holo-chip">Style: {copilotStyle}</span>
-              <span className={`holo-chip ${copilotStrictCitations ? "holo-chip-live" : ""}`}>
-                Citation Guard: {copilotStrictCitations ? "On" : "Off"}
-              </span>
+            <div className="mt-2 grid sm:grid-cols-3 gap-2 text-[11px]">
+              <label className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Web Depth</div>
+                <select
+                  value={copilotDepth}
+                  onChange={(event) => setCopilotDepth(event.target.value as CopilotDepth)}
+                  className="mt-1 w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1"
+                >
+                  <option value="fast">Fast</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="deep">Deep Retrieval</option>
+                </select>
+              </label>
+              <label className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Answer Style</div>
+                <select
+                  value={copilotStyle}
+                  onChange={(event) => setCopilotStyle(event.target.value as CopilotStyle)}
+                  className="mt-1 w-full rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1"
+                >
+                  <option value="concise">Concise</option>
+                  <option value="balanced">Balanced</option>
+                  <option value="deep">Deep Dive</option>
+                </select>
+              </label>
+              <label className="inline-flex items-center justify-between gap-2 rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <span>Citation Guard</span>
+                <input
+                  type="checkbox"
+                  checked={copilotStrictCitations}
+                  onChange={(event) => setCopilotStrictCitations(event.target.checked)}
+                />
+              </label>
+            </div>
+
+            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+              <div className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Runtime</div>
+                <div className="mt-0.5 font-semibold">
+                  {copilotBusy
+                    ? "Streaming"
+                    : latestCopilotTurn
+                    ? latestCopilotTurn.mode === "live"
+                      ? "Live AI"
+                      : "Deterministic"
+                    : "Idle"}
+                </div>
+              </div>
+              <div className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Source Pool</div>
+                <div className="mt-0.5 font-semibold">{sourceRankPreview.length}</div>
+              </div>
+              <div className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Grounding</div>
+                <div className={`mt-0.5 font-semibold ${scoreClass(latestCopilotTurn?.metrics?.groundingConfidence ?? 0)}`}>
+                  {Math.round(latestCopilotTurn?.metrics?.groundingConfidence ?? 0)}%
+                </div>
+              </div>
+              <div className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
+                <div className="muted">Citation Verify</div>
+                <div
+                  className={`mt-0.5 font-semibold ${scoreClass(
+                    latestCopilotTurn?.metrics?.citationVerificationScore ?? 0
+                  )}`}
+                >
+                  {Math.round(latestCopilotTurn?.metrics?.citationVerificationScore ?? 0)}%
+                </div>
+              </div>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-2">
@@ -2212,8 +2257,8 @@ export default function ResearchPanel() {
               {!copilotTurns.length && <div className="text-xs muted">No copilot turns yet.</div>}
               {copilotTurns.map((turn) => (
                 <div key={turn.id} className="rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5">
-                  <div className="text-xs font-semibold">{turn.question}</div>
-                  <div className="mt-1 whitespace-pre-wrap text-[12px] leading-relaxed">
+                  <div className="text-xs font-semibold break-words">{turn.question}</div>
+                  <div className="mt-1 whitespace-pre-wrap break-words text-[12px] leading-relaxed">
                     {turn.answer || (turn.streaming ? "Streaming response..." : "No response text available.")}
                   </div>
                   <div className="mt-2 flex items-center justify-between gap-2 text-[11px] muted">
@@ -2289,7 +2334,7 @@ export default function ResearchPanel() {
                       {turn.sources.slice(0, 3).map((source) => (
                         <a
                           key={`${turn.id}-${source.id || source.title}`}
-                          href={source.url || "#"}
+                          href={resolveSourceLink(source.url, `${source.title} ${source.source}`)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 px-2 py-0.5 text-[11px]"
@@ -2303,56 +2348,9 @@ export default function ResearchPanel() {
                 </div>
               ))}
             </div>
-            </section>
-          )}
+          </section>
 
-          {workspaceView !== "command" && (
-            <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
-            <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
-              <Newspaper size={15} />
-              Intelligence Feed
-            </h3>
-            <div className="mt-3 space-y-2 max-h-[280px] overflow-y-auto pr-1">
-              {feed.map((item, index) => (
-                <div
-                  key={`${item.title}-${index}`}
-                  className="rounded-lg control-surface bg-white/70 dark:bg-black/20 p-2.5"
-                >
-                  <div className="text-xs font-medium leading-snug">{item.title}</div>
-                  <div className="text-[11px] muted mt-1">
-                    {item.source} · {formatDate(item.publishedAt)}
-                  </div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        const prompt = `Use this headline for thesis update: ${item.title}`;
-                        setCopilotQuestion(prompt);
-                        void handleAskCopilot(prompt);
-                      }}
-                      disabled={copilotBusy}
-                      className="inline-flex items-center gap-1 rounded-md bg-[var(--accent)] text-white px-2 py-1 text-[11px] font-semibold disabled:opacity-60"
-                    >
-                      <MessageSquareText size={10} />
-                      Analyze
-                    </button>
-                    <a
-                      href={item.url || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded-md border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 px-2 py-1 text-[11px]"
-                    >
-                      <Link2 size={10} />
-                      Source
-                    </a>
-                  </div>
-                </div>
-              ))}
-              {!feed.length && <div className="text-xs muted">No feed items available.</div>}
-            </div>
-            </section>
-          )}
-
-          {workspaceView !== "synthesis" && (
+          {workspaceView === "command" && (
             <section className="surface-glass dynamic-surface rounded-2xl p-4 research-card quantum-surface">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold section-title text-sm inline-flex items-center gap-2">
