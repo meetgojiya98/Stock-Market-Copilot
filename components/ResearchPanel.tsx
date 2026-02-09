@@ -176,12 +176,6 @@ function scoreClass(score: number) {
   return "text-[var(--warning)]";
 }
 
-function sourceAuthorityClass(score: number) {
-  if (score >= 80) return "badge-positive";
-  if (score <= 55) return "badge-negative";
-  return "badge-neutral";
-}
-
 function summarizeAnswer(value: string, limit = 760) {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -620,7 +614,6 @@ export default function ResearchPanel() {
   const [copilotStrictCitations, setCopilotStrictCitations] = useState(true);
   const [copilotError, setCopilotError] = useState("");
   const [copilotNotice, setCopilotNotice] = useState("");
-  const [lastFollowUpPrompt, setLastFollowUpPrompt] = useState("");
 
   const loadContexts = useCallback(async () => {
     setContextLoading(true);
@@ -1025,27 +1018,8 @@ export default function ResearchPanel() {
     [copilotDepth, copilotQuestion, feed, packet, question]
   );
 
-  const latestFollowUpTurn = useMemo(() => {
-    if (!lastFollowUpPrompt) return null;
-    return copilotTurns.find((turn) => turn.question.trim() === lastFollowUpPrompt.trim()) ?? null;
-  }, [copilotTurns, lastFollowUpPrompt]);
-
   const latestCopilotTurn = copilotTurns[0] ?? null;
   const latestTurnSources = latestCopilotTurn?.sources ?? [];
-  const latestTurnSourcePreview = latestTurnSources.slice(0, 6);
-  const latestTurnPreview = summarizeAnswer(latestCopilotTurn?.answer ?? "", 860);
-  const qualitySnapshot = latestCopilotTurn?.metrics;
-
-  const verificationQueue = useMemo(() => {
-    const prompts = [
-      `What could invalidate this thesis for ${normalizeSymbol(primarySymbol)} in the next 5 sessions?`,
-      `List the highest-risk assumptions in your previous answer and quantify likely impact.`,
-      `Which claims are least-supported by current sources and what data should we pull next?`,
-      `Provide a short-vs-long playbook for ${normalizeSymbol(primarySymbol)} with explicit triggers.`,
-    ];
-    const packetPrompts = packet?.followUps.slice(0, 2) ?? [];
-    return [...packetPrompts, ...prompts].slice(0, 6);
-  }, [packet?.followUps, primarySymbol]);
 
   const followUpAnswerMap = useMemo(() => {
     const map = new Map<string, CopilotTurn>();
@@ -1156,10 +1130,6 @@ export default function ResearchPanel() {
     if (!userQuestion) {
       setCopilotError("Enter a copilot question first.");
       return;
-    }
-
-    if (packet?.followUps.some((item) => item.trim().toLowerCase() === userQuestion.toLowerCase())) {
-      setLastFollowUpPrompt(userQuestion);
     }
 
     setCopilotBusy(true);
@@ -1491,7 +1461,6 @@ export default function ResearchPanel() {
   const handleRunFollowUp = (followUp: string) => {
     setWorkspaceView("synthesis");
     setQuestion(followUp);
-    setLastFollowUpPrompt(followUp);
     setCopilotQuestion(followUp);
     setCopilotNotice("Running follow-up in Research Copilot...");
     document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1500,7 +1469,6 @@ export default function ResearchPanel() {
 
   const handleAskFollowUp = (followUp: string) => {
     setWorkspaceView("synthesis");
-    setLastFollowUpPrompt(followUp);
     setCopilotQuestion(followUp);
     document.getElementById("research-copilot-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
     void handleAskCopilot(followUp);
@@ -1807,133 +1775,13 @@ export default function ResearchPanel() {
         </div>
       </section>
 
-      {workspaceView !== "command" && (
-        <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-in research-card research-intel-board quantum-surface">
-        <div className="relative z-[1] grid lg:grid-cols-[1.55fr_1fr] gap-4">
-          <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
-                <Compass size={15} />
-                Copilot Answer Workspace
-              </h3>
-              <div className="flex items-center gap-2 text-[11px]">
-                <span className="holo-chip">Thread: {copilotTurns.length}</span>
-                <span className={`holo-chip ${latestCopilotTurn?.mode === "live" ? "holo-chip-live" : ""}`}>
-                  {latestCopilotTurn?.mode === "live" ? "Live Inference" : "Deterministic"}
-                </span>
-              </div>
-            </div>
-
-            {!latestCopilotTurn && (
-              <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-3 text-sm muted">
-                Ask a research question to start the answer workspace. Responses stream with source grounding and
-                verification metrics.
-              </div>
-            )}
-
-            {latestCopilotTurn && (
-              <div className="mt-3 space-y-3">
-                <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-3">
-                  <div className="text-xs font-semibold">{latestCopilotTurn.question}</div>
-                  <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed">{latestTurnPreview}</div>
-                </div>
-
-                {qualitySnapshot && (
-                  <div className="grid sm:grid-cols-3 gap-2">
-                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
-                      <div className="text-[11px] muted">Grounding</div>
-                      <div className={`text-sm font-semibold ${scoreClass(qualitySnapshot.groundingConfidence)}`}>
-                        {Math.round(qualitySnapshot.groundingConfidence)}%
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
-                      <div className="text-[11px] muted">Citation Verify</div>
-                      <div
-                        className={`text-sm font-semibold ${scoreClass(qualitySnapshot.citationVerificationScore)}`}
-                      >
-                        {Math.round(qualitySnapshot.citationVerificationScore)}%
-                      </div>
-                    </div>
-                    <div className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5">
-                      <div className="text-[11px] muted">Source Authority</div>
-                      <div className={`text-sm font-semibold ${scoreClass(qualitySnapshot.sourceAuthorityScore ?? 0)}`}>
-                        {Math.round(qualitySnapshot.sourceAuthorityScore ?? 0)}%
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] muted">Cross-Examination Prompts</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {verificationQueue.map((prompt) => (
-                      <button
-                        key={prompt}
-                        onClick={() => {
-                          setCopilotQuestion(prompt);
-                          void handleAskCopilot(prompt);
-                        }}
-                        disabled={copilotBusy}
-                        className="rounded-full border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 px-2.5 py-1 text-[11px] disabled:opacity-60"
-                      >
-                        {prompt.length > 96 ? `${prompt.slice(0, 96)}...` : prompt}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="rounded-xl border border-[var(--surface-border)] bg-white/80 dark:bg-black/25 p-4">
-            <h3 className="text-sm font-semibold section-title inline-flex items-center gap-2">
-              <Library size={15} />
-              Source Board
-            </h3>
-            <div className="mt-3 space-y-2 max-h-[420px] overflow-y-auto pr-1">
-              {!latestTurnSourcePreview.length && (
-                <div className="text-xs muted">No sources in the current answer yet. Ask to build evidence.</div>
-              )}
-              {latestTurnSourcePreview.map((source, index) => (
-                <div
-                  key={`${source.id || source.title}-${index}`}
-                  className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5"
-                >
-                  <div className="text-xs font-medium line-clamp-2">{source.title}</div>
-                  <div className="mt-1 flex items-center gap-1.5 text-[11px]">
-                    <span className={`rounded-full px-2 py-0.5 ${sourceAuthorityClass((source.authority ?? 0.6) * 100)}`}>
-                      Authority {Math.round((source.authority ?? 0.6) * 100)}
-                    </span>
-                    <span className="holo-chip">Relevance {Math.round(source.relevance * 100)}</span>
-                  </div>
-                  <div className="mt-1 flex items-center justify-between gap-2 text-[11px] muted">
-                    <span>{source.source}</span>
-                    <span>{sourceDomain(source.url)}</span>
-                  </div>
-                  <a
-                    href={source.url || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
-                  >
-                    <Link2 size={10} />
-                    Open Source
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        </section>
-      )}
-
       <div
         className={`grid gap-4 ${
           workspaceView === "forensics"
-            ? "xl:grid-cols-[1.1fr_1.2fr]"
+            ? "xl:grid-cols-[1.18fr_1fr]"
             : workspaceView === "command"
-            ? "xl:grid-cols-[1.25fr_1fr]"
-            : "xl:grid-cols-[1.5fr_1fr]"
+            ? "xl:grid-cols-[1.34fr_1fr]"
+            : "xl:grid-cols-[1.42fr_1fr]"
         }`}
       >
         {workspaceView !== "forensics" && (
@@ -2079,7 +1927,7 @@ export default function ResearchPanel() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/25 p-3">
+              <div className="card-elevated rounded-xl p-3">
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] muted">Follow-Ups</div>
                 <div className="mt-2 grid sm:grid-cols-2 gap-2">
                   {packet.followUps.map((item) => (
@@ -2120,40 +1968,9 @@ export default function ResearchPanel() {
                     </div>
                   ))}
                 </div>
-                <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-white/80 dark:bg-black/20 p-2.5">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] muted">
-                    Follow-Up Answer Console
-                  </div>
-                  {!latestFollowUpTurn && (
-                    <div className="mt-1 text-xs muted">
-                      Run a follow-up and the answer will stream here immediately.
-                    </div>
-                  )}
-                  {latestFollowUpTurn && (
-                    <div className="mt-1">
-                      <div className="text-xs font-semibold">{latestFollowUpTurn.question}</div>
-                      <div className="text-[11px] mt-1 whitespace-pre-wrap leading-relaxed">
-                        {latestFollowUpTurn.answer ||
-                          (latestFollowUpTurn.streaming ? "Streaming follow-up answer..." : "No answer yet.")}
-                      </div>
-                      <div className="mt-1 flex items-center gap-2 text-[11px] muted">
-                        {latestFollowUpTurn.streaming && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-200 px-2 py-0.5">
-                            <Loader2 size={10} className="animate-spin" />
-                            Streaming
-                          </span>
-                        )}
-                        <span>
-                          {latestFollowUpTurn.mode === "live" ? "Live answer" : "Deterministic fallback"} ·{" "}
-                          {formatRelativeAge(latestFollowUpTurn.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
               </div>
 
-              <div className="rounded-xl border border-black/10 dark:border-white/10 bg-white/75 dark:bg-black/25 p-3">
+              <div className="card-elevated rounded-xl p-3">
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] muted">Citation Trail</div>
                 <div className="mt-2 space-y-1.5">
                   {citationTrail.length === 0 && <div className="text-xs muted">No citations available.</div>}
@@ -2183,11 +2000,6 @@ export default function ResearchPanel() {
             </div>
           )}
 
-          {rawAnswer && (
-            <div className="mt-4 text-xs muted rounded-lg control-surface p-2 bg-white/60 dark:bg-black/20">
-              {rawAnswer}
-            </div>
-          )}
           </section>
         )}
 
