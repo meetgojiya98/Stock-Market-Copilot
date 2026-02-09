@@ -20,6 +20,12 @@ type SourceInput = {
   channel?: unknown;
 };
 
+const WEB_FETCH_TIMEOUT_MS = (() => {
+  const parsed = Number(process.env.RESEARCH_FETCH_TIMEOUT_MS ?? 9000);
+  if (!Number.isFinite(parsed) || parsed < 1500) return 9000;
+  return Math.floor(parsed);
+})();
+
 function normalizeText(value: unknown) {
   return String(value ?? "").replace(/\s+/g, " ").trim();
 }
@@ -119,6 +125,19 @@ function authorityScore(source: string, url: string) {
   return Math.max(0.4, Math.min(1, hostScore * 0.62 + sourceScore * 0.38));
 }
 
+async function fetchWithTimeout(url: string, init: RequestInit = {}, timeoutMs = WEB_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 function asSource(entry: SourceInput, channel: CopilotSource["channel"]): CopilotSource | null {
   const title = normalizeText(entry.title);
   const url = safeUrl(entry.url);
@@ -149,7 +168,7 @@ async function fetchGoogleNews(query: string) {
   const q = encodeURIComponent(query);
   const url = `https://news.google.com/rss/search?q=${q}&hl=en-US&gl=US&ceid=US:en`;
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetchWithTimeout(url, { cache: "no-store" });
     if (!response.ok) return [] as CopilotSource[];
     const xml = await response.text();
     const items = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 12);
@@ -163,8 +182,13 @@ async function fetchGoogleNews(query: string) {
           );
         };
         const description = tag("description");
-        const directLinkMatch = description.match(/href="([^"]+)"/i);
-        const directLink = safeUrl(decodeHtml(directLinkMatch?.[1] ?? ""));
+        const directLinks = Array.from(description.matchAll(/href="([^"]+)"/gi))
+          .map((match) => safeUrl(decodeHtml(match[1] ?? "")))
+          .filter(Boolean);
+        const directLink =
+          directLinks.find((link) => !/news\.google\.com$/i.test(extractHostname(link))) ||
+          directLinks[0] ||
+          "";
         const preferredUrl = directLink || tag("link");
         return asSource(
           {
@@ -201,7 +225,7 @@ async function fetchDuckDuckGo(query: string) {
     query
   )}&format=json&no_html=1&skip_disambig=1&no_redirect=1`;
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetchWithTimeout(url, { cache: "no-store" });
     if (!response.ok) return [] as CopilotSource[];
     const payload = await response.json();
     const aggregate: CopilotSource[] = [];
@@ -260,7 +284,7 @@ async function fetchFinnhubSymbolNews(symbol: string) {
   )}&from=${fmt(from)}&to=${fmt(to)}&token=${apiKey}`;
 
   try {
-    const response = await fetch(url, { cache: "no-store" });
+    const response = await fetchWithTimeout(url, { cache: "no-store" });
     if (!response.ok) return [] as CopilotSource[];
     const payload = await response.json();
     if (!Array.isArray(payload)) return [] as CopilotSource[];

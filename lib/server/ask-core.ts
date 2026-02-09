@@ -11,16 +11,26 @@ function normalizeBase(value: string | undefined) {
   return trimmed.replace(/\/$/, "");
 }
 
+const CONFIGURED_BACKEND_BASES = [
+  normalizeBase(process.env.API_BASE),
+  normalizeBase(process.env.NEXT_PUBLIC_API_BASE),
+].filter(Boolean);
+
+const LOCAL_BACKEND_BASES = ["http://127.0.0.1:8000", "http://localhost:8000"];
+
 const BACKEND_BASES = Array.from(
   new Set(
-    [
-      normalizeBase(process.env.API_BASE),
-      normalizeBase(process.env.NEXT_PUBLIC_API_BASE),
-      "http://127.0.0.1:8000",
-      "http://localhost:8000",
-    ].filter(Boolean)
+    process.env.NODE_ENV === "production"
+      ? CONFIGURED_BACKEND_BASES
+      : [...CONFIGURED_BACKEND_BASES, ...LOCAL_BACKEND_BASES]
   )
 );
+
+const ASK_TIMEOUT_MS = (() => {
+  const parsed = Number(process.env.ASK_TIMEOUT_MS ?? 16000);
+  if (!Number.isFinite(parsed) || parsed < 2000) return 16000;
+  return Math.floor(parsed);
+})();
 
 export function normalizeSymbol(value: unknown) {
   if (typeof value !== "string") return "";
@@ -78,18 +88,27 @@ export async function fetchAskAnswer(
   sources: BaseSource[] = []
 ) {
   let lastDetail = "AI service is unavailable.";
+  const body = JSON.stringify(payload);
 
   for (const base of BACKEND_BASES) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), ASK_TIMEOUT_MS);
     try {
       const res = await fetch(`${base}/ask`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body,
+        signal: controller.signal,
       });
+      clearTimeout(timeout);
 
-      const data = await res.json().catch(() => ({}));
+      const contentType = res.headers.get("content-type") || "";
+      const data: Record<string, unknown> = contentType.includes("application/json")
+        ? ((await res.json().catch(() => ({}))) as Record<string, unknown>)
+        : { detail: await res.text().catch(() => "") };
       if (!res.ok) {
-        lastDetail = data?.detail || `AI request failed (${res.status}).`;
+        const detail = String(data?.detail ?? "").trim();
+        lastDetail = detail || `AI request failed (${res.status}).`;
         continue;
       }
 
@@ -107,6 +126,11 @@ export async function fetchAskAnswer(
         detail: String(data?.detail ?? ""),
       };
     } catch (error) {
+      clearTimeout(timeout);
+      if (error instanceof Error && error.name === "AbortError") {
+        lastDetail = `AI request timed out after ${Math.round(ASK_TIMEOUT_MS / 1000)}s.`;
+        continue;
+      }
       lastDetail = error instanceof Error ? error.message : "AI service is unavailable.";
     }
   }

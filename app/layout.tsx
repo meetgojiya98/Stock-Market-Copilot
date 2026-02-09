@@ -37,21 +37,60 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               (function () {
                 try {
                   var FLAG_KEY = "smc_sw_hard_reset_v1";
-                  if (sessionStorage.getItem(FLAG_KEY) === "done") return;
-                  if (!("serviceWorker" in navigator)) {
-                    sessionStorage.setItem(FLAG_KEY, "done");
-                    return;
-                  }
-                  navigator.serviceWorker.getRegistrations().then(function (registrations) {
-                    if (!registrations || registrations.length === 0) {
+                  if (sessionStorage.getItem(FLAG_KEY) !== "done") {
+                    if (!("serviceWorker" in navigator)) {
                       sessionStorage.setItem(FLAG_KEY, "done");
-                      return;
+                    } else {
+                      navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                        if (!registrations || registrations.length === 0) {
+                          sessionStorage.setItem(FLAG_KEY, "done");
+                          return;
+                        }
+                        Promise.all(
+                          registrations.map(function (registration) {
+                            return registration.unregister();
+                          })
+                        )
+                          .then(function () {
+                            if (!("caches" in window)) return;
+                            return caches.keys().then(function (keys) {
+                              return Promise.all(
+                                keys.map(function (key) {
+                                  return caches.delete(key);
+                                })
+                              );
+                            });
+                          })
+                          .finally(function () {
+                            sessionStorage.setItem(FLAG_KEY, "done");
+                            var url = new URL(window.location.href);
+                            if (url.searchParams.get("sw-reset") !== "1") {
+                              url.searchParams.set("sw-reset", "1");
+                              window.location.replace(url.toString());
+                            }
+                          });
+                      });
                     }
-                    Promise.all(
-                      registrations.map(function (registration) {
-                        return registration.unregister();
-                      })
-                    )
+                  }
+                } catch (error) {
+                  // Best effort only.
+                }
+
+                try {
+                  var CHUNK_FLAG_KEY = "smc_chunk_reload_v2";
+                  var isChunkFailure = function (text) {
+                    var value = String(text || "");
+                    return (
+                      value.indexOf("ChunkLoadError") !== -1 ||
+                      value.indexOf("Loading chunk") !== -1 ||
+                      value.indexOf("/_next/static/chunks/") !== -1
+                    );
+                  };
+                  var recoverChunk = function () {
+                    if (sessionStorage.getItem(CHUNK_FLAG_KEY) === "done") return;
+                    sessionStorage.setItem(CHUNK_FLAG_KEY, "done");
+
+                    Promise.resolve()
                       .then(function () {
                         if (!("caches" in window)) return;
                         return caches.keys().then(function (keys) {
@@ -63,13 +102,35 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                         });
                       })
                       .finally(function () {
-                        sessionStorage.setItem(FLAG_KEY, "done");
                         var url = new URL(window.location.href);
-                        if (url.searchParams.get("sw-reset") !== "1") {
-                          url.searchParams.set("sw-reset", "1");
-                          window.location.replace(url.toString());
-                        }
+                        url.searchParams.set("chunk-reload", "1");
+                        window.location.replace(url.toString());
                       });
+                  };
+
+                  window.addEventListener(
+                    "error",
+                    function (event) {
+                      var message = event && event.message ? event.message : "";
+                      var filename = event && event.filename ? event.filename : "";
+                      if (isChunkFailure(message) || isChunkFailure(filename)) {
+                        recoverChunk();
+                      }
+                    },
+                    true
+                  );
+
+                  window.addEventListener("unhandledrejection", function (event) {
+                    var reason = event ? event.reason : "";
+                    var message =
+                      typeof reason === "string"
+                        ? reason
+                        : reason && reason.message
+                        ? reason.message
+                        : String(reason || "");
+                    if (isChunkFailure(message)) {
+                      recoverChunk();
+                    }
                   });
                 } catch (error) {
                   // Best effort only.

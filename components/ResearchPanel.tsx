@@ -145,6 +145,32 @@ function extractUrlFromText(value: string) {
   }
 }
 
+function isHttpUrl(value: string) {
+  return /^https?:\/\//i.test(value.trim());
+}
+
+function normalizeCitationKey(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/https?:\/\/[^\s]+/g, " ")
+    .replace(/\[(s\d+)\]/gi, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractSourceId(value: string) {
+  const withBrackets = value.match(/\[(S\d+)\]/i);
+  if (withBrackets?.[1]) return withBrackets[1].toUpperCase();
+  const bare = value.match(/\b(S\d+)\b/i);
+  if (bare?.[1]) return bare[1].toUpperCase();
+  return "";
+}
+
+function extractSourceIdsFromAnswer(value: string) {
+  return Array.from(new Set([...value.matchAll(/\[(S\d+)\]/gi)].map((match) => match[1].toUpperCase())));
+}
+
 function scoreClass(score: number) {
   if (score >= 70) return "text-[var(--positive)]";
   if (score <= 40) return "text-[var(--negative)]";
@@ -1006,7 +1032,8 @@ export default function ResearchPanel() {
   }, [copilotTurns, lastFollowUpPrompt]);
 
   const latestCopilotTurn = copilotTurns[0] ?? null;
-  const latestTurnSources = latestCopilotTurn?.sources.slice(0, 6) ?? [];
+  const latestTurnSources = latestCopilotTurn?.sources ?? [];
+  const latestTurnSourcePreview = latestTurnSources.slice(0, 6);
   const latestTurnPreview = summarizeAnswer(latestCopilotTurn?.answer ?? "", 860);
   const qualitySnapshot = latestCopilotTurn?.metrics;
 
@@ -1037,11 +1064,11 @@ export default function ResearchPanel() {
   }, [copilotTurns, packet?.followUps]);
 
   const citationTrail = useMemo(() => {
-    if (!packet) return [];
     const sourceCandidates = [
       ...latestTurnSources,
       ...sourceRankPreview,
       ...feed.map((item) => ({
+        id: "",
         title: item.title,
         url: item.url,
         source: item.source,
@@ -1051,38 +1078,69 @@ export default function ResearchPanel() {
       })),
     ];
 
-    return packet.citations.slice(0, 8).map((citation) => {
-      const directUrl = extractUrlFromText(citation);
-      if (directUrl) {
+    const sourcesById = new Map<string, (typeof sourceCandidates)[number]>();
+    sourceCandidates.forEach((item) => {
+      const id = String(item.id ?? "").trim().toUpperCase();
+      if (id && !sourcesById.has(id)) {
+        sourcesById.set(id, item);
+      }
+    });
+
+    const citationInputs = packet?.citations.slice(0, 10) ?? [];
+    const answerSourceIds = extractSourceIdsFromAnswer(latestCopilotTurn?.answer ?? "");
+    answerSourceIds.forEach((id) => {
+      if (!citationInputs.some((item) => item.toUpperCase().includes(id))) {
+        citationInputs.push(`[${id}]`);
+      }
+    });
+
+    if (!citationInputs.length) return [];
+
+    const resolveLinkedSource = (citation: string) => {
+      const sourceId = extractSourceId(citation);
+      if (sourceId && sourcesById.has(sourceId)) {
+        const source = sourcesById.get(sourceId)!;
         return {
-          citation,
-          linked: {
-            title: citation,
-            source: sourceDomain(directUrl),
-            url: directUrl,
-            publishedAt: new Date().toISOString(),
-          },
+          title: source.title,
+          source: source.source,
+          url: source.url,
+          publishedAt: source.publishedAt,
         };
       }
 
-      const lowered = citation.toLowerCase().trim();
-      const linked = sourceCandidates.find((item) => {
-        const title = (item.title || "").toLowerCase().trim();
-        return title.includes(lowered) || lowered.includes(title);
+      const citationKey = normalizeCitationKey(citation);
+      if (!citationKey) return null;
+      const fuzzyMatch = sourceCandidates.find((item) => {
+        const titleKey = normalizeCitationKey(item.title || "");
+        return Boolean(titleKey) && (titleKey.includes(citationKey) || citationKey.includes(titleKey));
       });
+      if (!fuzzyMatch) return null;
+      return {
+        title: fuzzyMatch.title,
+        source: fuzzyMatch.source,
+        url: fuzzyMatch.url,
+        publishedAt: fuzzyMatch.publishedAt,
+      };
+    };
+
+    return citationInputs.slice(0, 12).map((citation) => {
+      const directUrl = extractUrlFromText(citation);
+      const linked = resolveLinkedSource(citation);
+      const resolvedUrl = (linked?.url && isHttpUrl(linked.url) ? linked.url : "") || directUrl;
+
       return {
         citation,
-        linked: linked
+        linked: resolvedUrl
           ? {
-              title: linked.title,
-              source: linked.source,
-              url: linked.url,
-              publishedAt: linked.publishedAt,
+              title: linked?.title || citation,
+              source: linked?.source || sourceDomain(resolvedUrl),
+              url: resolvedUrl,
+              publishedAt: linked?.publishedAt || new Date().toISOString(),
             }
           : null,
       };
     });
-  }, [feed, latestTurnSources, packet, sourceRankPreview]);
+  }, [feed, latestCopilotTurn?.answer, latestTurnSources, packet?.citations, sourceRankPreview]);
 
   const handleClearCopilotThread = () => {
     setCopilotTurns([]);
@@ -1233,19 +1291,23 @@ export default function ResearchPanel() {
     let responseSources = rankedSources;
     let responseMetrics: CopilotMetrics | undefined;
     let responseDetail = "";
+    const requestPayload = {
+      query: prompt,
+      retrievalQuery: userQuestion,
+      symbol: normalizeSymbol(primarySymbol),
+      sources: rankedSources,
+      webDepth: copilotDepth,
+      citationStrict: copilotStrictCitations,
+    };
+    const streamController = new AbortController();
+    const streamTimeout = setTimeout(() => streamController.abort(), 35_000);
 
     try {
       const streamResponse = await fetch("/api/ask/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: prompt,
-          retrievalQuery: userQuestion,
-          symbol: normalizeSymbol(primarySymbol),
-          sources: rankedSources,
-          webDepth: copilotDepth,
-          citationStrict: copilotStrictCitations,
-        }),
+        body: JSON.stringify(requestPayload),
+        signal: streamController.signal,
       });
 
       if (!streamResponse.ok || !streamResponse.body) {
@@ -1261,98 +1323,146 @@ export default function ResearchPanel() {
       const decoder = new TextDecoder();
       let buffer = "";
       let done = false;
+      const consumeSseEvent = (rawEvent: string) => {
+        if (!rawEvent.trim()) return false;
+        const lines = rawEvent.split(/\r?\n/);
+        let event = "message";
+        const dataLines: string[] = [];
+
+        lines.forEach((line) => {
+          if (line.startsWith("event:")) {
+            event = line.slice(6).trim();
+            return;
+          }
+          if (line.startsWith("data:")) {
+            dataLines.push(line.slice(5).trim());
+          }
+        });
+
+        if (!dataLines.length) return false;
+        const dataText = dataLines.join("\n");
+        let payload: unknown = {};
+        try {
+          payload = JSON.parse(dataText);
+        } catch {
+          payload = {};
+        }
+
+        if (event === "chunk") {
+          const text = String((payload as Record<string, unknown>)?.text ?? "");
+          if (!text) return false;
+          answer += text;
+          patchTurn({ answer });
+          return false;
+        }
+
+        if (event === "sources") {
+          const nextSources = parseCopilotSources((payload as Record<string, unknown>)?.sources ?? payload);
+          if (nextSources.length) {
+            responseSources = nextSources;
+            patchTurn({ sources: nextSources });
+          }
+          return false;
+        }
+
+        if (event === "meta") {
+          const row = payload as Record<string, unknown>;
+          responseMode = row?.mode === "deterministic" ? "deterministic" : "live";
+          responseDetail = String(row?.detail ?? "").trim();
+          const metrics = parseCopilotMetrics(row);
+          if (metrics) {
+            responseMetrics = metrics;
+            patchTurn({ metrics });
+          }
+          return false;
+        }
+
+        if (event === "error") {
+          const detail = String((payload as Record<string, unknown>)?.detail ?? "Copilot stream error.");
+          throw new Error(detail);
+        }
+
+        if (event === "done") {
+          return true;
+        }
+
+        return false;
+      };
 
       while (!done) {
         const chunk = await reader.read();
         if (chunk.done) break;
 
         buffer += decoder.decode(chunk.value, { stream: true });
-        const events = buffer.split("\n\n");
+        const events = buffer.split(/\r?\n\r?\n/);
         buffer = events.pop() ?? "";
 
         for (const rawEvent of events) {
-          if (!rawEvent.trim()) continue;
-          const lines = rawEvent.split("\n");
-          let event = "message";
-          const dataLines: string[] = [];
-
-          lines.forEach((line) => {
-            if (line.startsWith("event:")) {
-              event = line.slice(6).trim();
-              return;
-            }
-            if (line.startsWith("data:")) {
-              dataLines.push(line.slice(5).trim());
-            }
-          });
-
-          if (!dataLines.length) continue;
-          const dataText = dataLines.join("\n");
-          let payload: unknown = {};
-          try {
-            payload = JSON.parse(dataText);
-          } catch {
-            payload = {};
-          }
-
-          if (event === "chunk") {
-            const text = String((payload as Record<string, unknown>)?.text ?? "");
-            if (!text) continue;
-            answer += text;
-            patchTurn({ answer });
-            continue;
-          }
-
-          if (event === "sources") {
-            const nextSources = parseCopilotSources(
-              (payload as Record<string, unknown>)?.sources ?? payload
-            );
-            if (nextSources.length) {
-              responseSources = nextSources;
-              patchTurn({ sources: nextSources });
-            }
-            continue;
-          }
-
-          if (event === "meta") {
-            const row = payload as Record<string, unknown>;
-            responseMode = row?.mode === "deterministic" ? "deterministic" : "live";
-            responseDetail = String(row?.detail ?? "").trim();
-            const metrics = parseCopilotMetrics(row);
-            if (metrics) {
-              responseMetrics = metrics;
-              patchTurn({ metrics });
-            }
-            continue;
-          }
-
-          if (event === "error") {
-            const detail = String((payload as Record<string, unknown>)?.detail ?? "Copilot stream error.");
-            throw new Error(detail);
-          }
-
-          if (event === "done") {
+          if (consumeSseEvent(rawEvent)) {
             done = true;
+            break;
           }
         }
+      }
+
+      if (buffer.trim()) {
+        consumeSseEvent(buffer);
       }
 
       if (!answer.trim()) {
         throw new Error("Copilot stream returned an empty response.");
       }
     } catch (copilotFailure) {
-      answer = deterministicCopilotFallback({
-        query: userQuestion,
-        symbol: normalizeSymbol(primarySymbol),
-        packet: effectivePacket,
-        sources: responseSources,
-      });
-      responseMode = "deterministic";
-      responseMetrics = undefined;
-      responseDetail =
-        copilotFailure instanceof Error ? copilotFailure.message : "Copilot fallback engaged.";
-      setCopilotError(responseDetail);
+      const streamFailureDetail =
+        copilotFailure instanceof Error
+          ? copilotFailure.name === "AbortError"
+            ? "Copilot stream timed out."
+            : copilotFailure.message
+          : "Copilot streaming failed.";
+      let recoveredViaJson = false;
+
+      try {
+        const jsonResponse = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(requestPayload),
+        });
+        const data = (await jsonResponse.json().catch(() => ({}))) as Record<string, unknown>;
+        const jsonAnswer = String(data?.answer ?? "").trim();
+        if (jsonResponse.ok && jsonAnswer) {
+          answer = jsonAnswer;
+          responseMode = data?.mode === "deterministic" ? "deterministic" : "live";
+          const nextSources = parseCopilotSources(data?.sources);
+          if (nextSources.length) {
+            responseSources = nextSources;
+          }
+          const metrics = parseCopilotMetrics(data);
+          if (metrics) {
+            responseMetrics = metrics;
+          } else {
+            responseMetrics = undefined;
+          }
+          responseDetail = String(data?.detail ?? streamFailureDetail).trim() || streamFailureDetail;
+          recoveredViaJson = true;
+        }
+      } catch {
+        // Fallback to deterministic mode below.
+      }
+
+      if (!recoveredViaJson) {
+        answer = deterministicCopilotFallback({
+          query: userQuestion,
+          symbol: normalizeSymbol(primarySymbol),
+          packet: effectivePacket,
+          sources: responseSources,
+        });
+        responseMode = "deterministic";
+        responseMetrics = undefined;
+        responseDetail = streamFailureDetail;
+        setCopilotError(responseDetail);
+      }
     } finally {
+      clearTimeout(streamTimeout);
       setCopilotBusy(false);
     }
 
@@ -1776,10 +1886,10 @@ export default function ResearchPanel() {
               Source Intelligence Board
             </h3>
             <div className="mt-3 space-y-2 max-h-[420px] overflow-y-auto pr-1">
-              {!latestTurnSources.length && (
+              {!latestTurnSourcePreview.length && (
                 <div className="text-xs muted">No sources in the current answer yet. Ask to build evidence.</div>
               )}
-              {latestTurnSources.map((source, index) => (
+              {latestTurnSourcePreview.map((source, index) => (
                 <div
                   key={`${source.id || source.title}-${index}`}
                   className="rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/20 p-2.5"
@@ -2042,24 +2152,24 @@ export default function ResearchPanel() {
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] muted">Citation Trail</div>
                 <div className="mt-2 space-y-1.5">
                   {citationTrail.length === 0 && <div className="text-xs muted">No citations available.</div>}
-                  {citationTrail.map((item) => (
+                  {citationTrail.map((item, index) => (
                     <div
-                      key={item.citation}
+                      key={`${item.citation}-${index}`}
                       className="rounded-md control-surface bg-white/70 dark:bg-black/20 px-2.5 py-2 text-xs"
                     >
                       <div className="font-medium">{item.citation}</div>
                       {item.linked ? (
                         <a
-                          href={item.linked.url || `https://www.google.com/search?q=${encodeURIComponent(item.citation)}`}
+                          href={item.linked.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="mt-1 inline-flex items-center gap-1 text-[11px] text-[var(--accent)] hover:underline"
                         >
                           <Link2 size={10} />
-                          {item.linked.source} · {formatDate(item.linked.publishedAt)}
+                          Open original source ({item.linked.source} · {formatDate(item.linked.publishedAt)})
                         </a>
                       ) : (
-                        <div className="mt-1 text-[11px] muted">No linked source found in current feed.</div>
+                        <div className="mt-1 text-[11px] muted">Original source URL unavailable for this citation.</div>
                       )}
                     </div>
                   ))}
