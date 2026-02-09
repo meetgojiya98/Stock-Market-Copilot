@@ -60,6 +60,35 @@ function writeUsers(users: LocalAuthUser[]) {
   localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
 }
 
+function upsertLocalUser(input: { email: string; password: string; username?: string }) {
+  const email = normalizeEmail(input.email);
+  const username = (input.username || "").trim() || email.split("@")[0];
+  const users = readUsers();
+  const existingIndex = users.findIndex((user) => user.email === email);
+
+  if (existingIndex >= 0) {
+    const existing = users[existingIndex];
+    const nextUsers = [...users];
+    nextUsers[existingIndex] = {
+      ...existing,
+      username,
+      password: input.password,
+    };
+    writeUsers(nextUsers);
+    return;
+  }
+
+  writeUsers([
+    {
+      email,
+      username,
+      password: input.password,
+      createdAt: new Date().toISOString(),
+    },
+    ...users,
+  ]);
+}
+
 function createLocalToken(email: string) {
   const payload = `${normalizeEmail(email)}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
 
@@ -186,6 +215,7 @@ export async function registerUser(input: RegisterInput): Promise<AuthOutcome> {
   const remote = await attemptRemoteRegister(normalizedInput);
 
   if (remote.status === "success") {
+    upsertLocalUser(normalizedInput);
     return { ok: true, mode: "remote" };
   }
 
@@ -216,6 +246,10 @@ export async function loginUser(input: LoginInput): Promise<AuthOutcome> {
   const remote = await attemptRemoteLogin(normalizedInput);
 
   if (remote.status === "success" && remote.token) {
+    upsertLocalUser({
+      email: normalizedInput.email,
+      password: normalizedInput.password,
+    });
     storeSession(remote.token, "remote", normalizedInput.email);
     return { ok: true, mode: "remote" };
   }
