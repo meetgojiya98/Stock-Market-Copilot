@@ -3,7 +3,7 @@ import { Providers } from "./providers";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileDock from "../components/MobileDock";
-import PWARegistrar from "../components/PWARegistrar";
+import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
@@ -28,9 +28,59 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <Script
+          id="sw-hard-reset"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var FLAG_KEY = "smc_sw_hard_reset_v1";
+                  if (sessionStorage.getItem(FLAG_KEY) === "done") return;
+                  if (!("serviceWorker" in navigator)) {
+                    sessionStorage.setItem(FLAG_KEY, "done");
+                    return;
+                  }
+                  navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    if (!registrations || registrations.length === 0) {
+                      sessionStorage.setItem(FLAG_KEY, "done");
+                      return;
+                    }
+                    Promise.all(
+                      registrations.map(function (registration) {
+                        return registration.unregister();
+                      })
+                    )
+                      .then(function () {
+                        if (!("caches" in window)) return;
+                        return caches.keys().then(function (keys) {
+                          return Promise.all(
+                            keys.map(function (key) {
+                              return caches.delete(key);
+                            })
+                          );
+                        });
+                      })
+                      .finally(function () {
+                        sessionStorage.setItem(FLAG_KEY, "done");
+                        var url = new URL(window.location.href);
+                        if (url.searchParams.get("sw-reset") !== "1") {
+                          url.searchParams.set("sw-reset", "1");
+                          window.location.replace(url.toString());
+                        }
+                      });
+                  });
+                } catch (error) {
+                  // Best effort only.
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-screen flex flex-col antialiased text-[var(--ink)]">
         <Providers>
-          <PWARegistrar />
           <Header />
           <main className="flex-1 pb-24 md:pb-8 relative">{children}</main>
           <MobileDock />
