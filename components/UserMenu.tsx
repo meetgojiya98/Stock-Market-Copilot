@@ -7,14 +7,20 @@ export default function UserMenu() {
   if (status === "loading") return <div>Loading...</div>;
   if (!session)
     return (
-      <button className="bg-navy text-saffron px-3 py-1 rounded" onClick={() => signIn()}>
+      <button
+        className="px-3 py-1 rounded border border-[var(--surface-border)] bg-[var(--surface-emphasis)] text-[var(--ink)]"
+        onClick={() => signIn()}
+      >
         Sign in
       </button>
     );
   return (
     <div className="flex items-center gap-2">
-      <span className="text-navy">{session.user?.name || "User"}</span>
-      <button className="bg-navy text-saffron px-3 py-1 rounded" onClick={() => signOut()}>
+      <span className="text-[var(--ink)]">{session.user?.name || "User"}</span>
+      <button
+        className="px-3 py-1 rounded bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white"
+        onClick={() => signOut()}
+      >
         Sign out
       </button>
     </div>

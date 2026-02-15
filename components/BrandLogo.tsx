@@ -19,7 +19,7 @@ export default function BrandLogo({
         className="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/15 shadow-[0_8px_24px_rgba(8,16,32,0.2)]"
         style={{ width: size, height: size, minWidth: size, minHeight: size }}
       >
-        <img src="/smc-logo.svg" alt="Zentrade logo" className="w-full h-full object-cover" />
+        <img src="/zentrade-logo.svg" alt="Zentrade logo" className="w-full h-full object-cover" />
       </div>
 
       {withWordmark && (

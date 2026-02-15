@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   icons: {
-    icon: "/smc-logo.svg",
+    icon: "/zentrade-logo.svg",
   },
 };
 

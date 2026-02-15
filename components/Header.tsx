@@ -73,7 +73,9 @@ export default function Header() {
   const hideChrome = pathname === "/";
 
   const { mode, resolvedMode, setThemeMode } = useThemeMode();
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [loggedIn, setLoggedIn] = useState(
+    () => typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [clockTick, setClockTick] = useState(0);
   const showThemeControl =
