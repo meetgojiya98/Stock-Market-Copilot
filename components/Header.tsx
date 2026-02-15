@@ -70,7 +70,7 @@ function getMarketMeta() {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const hideChrome = pathname === "/";
+  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   const { mode, resolvedMode, setThemeMode } = useThemeMode();
   const [loggedIn, setLoggedIn] = useState(

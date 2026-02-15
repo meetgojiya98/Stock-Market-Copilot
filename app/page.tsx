@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -41,6 +41,7 @@ const STATEMENT_WORDS = ["Unify", "your", "trading", "flow."] as const;
 
 export default function LandingPage() {
   const heroRef = useRef<HTMLElement | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false);
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ["start start", "end start"],
@@ -52,6 +53,16 @@ export default function LandingPage() {
   const heroGlowY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const copyY = useTransform(scrollYProgress, [0, 1], [0, 70]);
   const copyOpacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.4]);
+
+  useEffect(() => {
+    const sync = () => setLoggedIn(Boolean(localStorage.getItem("access_token")));
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, []);
+
+  const loginHref = useMemo(() => (loggedIn ? "/portfolio" : "/login"), [loggedIn]);
+  const signupHref = useMemo(() => (loggedIn ? "/portfolio" : "/signup"), [loggedIn]);
 
   return (
     <div className="landing-root">
@@ -76,10 +87,10 @@ export default function LandingPage() {
             </Link>
 
             <div className="landing-nav-actions">
-              <Link href="/login" className="landing-login-link">
+              <Link href={loginHref} className="landing-login-link">
                 Log in
               </Link>
-              <Link href="/signup" className="landing-signup-link">
+              <Link href={signupHref} className="landing-signup-link">
                 Sign up
               </Link>
             </div>
@@ -106,11 +117,11 @@ export default function LandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.25, duration: 0.55, ease: "easeOut" }}
               >
-                <Link href="/signup" className="landing-primary-cta">
+                <Link href={signupHref} className="landing-primary-cta">
                   Create account
                   <ArrowUpRight size={16} />
                 </Link>
-                <Link href="/login" className="landing-secondary-cta">
+                <Link href={loginHref} className="landing-secondary-cta">
                   I already have an account
                 </Link>
               </motion.div>
@@ -182,7 +193,7 @@ export default function LandingPage() {
                 </div>
                 <h3>{title}</h3>
                 <p>{description}</p>
-                <Link href="/login" className="landing-tool-link">
+                <Link href={loginHref} className="landing-tool-link">
                   Log in to use
                 </Link>
               </motion.article>
@@ -208,10 +219,10 @@ export default function LandingPage() {
             It only takes seconds to start. Create an account and unlock the full Zentrade toolkit.
           </p>
           <div className="landing-cta-row">
-            <Link href="/signup" className="landing-primary-cta landing-primary-cta-light">
+            <Link href={signupHref} className="landing-primary-cta landing-primary-cta-light">
               Sign up now
             </Link>
-            <Link href="/login" className="landing-secondary-cta landing-secondary-cta-light">
+            <Link href={loginHref} className="landing-secondary-cta landing-secondary-cta-light">
               Log in
             </Link>
           </div>
@@ -224,13 +235,13 @@ export default function LandingPage() {
 
       <nav className="landing-floating-nav" aria-label="Tool categories">
         {FLOAT_LINKS.map((label) => (
-          <Link key={label} href="/login" className="landing-floating-link">
+          <Link key={label} href={loginHref} className="landing-floating-link">
             {label}
           </Link>
         ))}
       </nav>
 
-      <Link href="/login" className="landing-support-link">
+      <Link href={loginHref} className="landing-support-link">
         Support
       </Link>
     </div>

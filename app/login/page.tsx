@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -23,6 +23,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [modeNotice, setModeNotice] = useState("");
   const router = useRouter();
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (localStorage.getItem("access_token")) {
+      router.replace("/portfolio");
+    }
+  }, [router]);
 
   async function handleLogin(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
