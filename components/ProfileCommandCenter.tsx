@@ -320,7 +320,7 @@ export default function ProfileCommandCenter() {
       <section className="surface-panel p-5 sm:p-6 grid lg:grid-cols-[1.35fr_0.95fr] gap-5 fade-up">
         <div className="relative overflow-hidden rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 p-5">
           <div className="absolute -top-14 -right-10 w-52 h-52 rounded-full bg-orange-400/20 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-16 -left-12 w-56 h-56 rounded-full bg-orange-400/20 blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-16 -left-12 w-56 h-56 rounded-full bg-fuchsia-400/20 blur-3xl pointer-events-none" />
 
           <div className="relative flex items-start justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3 min-w-0">
@@ -417,7 +417,7 @@ export default function ProfileCommandCenter() {
           </div>
 
           {syncNotice && (
-            <p className="mt-4 text-xs rounded-lg border border-orange-300/50 bg-orange-500/10 text-orange-900 dark:text-orange-200 px-3 py-2">
+            <p className="mt-4 text-xs rounded-lg border border-fuchsia-300/50 bg-fuchsia-500/10 text-fuchsia-900 dark:text-fuchsia-200 px-3 py-2">
               {syncNotice}
             </p>
           )}

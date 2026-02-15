@@ -6,8 +6,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#fff7f2",
-  "theme_color": "#ff7a1a",
+  "background_color": "#f6f1fb",
+  "theme_color": "#6f4dff",
   "icons": [
     {
       "src": "/zentrade-logo.svg",

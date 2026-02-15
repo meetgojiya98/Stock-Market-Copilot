@@ -27,7 +27,7 @@ export default function NewsFeed({ news, loading = false }: NewsFeedProps) {
         news.map((item, idx) => (
           <div key={idx} className="mb-2">
             <a href={item.url} target="_blank" rel="noopener noreferrer"
-              className="font-semibold text-orange-600 dark:text-orange-300 hover:underline">
+              className="font-semibold text-violet-600 dark:text-violet-300 hover:underline">
               {item.title}
             </a>
             <div className="text-xs text-gray-500 dark:text-zinc-400">
