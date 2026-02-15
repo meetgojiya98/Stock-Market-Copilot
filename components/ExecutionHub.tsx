@@ -1214,7 +1214,7 @@ export default function ExecutionHub() {
             <p className="text-xs muted mt-1">Open long inventory with mark-to-market unrealized P/L.</p>
 
             <div className="mt-3 overflow-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[620px] text-sm">
                 <thead className="text-xs muted">
                   <tr>
                     <th className="text-left py-2">Symbol</th>
@@ -1368,7 +1368,7 @@ export default function ExecutionHub() {
           </div>
 
           <div className="mt-3 overflow-auto">
-            <table className="w-full text-sm">
+            <table className="w-full min-w-[760px] text-sm">
               <thead className="text-xs muted">
                 <tr>
                   <th className="text-left py-2">Time</th>

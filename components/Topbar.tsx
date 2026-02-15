@@ -4,7 +4,7 @@ import { signIn, signOut, useSession } from "next-auth/react";
 export default function Topbar() {
   const { data: session } = useSession();
   return (
-    <header className="w-full px-8 py-3 flex items-center justify-between rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-strong)] text-[var(--ink)] font-bold shadow">
+    <header className="w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-strong)] text-[var(--ink)] font-bold shadow gap-2">
       <span className="text-lg">Zentrade</span>
       <div>
         {session ? (

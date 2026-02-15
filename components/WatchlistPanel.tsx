@@ -252,7 +252,7 @@ export default function WatchlistPanel() {
             value={symbol}
             onChange={(event) => setSymbol(event.target.value.toUpperCase())}
             placeholder="Add symbol"
-            className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm min-w-[180px]"
+            className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm w-full sm:w-auto sm:min-w-[180px]"
             required
           />
           <button className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-3 py-2 text-sm font-semibold">
@@ -260,7 +260,7 @@ export default function WatchlistPanel() {
             Add to Watchlist
           </button>
 
-          <span className={`text-xs ml-auto rounded-full px-2.5 py-1 ${dataMode === "remote" ? "badge-positive" : "badge-neutral"}`}>
+          <span className={`text-xs sm:ml-auto rounded-full px-2.5 py-1 ${dataMode === "remote" ? "badge-positive" : "badge-neutral"}`}>
             {dataMode === "remote" ? "Remote Data" : "Local Data"}
           </span>
         </form>

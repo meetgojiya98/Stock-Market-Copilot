@@ -282,7 +282,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-4">
         <form onSubmit={handleAdd} className="card-elevated rounded-xl p-4 space-y-3">
           <div className="text-sm font-semibold section-title">Add Position</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               value={symbol}
               onChange={(event) => setSymbol(event.target.value.toUpperCase())}
@@ -308,7 +308,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
 
         <div className="card-elevated rounded-xl p-4">
           <div className="text-sm font-semibold section-title">Portfolio Snapshot</div>
-          <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
             <div className="rounded-lg control-surface bg-white/70 dark:bg-black/25 p-2.5">
               <div className="text-xs muted">Total Value</div>
               <div className="font-semibold metric-value mt-1">{formatMoney(totalValue)}</div>
@@ -319,7 +319,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                 {formatMoney(estimatedDayPnL)}
               </div>
             </div>
-            <div className="rounded-lg control-surface bg-white/70 dark:bg-black/25 p-2.5 col-span-2">
+            <div className="rounded-lg control-surface bg-white/70 dark:bg-black/25 p-2.5 sm:col-span-2">
               <div className="text-xs muted">Open Positions</div>
               <div className="font-semibold metric-value mt-1">{portfolio.length}</div>
             </div>
@@ -332,7 +332,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Filter symbols"
-          className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm min-w-[220px]"
+          className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm w-full sm:w-auto sm:min-w-[220px]"
         />
 
         <button
@@ -353,7 +353,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
       {error && <div className="text-sm text-red-600 dark:text-red-300">{error}</div>}
 
       <div className="overflow-x-auto rounded-xl border soft-divider bg-[color-mix(in_srgb,var(--surface)_86%,transparent)]">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-black/5 dark:bg-white/10">
             <tr className="text-left">
               <th className="px-3 py-2.5 font-medium">Symbol</th>

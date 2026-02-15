@@ -80,8 +80,8 @@ export default function Chart({ data: _data, loading: _loading, symbol = "AAPL" 
   }, [symbol, range]);
 
   return (
-    <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl shadow p-6 flex flex-col h-[210px]">
-      <div className="flex gap-2 mb-4 items-center">
+    <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl shadow p-4 sm:p-6 flex flex-col min-h-[240px] sm:h-[210px]">
+      <div className="flex gap-2 mb-3 sm:mb-4 items-center flex-wrap">
         <span className="text-sm font-semibold dark:text-white">Range:</span>
         {RANGES.map(r => (
           <button

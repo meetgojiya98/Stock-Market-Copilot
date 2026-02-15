@@ -8,7 +8,7 @@ export default function UIProCard({
   className?: string;
 }) {
   return (
-    <div className={`bg-white rounded-2xl shadow-xl p-8 flex flex-col min-h-[20rem] h-full ${className}`}>
+    <div className={`bg-white rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 flex flex-col min-h-[16rem] sm:min-h-[20rem] h-full ${className}`}>
       {children}
     </div>
   );

@@ -1,7 +1,7 @@
 "use client";
 export default function AnalyticsPanel() {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8">
+    <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8">
       <h3 className="font-bold text-lg mb-4">Visualization & Analytics</h3>
       <div className="text-zinc-700 dark:text-zinc-300">
         {/* Demo only */}

@@ -40,7 +40,7 @@ export default function SearchBar({ stocks, onSelect }: SearchBarProps) {
         placeholder="Search stocks (AAPL, TSLA...)"
         value={q}
         onChange={handleChange}
-        className="border px-2 py-1 rounded min-w-[220px] dark:bg-zinc-900 dark:text-white"
+        className="border px-2 py-1 rounded w-full sm:w-auto sm:min-w-[220px] dark:bg-zinc-900 dark:text-white"
       />
       {results.length > 0 && (
         <div className="absolute z-10 bg-white dark:bg-zinc-900 shadow rounded w-full mt-1">

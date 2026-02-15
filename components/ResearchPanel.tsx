@@ -1714,7 +1714,7 @@ export default function ResearchPanel() {
           </div>
 
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="card-elevated rounded-xl p-3">
                 <div className="muted">Primary</div>
                 <div className="mt-1 text-sm font-semibold">{primaryContext?.symbol || "-"}</div>
@@ -2144,7 +2144,7 @@ export default function ResearchPanel() {
               </label>
             </div>
 
-            <div className="mt-2 grid grid-cols-2 gap-2 text-[11px]">
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
               <div className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2 py-1.5">
                 <div className="muted">Runtime</div>
                 <div className="mt-0.5 font-semibold">
@@ -2283,7 +2283,7 @@ export default function ResearchPanel() {
                   </div>
                   {turn.metrics && (
                     <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 p-2">
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                         <div>
                           <div className="flex items-center justify-between gap-2">
                             <span className="muted">Grounding</span>

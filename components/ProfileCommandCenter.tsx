@@ -369,7 +369,7 @@ export default function ProfileCommandCenter() {
 
         <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-white/70 dark:bg-black/20 p-5">
           <p className="text-xs uppercase tracking-[0.12em] muted">Posture Snapshot</p>
-          <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="rounded-xl bg-white/80 dark:bg-black/25 border border-black/10 dark:border-white/10 p-3">
               <p className="text-xs muted">Positions</p>
               <p className="mt-1 text-lg font-semibold metric-value">{portfolio.length}</p>

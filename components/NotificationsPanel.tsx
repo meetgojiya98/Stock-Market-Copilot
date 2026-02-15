@@ -772,7 +772,7 @@ export default function NotificationsPanel() {
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Search symbol, message, type"
-                className="rounded-lg px-3 py-1.5 text-xs control-surface bg-white/80 dark:bg-black/25 min-w-[180px]"
+                className="rounded-lg px-3 py-1.5 text-xs control-surface bg-white/80 dark:bg-black/25 w-full sm:w-auto sm:min-w-[180px]"
               />
               {(
                 [

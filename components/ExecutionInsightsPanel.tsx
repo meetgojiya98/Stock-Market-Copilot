@@ -440,7 +440,7 @@ export default function ExecutionInsightsPanel({ ledger, quotes }: ExecutionInsi
                     {formatMoney(row.net)}
                   </span>
                 </div>
-                <div className="mt-1 grid grid-cols-2 gap-2 muted">
+                <div className="mt-1 grid grid-cols-1 sm:grid-cols-2 gap-2 muted">
                   <span>Realized {formatMoney(row.realized)}</span>
                   <span>Unrealized {formatMoney(row.unrealized)}</span>
                 </div>

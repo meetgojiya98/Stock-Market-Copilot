@@ -22,7 +22,7 @@ export default function PageShell({
   children,
 }: PageShellProps) {
   return (
-    <div className="pro-container py-6 sm:py-8 space-y-4">
+    <div className="pro-container py-5 sm:py-7 lg:py-8 pb-24 lg:pb-8 space-y-3 sm:space-y-4">
       <section className="mission-hero fade-up">
         <DynamicBackdrop variant={heroBackdrop} />
         <div className="relative z-[1] mission-hero-content">

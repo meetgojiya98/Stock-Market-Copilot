@@ -68,7 +68,7 @@ export default function AuditTimeline() {
         value={filter}
         onChange={(event) => setFilter(event.target.value)}
         placeholder="Filter by type, symbol, or detail"
-        className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm min-w-[220px]"
+        className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm w-full sm:w-auto sm:min-w-[220px]"
       />
 
       {error && <div className="text-sm text-red-600 dark:text-red-300">{error}</div>}

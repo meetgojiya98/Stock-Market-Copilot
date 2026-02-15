@@ -57,7 +57,7 @@ export default function MobileDock() {
 
   return (
     <div
-      className="md:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] w-[min(95vw,430px)]"
+      className="lg:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-[70] w-[min(95vw,430px)]"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="dock-shell">

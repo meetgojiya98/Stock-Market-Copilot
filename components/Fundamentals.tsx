@@ -14,9 +14,9 @@ export default function Fundamentals({ symbol }: { symbol: string }) {
   const metrics = fund.metric || {};
 
   return (
-    <div className="bg-card dark:bg-darkcard rounded-2xl shadow-card p-8">
+    <div className="bg-card dark:bg-darkcard rounded-2xl shadow-card p-4 sm:p-6 lg:p-8">
       <h2 className="text-xl font-bold text-saffron mb-4">{symbol} Fundamentals</h2>
-      <ul className="grid grid-cols-2 gap-x-6 gap-y-2">
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
         <li><b>P/E:</b> {metrics.peBasicExclExtraTTM}</li>
         <li><b>Market Cap:</b> ${metrics.marketCapitalization}B</li>
         <li><b>EPS:</b> {metrics.epsTTM}</li>
