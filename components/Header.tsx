@@ -70,6 +70,7 @@ function getMarketMeta() {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const hideChrome = pathname === "/";
 
   const [dark, setDark] = useState(false);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -126,6 +127,8 @@ export default function Header() {
     setMenuOpen(false);
     router.push("/login");
   };
+
+  if (hideChrome) return null;
 
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">

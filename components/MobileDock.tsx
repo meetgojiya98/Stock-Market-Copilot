@@ -39,10 +39,10 @@ export default function MobileDock() {
     return () => window.removeEventListener("storage", sync);
   }, [pathname]);
 
-  const hidden = useMemo(
-    () => HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix)),
-    [pathname]
-  );
+  const hidden = useMemo(() => {
+    if (pathname === "/") return true;
+    return HIDDEN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  }, [pathname]);
 
   if (hidden) return null;
 

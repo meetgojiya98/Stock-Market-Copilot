@@ -1,7 +1,13 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
+  const pathname = usePathname();
   const year = new Date().getFullYear();
+
+  if (pathname === "/") return null;
 
   return (
     <footer className="mt-12 pb-4 sm:pb-6">
