@@ -3,6 +3,7 @@ import AuthGuard from "../../components/AuthGuard";
 import { useEffect, useState } from "react";
 import AdvancedAnalyticsPanel from "../../components/AdvancedAnalyticsPanel";
 import PageShell from "../../components/PageShell";
+import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 import { fetchPortfolioData } from "../../lib/data-client";
 
 export default function AnalyticsPage() {
@@ -24,7 +25,10 @@ export default function AnalyticsPage() {
         title="Advanced Risk & Performance Analytics"
         subtitle="Analyze beta, alpha, Sharpe profile, and sector concentration for your current portfolio."
       >
-        <AdvancedAnalyticsPanel portfolio={portfolio} />
+        <div className="space-y-6">
+          <AdvancedAnalyticsPanel portfolio={portfolio} />
+          <FeatureExpansionHub module="analytics" />
+        </div>
       </PageShell>
     </AuthGuard>
   );

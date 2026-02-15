@@ -2,6 +2,7 @@
 import AuthGuard from "../../components/AuthGuard";
 import NotificationsPanel from "../../components/NotificationsPanel";
 import PageShell from "../../components/PageShell";
+import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 
 export default function NotificationsPage() {
   return (
@@ -11,7 +12,10 @@ export default function NotificationsPage() {
         title="Alert Operations Center"
         subtitle="Triage critical events, run alert-rule automation, and escalate risk with live stream + workflow controls."
       >
-        <NotificationsPanel />
+        <div className="space-y-6">
+          <NotificationsPanel />
+          <FeatureExpansionHub module="notifications" />
+        </div>
       </PageShell>
     </AuthGuard>
   );

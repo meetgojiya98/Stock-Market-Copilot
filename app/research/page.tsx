@@ -2,6 +2,7 @@
 import AuthGuard from "../../components/AuthGuard";
 import ResearchPanel from "../../components/ResearchPanel";
 import PageShell from "../../components/PageShell";
+import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 
 export default function ResearchPage() {
   return (
@@ -14,7 +15,10 @@ export default function ResearchPage() {
         bodyBackdrop="mesh"
         badges={["Streaming AI", "Verified Sources", "Execution Mapping"]}
       >
-        <ResearchPanel />
+        <div className="space-y-6">
+          <ResearchPanel />
+          <FeatureExpansionHub module="research" />
+        </div>
       </PageShell>
     </AuthGuard>
   );
