@@ -3,48 +3,48 @@
 @tailwind utilities;
 
 :root {
-  --bg-canvas: #f6f1fb;
-  --bg-soft: #fdfaff;
-  --bg-deep: #ebe2f8;
-  --ink: #1f1830;
-  --ink-muted: #72668f;
+  --bg-canvas: #fff7f2;
+  --bg-soft: #fffdfb;
+  --bg-deep: #ffe9dc;
+  --ink: #2a170f;
+  --ink-muted: #8f715c;
   --surface: rgba(255, 255, 255, 0.78);
   --surface-strong: rgba(255, 255, 255, 0.93);
   --surface-emphasis: rgba(255, 255, 255, 0.99);
-  --surface-border: rgba(39, 24, 70, 0.12);
-  --surface-border-strong: rgba(39, 24, 70, 0.24);
-  --accent: #6f4dff;
-  --accent-2: #ff4f9f;
-  --accent-3: #c6abff;
+  --surface-border: rgba(118, 74, 35, 0.14);
+  --surface-border-strong: rgba(118, 74, 35, 0.26);
+  --accent: #ff7a1a;
+  --accent-2: #ff5a2a;
+  --accent-3: #ffc27a;
   --positive: #22b784;
-  --negative: #e25e84;
+  --negative: #e35f43;
   --warning: #c39a41;
-  --shadow-sm: 0 10px 24px rgba(44, 24, 72, 0.1);
-  --shadow-lg: 0 28px 90px rgba(44, 24, 72, 0.18);
-  --shadow-xl: 0 60px 150px rgba(44, 24, 72, 0.24);
+  --shadow-sm: 0 10px 24px rgba(113, 59, 15, 0.12);
+  --shadow-lg: 0 28px 90px rgba(113, 59, 15, 0.2);
+  --shadow-xl: 0 60px 150px rgba(113, 59, 15, 0.26);
   --radius-card: 1.1rem;
 }
 
 .dark {
-  --bg-canvas: #130d22;
-  --bg-soft: #1b132d;
-  --bg-deep: #281b40;
-  --ink: #f5eeff;
-  --ink-muted: #b6a8d3;
-  --surface: rgba(31, 22, 50, 0.9);
-  --surface-strong: rgba(37, 27, 60, 0.95);
-  --surface-emphasis: rgba(45, 32, 71, 0.97);
-  --surface-border: rgba(206, 180, 240, 0.22);
-  --surface-border-strong: rgba(206, 180, 240, 0.34);
-  --accent: #8d74ff;
-  --accent-2: #ff6ab0;
-  --accent-3: #cfb7ff;
+  --bg-canvas: #25150a;
+  --bg-soft: #331d10;
+  --bg-deep: #4d2c17;
+  --ink: #fff3ea;
+  --ink-muted: #c7a891;
+  --surface: rgba(61, 37, 20, 0.9);
+  --surface-strong: rgba(72, 44, 24, 0.95);
+  --surface-emphasis: rgba(84, 53, 29, 0.97);
+  --surface-border: rgba(255, 205, 150, 0.24);
+  --surface-border-strong: rgba(255, 205, 150, 0.36);
+  --accent: #ff9a4a;
+  --accent-2: #ff7a4f;
+  --accent-3: #ffd3a6;
   --positive: #75dfb5;
-  --negative: #ff90b7;
+  --negative: #ff9a82;
   --warning: #e3c068;
-  --shadow-sm: 0 8px 20px rgba(12, 8, 20, 0.44);
-  --shadow-lg: 0 24px 74px rgba(12, 8, 20, 0.6);
-  --shadow-xl: 0 52px 140px rgba(12, 8, 20, 0.7);
+  --shadow-sm: 0 8px 20px rgba(18, 10, 4, 0.46);
+  --shadow-lg: 0 24px 74px rgba(18, 10, 4, 0.62);
+  --shadow-xl: 0 52px 140px rgba(18, 10, 4, 0.72);
 }
 
 * {
@@ -74,9 +74,9 @@ body {
 
 .dark body {
   background:
-    radial-gradient(circle at 14% -12%, rgba(141, 116, 255, 0.2), transparent 40%),
-    radial-gradient(circle at 86% -10%, rgba(255, 106, 176, 0.16), transparent 34%),
-    radial-gradient(circle at 50% 108%, rgba(207, 183, 255, 0.12), transparent 46%),
+    radial-gradient(circle at 14% -12%, rgba(255, 154, 74, 0.22), transparent 40%),
+    radial-gradient(circle at 86% -10%, rgba(255, 122, 79, 0.18), transparent 34%),
+    radial-gradient(circle at 50% 108%, rgba(255, 211, 166, 0.14), transparent 46%),
     linear-gradient(150deg, var(--bg-soft) 0%, var(--bg-canvas) 54%, var(--bg-deep) 100%);
 }
 
@@ -147,7 +147,7 @@ button:active {
 }
 
 ::selection {
-  background: rgba(255, 106, 176, 0.24);
+  background: rgba(255, 122, 79, 0.24);
   color: var(--ink);
 }
 
@@ -1141,7 +1141,7 @@ textarea::placeholder {
   background:
     radial-gradient(circle at 16% 10%, color-mix(in srgb, var(--accent-2) 24%, transparent), transparent 46%),
     radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--accent-3) 22%, transparent), transparent 42%),
-    linear-gradient(136deg, #2a1b4f 0%, #41256d 46%, #5a2d7f 100%);
+    linear-gradient(136deg, #5a341c 0%, #855530 46%, #ad7d47 100%);
   box-shadow: var(--shadow-lg);
   min-height: 620px;
 }
@@ -1185,7 +1185,7 @@ textarea::placeholder {
 
 .auth-title {
   margin: 1.05rem 0 0;
-  color: #fff5ff;
+  color: #fff7f0;
   font-size: clamp(2rem, 3.1vw, 2.8rem);
   line-height: 1.04;
   letter-spacing: -0.03em;
@@ -1359,9 +1359,9 @@ textarea::placeholder {
 
 .dark .auth-showcase {
   background:
-    radial-gradient(circle at 16% 10%, rgba(141, 116, 255, 0.34), transparent 46%),
-    radial-gradient(circle at 84% 14%, rgba(255, 106, 176, 0.24), transparent 42%),
-    linear-gradient(136deg, #140d25 0%, #22163a 48%, #311a4a 100%);
+    radial-gradient(circle at 16% 10%, rgba(255, 154, 74, 0.34), transparent 46%),
+    radial-gradient(circle at 84% 14%, rgba(255, 122, 79, 0.24), transparent 42%),
+    linear-gradient(136deg, #28170a 0%, #3f2312 48%, #653b20 100%);
 }
 
 .dark .auth-highlight-card {
@@ -1408,9 +1408,9 @@ textarea::placeholder {
   overflow: hidden;
   background:
     radial-gradient(circle at 18% 12%, rgba(132, 101, 255, 0.3), transparent 45%),
-    radial-gradient(circle at 84% 10%, rgba(255, 106, 176, 0.25), transparent 42%),
-    linear-gradient(126deg, #241746 0%, #3a2065 42%, #6a2f7b 100%);
-  color: #fff6ff;
+    radial-gradient(circle at 84% 10%, rgba(255, 122, 79, 0.25), transparent 42%),
+    linear-gradient(126deg, #442614 0%, #754827 42%, #b87a45 100%);
+  color: #fff8f2;
 }
 
 .landing-dynamic-field {
@@ -1488,8 +1488,8 @@ textarea::placeholder {
 }
 
 .landing-signup-link {
-  background: #fff3ff;
-  color: #3d215f;
+  background: #fff5ec;
+  color: #7f4f2d;
 }
 
 .landing-hero-grid {
@@ -1557,13 +1557,13 @@ textarea::placeholder {
 }
 
 .landing-primary-cta {
-  background: #fff3ff;
-  color: #3d215f;
+  background: #fff5ec;
+  color: #7f4f2d;
 }
 
 .landing-secondary-cta {
   border: 1px solid rgba(250, 216, 255, 0.46);
-  color: #fff6ff;
+  color: #fff8f2;
   background: rgba(199, 138, 239, 0.2);
 }
 
@@ -1650,28 +1650,28 @@ textarea::placeholder {
 .landing-market-candle-2 {
   left: 33%;
   height: 19%;
-  background: linear-gradient(180deg, #d9b7ff, #8d5de8);
+  background: linear-gradient(180deg, #ffd0a0, #ea9540);
   animation-delay: -1.4s;
 }
 
 .landing-market-candle-3 {
   left: 46%;
   height: 34%;
-  background: linear-gradient(180deg, #ffc0de, #ff5da8);
+  background: linear-gradient(180deg, #ffd1aa, #ff6b3c);
   animation-delay: -3.6s;
 }
 
 .landing-market-candle-4 {
   left: 59%;
   height: 23%;
-  background: linear-gradient(180deg, #bca4ff, #6f4dff);
+  background: linear-gradient(180deg, #ffbd79, #ff7a1a);
   animation-delay: -2s;
 }
 
 .landing-market-candle-5 {
   left: 72%;
   height: 39%;
-  background: linear-gradient(180deg, #f2b8ff, #b963de);
+  background: linear-gradient(180deg, #ffd09b, #e08a52);
   animation-delay: -4.1s;
 }
 
@@ -1708,7 +1708,7 @@ textarea::placeholder {
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: #ffe0f8;
+  background: #ffe0c7;
   box-shadow: 0 0 18px rgba(240, 178, 255, 0.8);
 }
 
@@ -1740,7 +1740,7 @@ textarea::placeholder {
   font-size: clamp(2.75rem, 10.5vw, 8.3rem);
   line-height: 0.92;
   letter-spacing: -0.06em;
-  color: #4b2b78;
+  color: #98693b;
   font-weight: 800;
   max-width: 980px;
 }
@@ -1774,20 +1774,20 @@ textarea::placeholder {
   border-radius: 0.72rem;
   display: grid;
   place-items: center;
-  background: rgba(255, 106, 176, 0.14);
-  color: #5b36c4;
+  background: rgba(255, 122, 79, 0.14);
+  color: #d4862f;
 }
 
 .landing-tool-card h3 {
   margin: 0.95rem 0 0;
   font-size: 1.08rem;
-  color: #2d1d46;
+  color: #60381f;
   letter-spacing: -0.02em;
 }
 
 .landing-tool-card p {
   margin: 0.5rem 0 0;
-  color: #6b5b86;
+  color: #9f7a60;
   line-height: 1.55;
   font-size: 0.93rem;
 }
@@ -1796,8 +1796,8 @@ textarea::placeholder {
   display: inline-flex;
   margin-top: 0.9rem;
   border-radius: 999px;
-  background: #5c3ac7;
-  color: #fff3ff;
+  background: #d97f26;
+  color: #fff5ec;
   padding: 0.48rem 0.86rem;
   font-size: 0.81rem;
   font-weight: 700;
@@ -1806,8 +1806,8 @@ textarea::placeholder {
 .landing-final-cta {
   background:
     radial-gradient(circle at 50% -40%, rgba(255, 212, 243, 0.25), transparent 62%),
-    linear-gradient(160deg, #2a184b 0%, #3a2162 56%, #4d286f 100%);
-  color: #fff5ff;
+    linear-gradient(160deg, #56311a 0%, #7a4c2a 56%, #9c6f3f 100%);
+  color: #fff7f0;
   padding: clamp(3.1rem, 8vw, 6rem) 0 clamp(6rem, 10vw, 8rem);
 }
 
@@ -1845,8 +1845,8 @@ textarea::placeholder {
 }
 
 .landing-primary-cta-light {
-  background: #fff3ff;
-  color: #3d215f;
+  background: #fff5ec;
+  color: #7f4f2d;
 }
 
 .landing-secondary-cta-light {
@@ -1873,7 +1873,7 @@ textarea::placeholder {
   align-items: center;
   gap: 0.4rem;
   border-radius: 999px;
-  background: #4a2a85;
+  background: #946338;
   border: 1px solid rgba(245, 194, 255, 0.38);
   padding: 0.34rem;
   box-shadow: 0 20px 44px rgba(24, 12, 39, 0.34);
@@ -1898,7 +1898,7 @@ textarea::placeholder {
   z-index: 65;
   border-radius: 999px;
   background: rgba(45, 25, 74, 0.64);
-  color: #f9e8ff;
+  color: #fff0e0;
   border: 1px solid rgba(227, 177, 248, 0.3);
   backdrop-filter: blur(12px);
   font-size: 0.9rem;
@@ -1907,24 +1907,24 @@ textarea::placeholder {
 }
 
 .dark .landing-root {
-  background: #100a1d;
-  color: #f4eefe;
+  background: #1f1209;
+  color: #fff2e7;
 }
 
 .dark .landing-hero {
   background:
-    radial-gradient(circle at 20% 12%, rgba(141, 116, 255, 0.32), transparent 44%),
-    radial-gradient(circle at 84% 10%, rgba(255, 106, 176, 0.26), transparent 42%),
-    linear-gradient(128deg, #170f2d 0%, #261644 42%, #341b50 100%);
+    radial-gradient(circle at 20% 12%, rgba(255, 154, 74, 0.32), transparent 44%),
+    radial-gradient(circle at 84% 10%, rgba(255, 122, 79, 0.26), transparent 42%),
+    linear-gradient(128deg, #2f1b0c 0%, #492814 42%, #6a3f22 100%);
 }
 
 .dark .landing-tool-strip,
 .dark .landing-statement-strip {
-  background: #100a1d;
+  background: #1f1209;
 }
 
 .dark .landing-statement {
-  color: #b999ff;
+  color: #ffbf82;
 }
 
 .dark .landing-tool-card {
@@ -1934,26 +1934,26 @@ textarea::placeholder {
 }
 
 .dark .landing-tool-card h3 {
-  color: #f6eefe;
+  color: #fff3e8;
 }
 
 .dark .landing-tool-card p {
-  color: #c8b7e1;
+  color: #d7b69c;
 }
 
 .dark .landing-tool-icon {
-  background: rgba(255, 106, 176, 0.2);
-  color: #ffb8dd;
+  background: rgba(255, 122, 79, 0.2);
+  color: #ffc79a;
 }
 
 .dark .landing-tool-link {
-  background: #7a58e0;
+  background: #e18d39;
 }
 
 .dark .landing-final-cta {
   background:
     radial-gradient(circle at 50% -30%, rgba(255, 193, 231, 0.16), transparent 62%),
-    linear-gradient(160deg, #160f29 0%, #120c22 56%, #0d0818 100%);
+    linear-gradient(160deg, #2c190b 0%, #23140a 56%, #1a0f08 100%);
 }
 
 .dark .landing-market-grid {
@@ -1961,7 +1961,7 @@ textarea::placeholder {
 }
 
 .dark .landing-floating-nav {
-  background: #2a1748;
+  background: #522f18;
 }
 
 .dark .landing-support-link {
