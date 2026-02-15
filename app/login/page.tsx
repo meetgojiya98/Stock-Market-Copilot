@@ -110,13 +110,13 @@ export default function LoginPage() {
 
             <form onSubmit={handleLogin} className="auth-form-stack">
               <label className="auth-input-label">
-                <span>Email</span>
+                <span>Email or username</span>
                 <input
-                  type="email"
+                  type="text"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   className="auth-input"
-                  placeholder="you@domain.com"
+                  placeholder="you@domain.com or username"
                   required
                 />
               </label>

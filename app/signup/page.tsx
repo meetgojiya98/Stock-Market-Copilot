@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import BrandLogo from "../../components/BrandLogo";
 import DynamicBackdrop from "../../components/DynamicBackdrop";
-import { isApiConfigured, registerUser } from "../../lib/auth-client";
+import { isApiConfigured, loginUser, registerUser } from "../../lib/auth-client";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -42,13 +42,25 @@ export default function SignupPage() {
       const result = await registerUser({ email, password, username });
 
       if (result.ok) {
-        if (result.mode === "local") {
-          setModeNotice("Account created and signed in via Local Mode.");
+        const existingToken =
+          typeof window !== "undefined" ? localStorage.getItem("access_token") : null;
+
+        if (existingToken) {
           router.push("/portfolio");
           return;
         }
 
-        router.push(localStorage.getItem("access_token") ? "/portfolio" : "/login");
+        const loginResult = await loginUser({ email, password });
+        if (loginResult.ok) {
+          if (loginResult.mode === "local") {
+            setModeNotice("Account created and signed in via Local Mode.");
+          }
+          router.push("/portfolio");
+          return;
+        }
+
+        setModeNotice("Account created. Please sign in to continue.");
+        router.push("/login");
         return;
       }
 

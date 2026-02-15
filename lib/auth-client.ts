@@ -27,7 +27,7 @@ type LocalAuthUser = {
 };
 
 type RemoteResult =
-  | { status: "success"; token?: string }
+  | { status: "success"; token?: string; email?: string; detail?: string }
   | { status: "error"; detail: string }
   | { status: "unavailable" };
 
@@ -38,6 +38,84 @@ const AUTH_MODE_KEY = "smc_auth_mode_v1";
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+function normalizeIdentifier(identifier: string) {
+  return identifier.trim();
+}
+
+function findLocalUserByIdentifier(identifier: string): LocalAuthUser | undefined {
+  const normalizedIdentifier = normalizeIdentifier(identifier);
+  if (!normalizedIdentifier) return undefined;
+
+  const emailLookup = normalizeEmail(normalizedIdentifier);
+  const usernameLookup = normalizedIdentifier.toLowerCase();
+
+  return readUsers().find(
+    (user) => user.email === emailLookup || user.username.trim().toLowerCase() === usernameLookup
+  );
+}
+
+function getSessionEmail(identifier: string, remoteEmail?: string) {
+  if (remoteEmail) return normalizeEmail(remoteEmail);
+
+  const matchedLocal = findLocalUserByIdentifier(identifier);
+  if (matchedLocal?.email) return matchedLocal.email;
+
+  if (identifier.includes("@")) return normalizeEmail(identifier);
+  return `${normalizeIdentifier(identifier).toLowerCase()}@local.zentrade`;
+}
+
+function uniqueNonEmpty(values: Array<string | undefined>) {
+  const seen = new Set<string>();
+  const next: string[] = [];
+
+  for (const value of values) {
+    if (!value) continue;
+    const normalized = value.trim();
+    if (!normalized) continue;
+    const key = normalized.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    next.push(normalized);
+  }
+
+  return next;
+}
+
+async function safeJson(response: Response): Promise<Record<string, unknown> | undefined> {
+  try {
+    const data = (await response.json()) as Record<string, unknown>;
+    if (data && typeof data === "object") return data;
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function readRemoteDetail(response: Response, fallback: string) {
+  const data = await safeJson(response);
+  if (typeof data?.detail === "string" && data.detail.trim()) return data.detail;
+  if (typeof data?.message === "string" && data.message.trim()) return data.message;
+  if (typeof data?.error === "string" && data.error.trim()) return data.error;
+  return fallback;
+}
+
+function extractToken(data: Record<string, unknown> | undefined) {
+  if (!data) return undefined;
+  const value =
+    (typeof data.access_token === "string" && data.access_token) ||
+    (typeof data.token === "string" && data.token) ||
+    (typeof data.jwt === "string" && data.jwt);
+  return value || undefined;
+}
+
+function extractEmail(data: Record<string, unknown> | undefined) {
+  if (!data) return undefined;
+  if (typeof data.email === "string" && data.email.includes("@")) {
+    return normalizeEmail(data.email);
+  }
+  return undefined;
 }
 
 function readUsers(): LocalAuthUser[] {
@@ -109,61 +187,147 @@ function storeSession(token: string, mode: AuthMode, email: string) {
 async function attemptRemoteRegister(input: RegisterInput): Promise<RemoteResult> {
   if (!API_BASE) return { status: "unavailable" };
 
-  try {
-    const response = await fetch(`${API_BASE}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    });
+  const attempts = [`${API_BASE}/auth/register`, `${API_BASE}/signup`];
+  let sawUnavailable = false;
+  let lastDetail: string | undefined;
 
-    if (response.ok) {
-      return { status: "success" };
+  for (const endpoint of attempts) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      });
+
+      if (response.ok) {
+        const data = await safeJson(response);
+        const token = extractToken(data);
+        const email = extractEmail(data) || input.email;
+        return { status: "success", token, email };
+      }
+
+      if (response.status === 404 || response.status === 405 || response.status === 422) {
+        continue;
+      }
+
+      lastDetail = await readRemoteDetail(response, "Registration failed.");
+      return { status: "error", detail: lastDetail };
+    } catch {
+      sawUnavailable = true;
     }
-
-    const detail =
-      (await response
-        .json()
-        .then((data) => data?.detail as string | undefined)
-        .catch(() => undefined)) || "Registration failed.";
-
-    return { status: "error", detail };
-  } catch {
-    return { status: "unavailable" };
   }
+
+  if (sawUnavailable) return { status: "unavailable" };
+  return { status: "error", detail: lastDetail || "Registration endpoint unavailable." };
 }
 
 async function attemptRemoteLogin(input: LoginInput): Promise<RemoteResult> {
   if (!API_BASE) return { status: "unavailable" };
 
-  try {
-    const response = await fetch(`${API_BASE}/auth/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        username: input.email,
-        password: input.password,
-      }),
-    });
+  const identifier = normalizeIdentifier(input.email);
+  const localMatch = findLocalUserByIdentifier(identifier);
+  const candidates = uniqueNonEmpty([
+    localMatch?.email,
+    identifier,
+    identifier.includes("@") ? normalizeEmail(identifier) : undefined,
+  ]);
 
-    if (response.ok) {
-      const data = await response.json();
-      const token = String(data?.access_token ?? "");
-      if (token) {
-        return { status: "success", token };
-      }
-      return { status: "error", detail: "Authentication token missing." };
-    }
-
-    const detail =
-      (await response
-        .json()
-        .then((data) => data?.detail as string | undefined)
-        .catch(() => undefined)) || "Invalid credentials.";
-
-    return { status: "error", detail };
-  } catch {
-    return { status: "unavailable" };
+  if (!candidates.length) {
+    return { status: "error", detail: "Please enter your email or username." };
   }
+
+  let sawUnavailable = false;
+  let lastDetail = "Invalid credentials.";
+
+  for (const candidate of candidates) {
+    const attempts = [
+      {
+        endpoint: `${API_BASE}/auth/login`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            username: candidate,
+            password: input.password,
+          }),
+        } satisfies RequestInit,
+      },
+      {
+        endpoint: `${API_BASE}/auth/login`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: candidate,
+            username: candidate,
+            password: input.password,
+          }),
+        } satisfies RequestInit,
+      },
+      {
+        endpoint: `${API_BASE}/login`,
+        init: {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: candidate,
+            username: candidate,
+            password: input.password,
+          }),
+        } satisfies RequestInit,
+      },
+    ];
+
+    for (const attempt of attempts) {
+      try {
+        const response = await fetch(attempt.endpoint, attempt.init);
+
+        if (response.ok) {
+          const data = await safeJson(response);
+          const token = extractToken(data);
+          const email = extractEmail(data) || (candidate.includes("@") ? normalizeEmail(candidate) : undefined);
+
+          if (token) {
+            return { status: "success", token, email };
+          }
+
+          const statusValue = typeof data?.status === "string" ? data.status.toLowerCase() : "";
+          const success =
+            data?.success === true ||
+            data?.ok === true ||
+            data?.authenticated === true ||
+            statusValue === "success" ||
+            statusValue === "ok" ||
+            statusValue === "authenticated";
+
+          if (success) {
+            return {
+              status: "success",
+              email,
+              detail: "Signed in without remote token. Local session enabled.",
+            };
+          }
+
+          return {
+            status: "success",
+            email,
+            detail: "Signed in. Local session enabled.",
+          };
+        }
+
+        if (response.status === 404 || response.status === 405 || response.status === 422) {
+          continue;
+        }
+
+        lastDetail = await readRemoteDetail(response, "Invalid credentials.");
+      } catch {
+        sawUnavailable = true;
+      }
+    }
+  }
+
+  if (sawUnavailable) return { status: "unavailable" };
+  return { status: "error", detail: lastDetail };
 }
 
 function registerLocal(input: RegisterInput): AuthOutcome {
@@ -189,9 +353,13 @@ function registerLocal(input: RegisterInput): AuthOutcome {
 }
 
 function loginLocal(input: LoginInput): AuthOutcome {
-  const email = normalizeEmail(input.email);
+  const identifier = normalizeIdentifier(input.email);
   const users = readUsers();
-  const found = users.find((user) => user.email === email);
+  const found = users.find(
+    (user) =>
+      user.email === normalizeEmail(identifier) ||
+      user.username.trim().toLowerCase() === identifier.toLowerCase()
+  );
 
   if (!found) {
     return { ok: false, mode: "local", detail: "Account not found. Create an account first." };
@@ -201,7 +369,7 @@ function loginLocal(input: LoginInput): AuthOutcome {
     return { ok: false, mode: "local", detail: "Invalid credentials." };
   }
 
-  storeSession(createLocalToken(email), "local", email);
+  storeSession(createLocalToken(found.email), "local", found.email);
   return { ok: true, mode: "local" };
 }
 
@@ -216,6 +384,9 @@ export async function registerUser(input: RegisterInput): Promise<AuthOutcome> {
 
   if (remote.status === "success") {
     upsertLocalUser(normalizedInput);
+    if (remote.token) {
+      storeSession(remote.token, "remote", remote.email || normalizedInput.email);
+    }
     return { ok: true, mode: "remote" };
   }
 
@@ -239,19 +410,27 @@ export async function registerUser(input: RegisterInput): Promise<AuthOutcome> {
 
 export async function loginUser(input: LoginInput): Promise<AuthOutcome> {
   const normalizedInput: LoginInput = {
-    email: normalizeEmail(input.email),
+    email: normalizeIdentifier(input.email),
     password: input.password,
   };
 
   const remote = await attemptRemoteLogin(normalizedInput);
 
-  if (remote.status === "success" && remote.token) {
+  if (remote.status === "success") {
+    const sessionEmail = getSessionEmail(normalizedInput.email, remote.email);
     upsertLocalUser({
-      email: normalizedInput.email,
+      email: sessionEmail,
       password: normalizedInput.password,
+      username: normalizedInput.email.includes("@") ? undefined : normalizedInput.email,
     });
-    storeSession(remote.token, "remote", normalizedInput.email);
-    return { ok: true, mode: "remote" };
+
+    if (remote.token) {
+      storeSession(remote.token, "remote", sessionEmail);
+      return { ok: true, mode: "remote" };
+    }
+
+    storeSession(createLocalToken(sessionEmail), "local", sessionEmail);
+    return { ok: true, mode: "local", detail: remote.detail };
   }
 
   if (remote.status === "error") {

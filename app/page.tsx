@@ -71,8 +71,6 @@ export default function LandingPage() {
           <span className="landing-orb landing-orb-a" />
           <span className="landing-orb landing-orb-b" />
           <span className="landing-orb landing-orb-c" />
-          <span className="landing-ribbon landing-ribbon-a" />
-          <span className="landing-ribbon landing-ribbon-b" />
         </motion.div>
 
         <div className="landing-shell">
