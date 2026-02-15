@@ -16,9 +16,9 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <BrandLogo withWordmark showTagline size={28} className="opacity-95" />
             <span className="hidden sm:inline footer-divider" />
-            <span className="hidden sm:inline muted">Ideas, analysis, and execution in one calm workspace</span>
+            <span className="hidden sm:inline muted">Research, risk, and execution in one focused studio</span>
           </div>
-          <span className="muted text-xs sm:text-sm">{year} Zentrade · Studio Edition</span>
+          <span className="muted text-xs sm:text-sm">{year} Zentrade · Operator Studio</span>
         </div>
       </div>
     </footer>

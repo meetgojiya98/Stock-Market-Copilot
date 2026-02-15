@@ -12,7 +12,7 @@ type DockItem = {
 };
 
 const ITEMS: DockItem[] = [
-  { label: "Home", href: "/", icon: <Gauge size={16} /> },
+  { label: "Command", href: "/portfolio", protected: true, icon: <Gauge size={16} /> },
   {
     label: "Portfolio",
     href: "/portfolio",

@@ -159,7 +159,7 @@ export default function WorkflowGuide() {
             setHidden(false);
             localStorage.removeItem(GUIDE_KEY);
           }}
-          className="text-xs rounded-full border border-[var(--surface-border)] bg-white/75 dark:bg-black/25 px-3 py-1.5 inline-flex items-center gap-1"
+          className="text-xs rounded-full control-surface px-3 py-1.5 inline-flex items-center gap-1"
         >
           <Sparkles size={12} />
           Show Workflow Guide
@@ -169,7 +169,7 @@ export default function WorkflowGuide() {
   }
 
   return (
-    <div className="mt-3 rounded-xl border border-[var(--surface-border)] bg-white/75 dark:bg-black/20 p-3">
+    <div className="mt-3 workflow-guide-shell p-3">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="inline-flex items-center gap-2">
           <Compass size={14} />
@@ -182,14 +182,14 @@ export default function WorkflowGuide() {
             setHidden(true);
             localStorage.setItem(GUIDE_KEY, "1");
           }}
-          className="text-xs inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] px-2 py-0.5 bg-white/70 dark:bg-black/20"
+          className="text-xs inline-flex items-center gap-1 rounded-full control-surface px-2 py-0.5"
         >
           <X size={11} />
           Hide
         </button>
       </div>
 
-      <div className="mt-2 rounded-lg border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2.5 py-2">
+      <div className="mt-2 rounded-lg workflow-progress-shell px-2.5 py-2">
         <div className="flex items-center justify-between gap-2 text-[11px]">
           <span className="muted">Workflow completion</span>
           <span className="font-semibold">
@@ -205,7 +205,7 @@ export default function WorkflowGuide() {
         {nextStep && (
           <Link
             href={nextStep.href}
-            className="mt-2 inline-flex items-center gap-1 rounded-full border border-[var(--surface-border)] bg-white/70 dark:bg-black/25 px-2.5 py-1 text-[11px] font-semibold"
+            className="mt-2 inline-flex items-center gap-1 rounded-full control-surface px-2.5 py-1 text-[11px] font-semibold"
           >
             Continue: {nextStep.label}
             <ArrowRight size={11} />
@@ -218,10 +218,10 @@ export default function WorkflowGuide() {
           <Link
             key={item.href}
             href={item.href}
-            className={`text-[11px] rounded-full px-2.5 py-1 border ${
+            className={`text-[11px] rounded-full px-2.5 py-1 border transition ${
               index === currentStep
-                ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)]"
-                : "border-[var(--surface-border)] bg-white/70 dark:bg-black/20"
+                ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_15%,transparent)] text-[var(--ink)]"
+                : "border-[var(--surface-border)] bg-[color-mix(in_srgb,var(--surface-emphasis)_88%,transparent)]"
             }`}
           >
             {index + 1}. {item.label}
@@ -233,7 +233,7 @@ export default function WorkflowGuide() {
         <div className="mt-3 grid xl:grid-cols-[1.2fr_1fr] gap-3">
           <ol className="text-xs space-y-1">
             {pageGuide.steps.map((step) => (
-              <li key={step} className="rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2.5 py-1.5">
+              <li key={step} className="rounded-lg control-surface px-2.5 py-1.5">
                 {step}
               </li>
             ))}
@@ -243,7 +243,7 @@ export default function WorkflowGuide() {
               <Link
                 key={`${item.href}-${item.label}`}
                 href={item.href}
-                className="block rounded-lg control-surface bg-white/70 dark:bg-black/20 px-2.5 py-1.5"
+                className="block rounded-lg control-surface px-2.5 py-1.5"
               >
                 <div className="text-xs font-semibold">{item.label}</div>
                 <div className="text-[11px] muted">{item.description}</div>

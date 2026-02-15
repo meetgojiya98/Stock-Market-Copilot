@@ -1,62 +1,63 @@
 <svg width="720" height="720" viewBox="0 0 720 720" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="zt-bg" x1="78" y1="62" x2="642" y2="662" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#130D22"/>
-      <stop offset="0.56" stop-color="#6F4DFF"/>
-      <stop offset="1" stop-color="#FF4F9F"/>
+    <linearGradient id="zt-bg" x1="72" y1="64" x2="640" y2="668" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#08142C"/>
+      <stop offset="0.55" stop-color="#174895"/>
+      <stop offset="1" stop-color="#FF8A1F"/>
     </linearGradient>
-    <radialGradient id="zt-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(368 360) rotate(90) scale(250)">
-      <stop stop-color="#F5D6FF" stop-opacity="0.48"/>
-      <stop offset="1" stop-color="#F5D6FF" stop-opacity="0"/>
+    <radialGradient id="zt-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(360 358) rotate(90) scale(262)">
+      <stop stop-color="#A8DCFF" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#A8DCFF" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="zt-bar-up" x1="240" y1="282" x2="286" y2="510" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#A6F1CF"/>
-      <stop offset="1" stop-color="#2FA87B"/>
+    <linearGradient id="zt-z" x1="186" y1="196" x2="530" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7FCFF"/>
+      <stop offset="1" stop-color="#FFE9D0"/>
     </linearGradient>
-    <linearGradient id="zt-bar-mid" x1="338" y1="236" x2="384" y2="506" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#DCC5FF"/>
-      <stop offset="1" stop-color="#8D5DE8"/>
+    <linearGradient id="zt-candle-up" x1="248" y1="250" x2="248" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DE9CE"/>
+      <stop offset="1" stop-color="#2EA76D"/>
     </linearGradient>
-    <linearGradient id="zt-bar-hot" x1="434" y1="202" x2="482" y2="502" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFC2DE"/>
-      <stop offset="1" stop-color="#FF5DA8"/>
+    <linearGradient id="zt-candle-mid" x1="358" y1="220" x2="358" y2="472" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A8DDFF"/>
+      <stop offset="1" stop-color="#3F7DE1"/>
     </linearGradient>
-    <linearGradient id="zt-z" x1="190" y1="200" x2="536" y2="530" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFF5FF"/>
-      <stop offset="1" stop-color="#FFE2F6"/>
+    <linearGradient id="zt-candle-hot" x1="468" y1="198" x2="468" y2="478" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFD0A6"/>
+      <stop offset="1" stop-color="#FF8A1F"/>
     </linearGradient>
-    <filter id="zt-shadow" x="128" y="136" width="472" height="476" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-      <feGaussianBlur stdDeviation="28"/>
-    </filter>
   </defs>
 
   <rect x="30" y="30" width="660" height="660" rx="168" fill="url(#zt-bg)"/>
-  <circle cx="366" cy="356" r="244" fill="url(#zt-glow)"/>
+  <circle cx="360" cy="360" r="252" fill="url(#zt-glow)"/>
 
-  <g filter="url(#zt-shadow)" opacity="0.45">
-    <path d="M202 214H522L236 506H518" stroke="#FFD9F3" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <g opacity="0.2">
+    <path d="M128 182H592" stroke="#DDEBFF" stroke-width="2"/>
+    <path d="M128 280H592" stroke="#DDEBFF" stroke-width="2"/>
+    <path d="M128 378H592" stroke="#DDEBFF" stroke-width="2"/>
+    <path d="M128 476H592" stroke="#DDEBFF" stroke-width="2"/>
+    <path d="M128 574H592" stroke="#DDEBFF" stroke-width="2"/>
   </g>
 
-  <g opacity="0.96">
-    <rect x="242" y="322" width="44" height="132" rx="15" fill="url(#zt-bar-up)"/>
-    <path d="M264 290V488" stroke="#EFFFF8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M206 214H520L244 506H514" stroke="url(#zt-z)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
 
-    <rect x="338" y="274" width="44" height="174" rx="15" fill="url(#zt-bar-mid)"/>
-    <path d="M360 240V482" stroke="#F7EEFF" stroke-width="7" stroke-linecap="round"/>
+  <g>
+    <rect x="224" y="320" width="48" height="138" rx="14" fill="url(#zt-candle-up)"/>
+    <path d="M248 286V484" stroke="#E8FFF6" stroke-width="7" stroke-linecap="round"/>
 
-    <rect x="434" y="230" width="44" height="212" rx="15" fill="url(#zt-bar-hot)"/>
-    <path d="M456 202V468" stroke="#FFE9F6" stroke-width="7" stroke-linecap="round"/>
+    <rect x="334" y="274" width="48" height="184" rx="14" fill="url(#zt-candle-mid)"/>
+    <path d="M358 236V486" stroke="#EAF4FF" stroke-width="7" stroke-linecap="round"/>
+
+    <rect x="444" y="236" width="48" height="220" rx="14" fill="url(#zt-candle-hot)"/>
+    <path d="M468 204V486" stroke="#FFF0DD" stroke-width="7" stroke-linecap="round"/>
   </g>
-
-  <path d="M202 214H522L236 506H518" stroke="url(#zt-z)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
 
   <path
-    d="M184 454L276 382L352 404L452 300L542 336"
-    stroke="#FFE8F8"
-    stroke-width="16"
+    d="M182 448L274 390L350 410L452 308L538 334"
+    stroke="#DFF3FF"
+    stroke-width="15"
     stroke-linecap="round"
     stroke-linejoin="round"
-    opacity="0.95"
+    opacity="0.96"
   />
-  <path d="M532 336L560 336L548 310" fill="none" stroke="#FFE8F8" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M526 334L560 334L546 306" fill="none" stroke="#DFF3FF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

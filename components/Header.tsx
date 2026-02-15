@@ -31,7 +31,7 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { name: "Home", href: "/", icon: <Gauge size={16} /> },
+  { name: "Command", href: "/portfolio", icon: <Gauge size={16} />, protected: true },
   {
     name: "Portfolio",
     href: "/portfolio",
@@ -98,6 +98,7 @@ export default function Header() {
   }, []);
 
   const marketMeta = useMemo(() => getMarketMeta(), [clockTick]);
+  const homeHref = loggedIn ? "/portfolio" : "/login";
 
   const navigate = (href: string, protectedRoute?: boolean) => {
     if (protectedRoute && !localStorage.getItem("access_token")) {
@@ -124,7 +125,7 @@ export default function Header() {
         <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.24]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-            <button className="topbar-brand" onClick={() => navigate("/")}>
+            <button className="topbar-brand" onClick={() => navigate(homeHref)}>
               <BrandLogo size={36} withWordmark showTagline={false} />
             </button>
             <div className="hidden xl:flex items-center gap-2">
@@ -132,6 +133,7 @@ export default function Header() {
                 {marketMeta.isOpen && <span className="pulse-dot" />}
                 {marketMeta.isOpen ? "Session Live" : "After Hours"}
               </span>
+              <span className="topbar-chip">{marketMeta.time} ET</span>
             </div>
           </div>
 
@@ -154,7 +156,7 @@ export default function Header() {
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => navigate("/research", true)} className="topbar-ai hidden sm:inline-flex">
               <Sparkles size={14} />
-              <span className="hidden xl:inline">Research AI</span>
+              <span className="hidden xl:inline">Open Research</span>
             </button>
             {showThemeControl && (
               <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />
