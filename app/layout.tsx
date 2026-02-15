@@ -22,13 +22,44 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f8cff",
+  themeColor: "#e83261",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <Script
+          id="theme-mode-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function () {
+                try {
+                  var MODE_KEY = "smc_theme_mode_v1";
+                  var LEGACY_KEY = "theme";
+                  var mode = localStorage.getItem(MODE_KEY);
+                  if (mode !== "light" && mode !== "dark" && mode !== "system") {
+                    var legacy = localStorage.getItem(LEGACY_KEY);
+                    mode = legacy === "light" || legacy === "dark" ? legacy : "system";
+                  }
+
+                  var resolved =
+                    mode === "system"
+                      ? window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+                        ? "dark"
+                        : "light"
+                      : mode;
+
+                  document.documentElement.classList.toggle("dark", resolved === "dark");
+                  document.documentElement.dataset.themeMode = mode;
+                } catch (error) {
+                  // Best effort only.
+                }
+              })();
+            `,
+          }}
+        />
         <Script
           id="sw-hard-reset"
           strategy="beforeInteractive"

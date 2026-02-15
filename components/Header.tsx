@@ -11,17 +11,17 @@ import {
   LogIn,
   LogOut,
   Menu,
-  MoonStar,
   Target,
   ScanSearch,
   Sparkles,
-  SunMedium,
   UserRound,
   X,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import DynamicBackdrop from "./DynamicBackdrop";
+import ThemeModeSwitch from "./ThemeModeSwitch";
 import { clearAuthSession } from "../lib/auth-client";
+import { useThemeMode } from "../lib/use-theme-mode";
 
 type NavLink = {
   name: string;
@@ -72,26 +72,10 @@ export default function Header() {
   const pathname = usePathname();
   const hideChrome = pathname === "/";
 
-  const [dark, setDark] = useState(false);
+  const { mode, resolvedMode, setThemeMode } = useThemeMode();
   const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [clockTick, setClockTick] = useState(0);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme) {
-      setDark(savedTheme === "dark");
-      return;
-    }
-
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setDark(prefersDark);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("theme", dark ? "dark" : "light");
-  }, [dark]);
 
   useEffect(() => {
     const checkLogin = () => {
@@ -133,7 +117,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">
       <div className="topbar-shell relative overflow-hidden">
-        <DynamicBackdrop variant={dark ? "mesh" : "aurora"} className="opacity-[0.5]" />
+        <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.5]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button className="topbar-brand" onClick={() => navigate("/")}>
@@ -169,9 +153,7 @@ export default function Header() {
               <Sparkles size={14} />
               <span className="hidden xl:inline">Research AI</span>
             </button>
-            <button aria-label="Toggle theme" className="topbar-icon-btn" onClick={() => setDark((value) => !value)}>
-              {dark ? <SunMedium size={18} /> : <MoonStar size={18} />}
-            </button>
+            <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />
 
             {!loggedIn ? (
               <button className="topbar-action hidden sm:inline-flex" onClick={() => navigate("/login")}>
@@ -190,6 +172,8 @@ export default function Header() {
                 </button>
               </>
             )}
+
+            <ThemeModeSwitch className="md:hidden" mode={mode} onModeChange={setThemeMode} />
 
             <button
               aria-label="Open navigation"

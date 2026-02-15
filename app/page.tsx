@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
 import {
   ArrowUpRight,
   BarChart3,
@@ -8,6 +12,7 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
+import ThemeModeSwitch from "../components/ThemeModeSwitch";
 
 const TOOL_TEASERS = [
   {
@@ -33,18 +38,46 @@ const TOOL_TEASERS = [
 ] as const;
 
 const FLOAT_LINKS = ["Portfolio", "Research", "Execution", "Alerts"] as const;
+const STATEMENT_WORDS = ["Unify", "your", "trading", "flow."] as const;
 
 export default function LandingPage() {
+  const heroRef = useRef<HTMLElement | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+
+  const discY = useTransform(scrollYProgress, [0, 1], [0, 170]);
+  const discRotate = useTransform(scrollYProgress, [0, 1], [-10, 15]);
+  const discScale = useTransform(scrollYProgress, [0, 1], [1, 0.84]);
+  const heroGlowY = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const copyY = useTransform(scrollYProgress, [0, 1], [0, 70]);
+  const copyOpacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.4]);
+
   return (
     <div className="landing-root">
-      <section className="landing-hero">
+      <section className="landing-hero" ref={heroRef}>
+        <motion.div className="landing-dynamic-field" style={{ y: heroGlowY }} aria-hidden="true">
+          <span className="landing-orb landing-orb-a" />
+          <span className="landing-orb landing-orb-b" />
+          <span className="landing-orb landing-orb-c" />
+          <span className="landing-ribbon landing-ribbon-a" />
+          <span className="landing-ribbon landing-ribbon-b" />
+        </motion.div>
+
         <div className="landing-shell">
-          <header className="landing-nav">
+          <motion.header
+            className="landing-nav"
+            initial={{ opacity: 0, y: -22 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+          >
             <Link href="/" className="landing-brand" aria-label="Stock Market Copilot home">
               Stock Market Copilot
             </Link>
 
             <div className="landing-nav-actions">
+              <ThemeModeSwitch className="landing-theme-switch" />
               <Link href="/login" className="landing-login-link">
                 Log in
               </Link>
@@ -52,10 +85,16 @@ export default function LandingPage() {
                 Sign up
               </Link>
             </div>
-          </header>
+          </motion.header>
 
           <div className="landing-hero-grid">
-            <div className="landing-copy">
+            <motion.div
+              className="landing-copy"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              style={{ y: copyY, opacity: copyOpacity }}
+            >
               <p className="landing-eyebrow">Single account for your full market stack</p>
               <h1 className="landing-title">One app for all your market moves.</h1>
               <p className="landing-subtitle">
@@ -63,7 +102,12 @@ export default function LandingPage() {
                 execution planning, and alerts.
               </p>
 
-              <div className="landing-cta-row">
+              <motion.div
+                className="landing-cta-row"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.55, ease: "easeOut" }}
+              >
                 <Link href="/signup" className="landing-primary-cta">
                   Create account
                   <ArrowUpRight size={16} />
@@ -71,14 +115,21 @@ export default function LandingPage() {
                 <Link href="/login" className="landing-secondary-cta">
                   I already have an account
                 </Link>
-              </div>
+              </motion.div>
 
               <p className="landing-auth-note">
                 All tools are locked behind authentication. Log in or sign up to continue.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="landing-discs" aria-hidden="true">
+            <motion.div
+              className="landing-discs"
+              aria-hidden="true"
+              style={{ y: discY, rotate: discRotate, scale: discScale }}
+              initial={{ opacity: 0, scale: 0.82, x: 26 }}
+              animate={{ opacity: 1, scale: 1, x: 0 }}
+              transition={{ duration: 0.95, ease: "easeOut" }}
+            >
               <span className="landing-disc landing-disc-1" />
               <span className="landing-disc landing-disc-2" />
               <span className="landing-disc landing-disc-3" />
@@ -87,30 +138,41 @@ export default function LandingPage() {
               <span className="landing-disc landing-disc-6" />
               <span className="landing-disc landing-disc-7" />
               <span className="landing-disc landing-disc-8" />
-            </div>
+            </motion.div>
           </div>
         </div>
-
-        <nav className="landing-floating-nav" aria-label="Tool categories">
-          {FLOAT_LINKS.map((label) => (
-            <Link key={label} href="/login" className="landing-floating-link">
-              {label}
-            </Link>
-          ))}
-        </nav>
       </section>
 
       <section className="landing-statement-strip">
         <div className="landing-shell">
-          <h2 className="landing-statement">Unify your trading flow.</h2>
+          <h2 className="landing-statement" aria-label="Unify your trading flow">
+            {STATEMENT_WORDS.map((word, index) => (
+              <motion.span
+                key={word}
+                initial={{ opacity: 0, y: 48 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ delay: index * 0.07, duration: 0.5, ease: "easeOut" }}
+              >
+                {word}
+              </motion.span>
+            ))}
+          </h2>
         </div>
       </section>
 
       <section className="landing-tool-strip">
         <div className="landing-shell">
           <div className="landing-tool-grid">
-            {TOOL_TEASERS.map(({ title, description, icon: Icon }) => (
-              <article key={title} className="landing-tool-card">
+            {TOOL_TEASERS.map(({ title, description, icon: Icon }, index) => (
+              <motion.article
+                key={title}
+                className="landing-tool-card"
+                initial={{ opacity: 0, y: 42 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ delay: index * 0.08, duration: 0.52, ease: "easeOut" }}
+              >
                 <div className="landing-tool-icon">
                   <Icon size={20} />
                 </div>
@@ -119,13 +181,19 @@ export default function LandingPage() {
                 <Link href="/login" className="landing-tool-link">
                   Log in to use
                 </Link>
-              </article>
+              </motion.article>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="landing-final-cta">
+      <motion.section
+        className="landing-final-cta"
+        initial={{ opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.25 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+      >
         <div className="landing-shell landing-final-inner">
           <p className="landing-final-kicker">
             <ShieldCheck size={16} />
@@ -149,7 +217,15 @@ export default function LandingPage() {
             Portfolio, watchlist, analytics, research, execution, and alerts are available after sign in.
           </span>
         </div>
-      </section>
+      </motion.section>
+
+      <nav className="landing-floating-nav" aria-label="Tool categories">
+        {FLOAT_LINKS.map((label) => (
+          <Link key={label} href="/login" className="landing-floating-link">
+            {label}
+          </Link>
+        ))}
+      </nav>
 
       <Link href="/login" className="landing-support-link">
         Support
