@@ -47,7 +47,7 @@ export default function PortfolioCSVManager({ onImported }: PortfolioCSVManagerP
         style={{ display: "none" }}
         onChange={handleImport}
       />
-      <button onClick={() => fileRef.current?.click()} className="bg-blue-500 text-white px-3 py-1 rounded">Import CSV</button>
+      <button onClick={() => fileRef.current?.click()} className="bg-violet-600 text-white px-3 py-1 rounded hover:bg-violet-700">Import CSV</button>
       <button onClick={handleExport} className="bg-green-500 text-white px-3 py-1 rounded">Export CSV</button>
     </div>
   );

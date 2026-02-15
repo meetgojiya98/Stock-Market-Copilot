@@ -41,7 +41,7 @@ export default function ImportExport() {
 
   return (
     <div className="flex gap-2 mb-3">
-      <label className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700">
+      <label className="bg-violet-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-violet-700">
         Import CSV
         <input ref={fileRef} type="file" accept=".csv" style={{ display: "none" }} onChange={handleImport} />
       </label>

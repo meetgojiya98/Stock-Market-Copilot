@@ -2265,7 +2265,7 @@ export default function ResearchPanel() {
                     <span>{formatRelativeAge(turn.createdAt)}</span>
                     <div className="inline-flex items-center gap-1.5">
                       {turn.streaming && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-500/15 text-sky-700 dark:text-sky-200 px-2 py-0.5">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-200 px-2 py-0.5">
                           <Loader2 size={10} className="animate-spin" />
                           Streaming
                         </span>
