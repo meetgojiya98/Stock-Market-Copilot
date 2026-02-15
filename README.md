@@ -1,6 +1,6 @@
 [Live Demo 🚀](https://stock-market-copilot.vercel.app)
 
-# 📈 Stock Market Copilot
+# 📈 Zentrade
 
 Your **AI-powered, RAG-based stock market dashboard** to track live prices, analyze your portfolio, receive real-time notifications, monitor trending stocks, get personalized research, and ask AI about the stock market.
 
@@ -97,8 +97,8 @@ Your **AI-powered, RAG-based stock market dashboard** to track live prices, anal
 ### 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/yourusername/stock-market-copilot.git
-cd stock-market-copilot
+git clone https://github.com/yourusername/zentrade.git
+cd zentrade
 ```
 
 ---

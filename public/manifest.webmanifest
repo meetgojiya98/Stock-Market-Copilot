@@ -1,13 +1,13 @@
 {
-  "name": "Stock Market Copilot",
-  "short_name": "SM Copilot",
+  "name": "Zentrade",
+  "short_name": "Zentrade",
   "description": "Execution-grade AI stock workflow with paper trading, backtesting, risk labs, and thesis memory.",
   "start_url": "/execution",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#eff3f7",
-  "theme_color": "#ec7a19",
+  "theme_color": "#1f3f8f",
   "icons": [
     {
       "src": "/smc-logo.svg",

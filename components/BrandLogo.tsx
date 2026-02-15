@@ -19,12 +19,12 @@ export default function BrandLogo({
         className="relative rounded-2xl overflow-hidden border border-black/10 dark:border-white/15 shadow-[0_8px_24px_rgba(8,16,32,0.2)]"
         style={{ width: size, height: size, minWidth: size, minHeight: size }}
       >
-        <img src="/smc-logo.svg" alt="Stock Market Copilot logo" className="w-full h-full object-cover" />
+        <img src="/smc-logo.svg" alt="Zentrade logo" className="w-full h-full object-cover" />
       </div>
 
       {withWordmark && (
         <div className="leading-tight">
-          <div className="font-semibold tracking-[0.015em] text-sm sm:text-base section-title">Stock Market Copilot</div>
+          <div className="font-semibold tracking-[0.015em] text-sm sm:text-base section-title">Zentrade</div>
           {showTagline && (
             <div className="text-[11px] sm:text-xs muted uppercase tracking-[0.2em]">Quantum Market OS</div>
           )}

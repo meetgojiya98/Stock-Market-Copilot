@@ -18,7 +18,7 @@ export default function Footer() {
             <span className="hidden sm:inline footer-divider" />
             <span className="hidden sm:inline muted">Institutional market intelligence workstation</span>
           </div>
-          <span className="muted text-xs sm:text-sm">{year} Stock Market Copilot · Neural Edition</span>
+          <span className="muted text-xs sm:text-sm">{year} Zentrade · Neural Edition</span>
         </div>
       </div>
     </footer>

@@ -76,6 +76,8 @@ export default function Header() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [clockTick, setClockTick] = useState(0);
+  const showThemeControl =
+    loggedIn || pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   useEffect(() => {
     const checkLogin = () => {
@@ -153,7 +155,9 @@ export default function Header() {
               <Sparkles size={14} />
               <span className="hidden xl:inline">Research AI</span>
             </button>
-            <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />
+            {showThemeControl && (
+              <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />
+            )}
 
             {!loggedIn ? (
               <button className="topbar-action hidden sm:inline-flex" onClick={() => navigate("/login")}>
@@ -173,7 +177,9 @@ export default function Header() {
               </>
             )}
 
-            <ThemeModeSwitch className="md:hidden" mode={mode} onModeChange={setThemeMode} />
+            {showThemeControl && (
+              <ThemeModeSwitch className="md:hidden" mode={mode} onModeChange={setThemeMode} />
+            )}
 
             <button
               aria-label="Open navigation"

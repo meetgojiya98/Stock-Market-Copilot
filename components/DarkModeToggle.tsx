@@ -4,8 +4,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 
 export const metadata = {
-  title: "Stock Market Copilot",
-  description: "RAG based Stock Market Copilot",
+  title: "Zentrade",
+  description: "RAG based Zentrade",
   icons: {
     icon: "/stockmarket.jpg",
   },

@@ -7,13 +7,13 @@ import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Stock Market Copilot | AI Investment Command Center",
+  title: "Zentrade | AI Investment Command Center",
   description:
     "Advanced AI-powered stock analytics workspace with portfolio intelligence, watchlists, alerts, and research copiloting.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "Stock Market Copilot",
+    title: "Zentrade",
     statusBarStyle: "default",
   },
   icons: {
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#e83261",
+  themeColor: "#1f3f8f",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

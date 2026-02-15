@@ -12,7 +12,6 @@ import {
   ShieldCheck,
   Target,
 } from "lucide-react";
-import ThemeModeSwitch from "../components/ThemeModeSwitch";
 
 const TOOL_TEASERS = [
   {
@@ -47,9 +46,9 @@ export default function LandingPage() {
     offset: ["start start", "end start"],
   });
 
-  const discY = useTransform(scrollYProgress, [0, 1], [0, 170]);
-  const discRotate = useTransform(scrollYProgress, [0, 1], [-10, 15]);
-  const discScale = useTransform(scrollYProgress, [0, 1], [1, 0.84]);
+  const sculptureY = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const sculptureRotate = useTransform(scrollYProgress, [0, 1], [-8, 8]);
+  const sculptureScale = useTransform(scrollYProgress, [0, 1], [1, 0.9]);
   const heroGlowY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const copyY = useTransform(scrollYProgress, [0, 1], [0, 70]);
   const copyOpacity = useTransform(scrollYProgress, [0, 0.85], [1, 0.4]);
@@ -72,12 +71,11 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: "easeOut" }}
           >
-            <Link href="/" className="landing-brand" aria-label="Stock Market Copilot home">
-              Stock Market Copilot
+            <Link href="/" className="landing-brand" aria-label="Zentrade home">
+              Zentrade
             </Link>
 
             <div className="landing-nav-actions">
-              <ThemeModeSwitch className="landing-theme-switch" />
               <Link href="/login" className="landing-login-link">
                 Log in
               </Link>
@@ -123,21 +121,27 @@ export default function LandingPage() {
             </motion.div>
 
             <motion.div
-              className="landing-discs"
+              className="landing-market-sculpture"
               aria-hidden="true"
-              style={{ y: discY, rotate: discRotate, scale: discScale }}
+              style={{ y: sculptureY, rotate: sculptureRotate, scale: sculptureScale }}
               initial={{ opacity: 0, scale: 0.82, x: 26 }}
               animate={{ opacity: 1, scale: 1, x: 0 }}
               transition={{ duration: 0.95, ease: "easeOut" }}
             >
-              <span className="landing-disc landing-disc-1" />
-              <span className="landing-disc landing-disc-2" />
-              <span className="landing-disc landing-disc-3" />
-              <span className="landing-disc landing-disc-4" />
-              <span className="landing-disc landing-disc-5" />
-              <span className="landing-disc landing-disc-6" />
-              <span className="landing-disc landing-disc-7" />
-              <span className="landing-disc landing-disc-8" />
+              <span className="landing-market-grid" />
+              <span className="landing-market-base" />
+              <span className="landing-market-ring" />
+              <span className="landing-market-ring landing-market-ring-2" />
+              <span className="landing-market-candle landing-market-candle-1" />
+              <span className="landing-market-candle landing-market-candle-2" />
+              <span className="landing-market-candle landing-market-candle-3" />
+              <span className="landing-market-candle landing-market-candle-4" />
+              <span className="landing-market-candle landing-market-candle-5" />
+              <span className="landing-market-trend">
+                <span className="landing-market-node landing-market-node-1" />
+                <span className="landing-market-node landing-market-node-2" />
+                <span className="landing-market-node landing-market-node-3" />
+              </span>
             </motion.div>
           </div>
         </div>
@@ -201,8 +205,7 @@ export default function LandingPage() {
           </p>
           <h2>1 account, plus you.</h2>
           <p>
-            It only takes seconds to start. Create an account and unlock the full Stock Market Copilot
-            toolkit.
+            It only takes seconds to start. Create an account and unlock the full Zentrade toolkit.
           </p>
           <div className="landing-cta-row">
             <Link href="/signup" className="landing-primary-cta landing-primary-cta-light">
