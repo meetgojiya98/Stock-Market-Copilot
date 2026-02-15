@@ -121,7 +121,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">
       <div className="topbar-shell relative overflow-hidden">
-        <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.5]" />
+        <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.24]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button className="topbar-brand" onClick={() => navigate("/")}>
@@ -130,9 +130,8 @@ export default function Header() {
             <div className="hidden xl:flex items-center gap-2">
               <span className={`topbar-chip ${marketMeta.isOpen ? "topbar-chip-live" : ""}`}>
                 {marketMeta.isOpen && <span className="pulse-dot" />}
-                {marketMeta.statusLabel}
+                {marketMeta.isOpen ? "Session Live" : "After Hours"}
               </span>
-              <span className="topbar-chip">{marketMeta.time} ET</span>
             </div>
           </div>
 

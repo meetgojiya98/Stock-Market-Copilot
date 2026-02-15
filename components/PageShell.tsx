@@ -18,7 +18,7 @@ export default function PageShell({
   eyebrow,
   heroBackdrop = "mesh",
   bodyBackdrop = "mesh",
-  badges = ["Realtime Intelligence", "Cross-Market Coverage"],
+  badges = ["Guided Workflows", "Narrative Insights"],
   children,
 }: PageShellProps) {
   return (
@@ -31,7 +31,7 @@ export default function PageShell({
           )}
 
           <div className="mt-2 flex items-start justify-between gap-3 flex-wrap">
-            <h1 className="text-[1.6rem] sm:text-[2.15rem] font-semibold leading-tight section-title max-w-4xl">
+            <h1 className="text-[1.65rem] sm:text-[2.2rem] font-medium leading-tight tracking-[-0.02em] section-title max-w-4xl">
               {title}
             </h1>
             <div className="flex items-center gap-2 text-xs flex-wrap justify-end">
@@ -44,7 +44,7 @@ export default function PageShell({
           </div>
 
           {subtitle && (
-            <p className="mt-3 muted max-w-4xl text-sm sm:text-[0.98rem] leading-relaxed">{subtitle}</p>
+            <p className="mt-3 muted max-w-4xl text-[0.95rem] sm:text-[1rem] leading-relaxed">{subtitle}</p>
           )}
           <div className="mt-4">
             <WorkflowGuide />

@@ -35,6 +35,7 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE?.replace(/\/$/, "");
 const LOCAL_USERS_KEY = "smc_local_auth_users_v1";
 const LOCAL_ACTIVE_KEY = "smc_local_auth_active_user_v1";
 const AUTH_MODE_KEY = "smc_auth_mode_v1";
+const REMOTE_AUTH_TIMEOUT_MS = 1800;
 
 function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -90,6 +91,22 @@ async function safeJson(response: Response): Promise<Record<string, unknown> | u
     return undefined;
   } catch {
     return undefined;
+  }
+}
+
+function isUnavailableError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.name === "AbortError" || error.name === "TypeError";
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs = REMOTE_AUTH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -188,12 +205,11 @@ async function attemptRemoteRegister(input: RegisterInput): Promise<RemoteResult
   if (!API_BASE) return { status: "unavailable" };
 
   const attempts = [`${API_BASE}/auth/register`, `${API_BASE}/signup`];
-  let sawUnavailable = false;
   let lastDetail: string | undefined;
 
   for (const endpoint of attempts) {
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetchWithTimeout(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(input),
@@ -212,12 +228,14 @@ async function attemptRemoteRegister(input: RegisterInput): Promise<RemoteResult
 
       lastDetail = await readRemoteDetail(response, "Registration failed.");
       return { status: "error", detail: lastDetail };
-    } catch {
-      sawUnavailable = true;
+    } catch (error) {
+      if (isUnavailableError(error)) {
+        return { status: "unavailable" };
+      }
+      return { status: "error", detail: "Registration failed." };
     }
   }
 
-  if (sawUnavailable) return { status: "unavailable" };
   return { status: "error", detail: lastDetail || "Registration endpoint unavailable." };
 }
 
@@ -236,22 +254,22 @@ async function attemptRemoteLogin(input: LoginInput): Promise<RemoteResult> {
     return { status: "error", detail: "Please enter your email or username." };
   }
 
-  let sawUnavailable = false;
   let lastDetail = "Invalid credentials.";
 
   for (const candidate of candidates) {
-    const attempts = [
-      {
-        endpoint: `${API_BASE}/auth/login`,
-        init: {
-          method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          body: new URLSearchParams({
-            username: candidate,
-            password: input.password,
-          }),
-        } satisfies RequestInit,
-      },
+    const primaryAttempt = {
+      endpoint: `${API_BASE}/auth/login`,
+      init: {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          username: candidate,
+          password: input.password,
+        }),
+      } satisfies RequestInit,
+    };
+
+    const fallbackAttempts = [
       {
         endpoint: `${API_BASE}/auth/login`,
         init: {
@@ -278,9 +296,13 @@ async function attemptRemoteLogin(input: LoginInput): Promise<RemoteResult> {
       },
     ];
 
-    for (const attempt of attempts) {
+    const allAttempts = [primaryAttempt, ...fallbackAttempts];
+
+    for (let index = 0; index < allAttempts.length; index += 1) {
+      const attempt = allAttempts[index];
+
       try {
-        const response = await fetch(attempt.endpoint, attempt.init);
+        const response = await fetchWithTimeout(attempt.endpoint, attempt.init);
 
         if (response.ok) {
           const data = await safeJson(response);
@@ -315,18 +337,24 @@ async function attemptRemoteLogin(input: LoginInput): Promise<RemoteResult> {
           };
         }
 
-        if (response.status === 404 || response.status === 405 || response.status === 422) {
+        const unsupportedShape =
+          response.status === 404 || response.status === 405 || response.status === 422;
+
+        if (unsupportedShape && index < allAttempts.length - 1) {
           continue;
         }
 
         lastDetail = await readRemoteDetail(response, "Invalid credentials.");
-      } catch {
-        sawUnavailable = true;
+        return { status: "error", detail: lastDetail };
+      } catch (error) {
+        if (isUnavailableError(error)) {
+          return { status: "unavailable" };
+        }
+        return { status: "error", detail: "Authentication service failed." };
       }
     }
   }
 
-  if (sawUnavailable) return { status: "unavailable" };
   return { status: "error", detail: lastDetail };
 }
 
@@ -414,6 +442,10 @@ export async function loginUser(input: LoginInput): Promise<AuthOutcome> {
     password: input.password,
   };
 
+  // Fast path: if this credential pair already exists locally, skip remote probes.
+  const local = loginLocal(normalizedInput);
+  if (local.ok) return local;
+
   const remote = await attemptRemoteLogin(normalizedInput);
 
   if (remote.status === "success") {
@@ -434,10 +466,6 @@ export async function loginUser(input: LoginInput): Promise<AuthOutcome> {
   }
 
   if (remote.status === "error") {
-    const local = loginLocal(normalizedInput);
-    if (local.ok) {
-      return { ok: true, mode: "local", detail: remote.detail };
-    }
     return {
       ok: false,
       mode: "remote",
@@ -445,7 +473,7 @@ export async function loginUser(input: LoginInput): Promise<AuthOutcome> {
     };
   }
 
-  return loginLocal(normalizedInput);
+  return local;
 }
 
 export function clearAuthSession() {
