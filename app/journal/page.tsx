@@ -2,12 +2,16 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import TradeJournal from "../../components/TradeJournal";
+import JournalAIInsights from "../../components/JournalAIInsights";
 
 export default function JournalPage() {
   return (
     <AuthGuard>
       <PageShell title="Journal">
-        <TradeJournal />
+        <div className="space-y-6">
+          <TradeJournal />
+          <JournalAIInsights />
+        </div>
       </PageShell>
     </AuthGuard>
   );

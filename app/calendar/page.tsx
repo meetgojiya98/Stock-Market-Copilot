@@ -3,6 +3,7 @@ import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import EarningsCalendar from "../../components/EarningsCalendar";
 import MacroCalendar from "../../components/MacroCalendar";
+import EarningsWhisperTracker from "../../components/EarningsWhisperTracker";
 
 export default function CalendarPage() {
   return (
@@ -13,6 +14,7 @@ export default function CalendarPage() {
             <h2 className="text-base font-semibold mb-3 section-title">Earnings Calendar</h2>
             <EarningsCalendar />
           </section>
+          <EarningsWhisperTracker />
           <section>
             <h2 className="text-base font-semibold mb-3 section-title">Economic Calendar &amp; Macro Impact</h2>
             <MacroCalendar />

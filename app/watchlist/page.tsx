@@ -1,6 +1,7 @@
 "use client";
 import AuthGuard from "../../components/AuthGuard";
 import WatchlistPanel from "../../components/WatchlistPanel";
+import PopoutPanel from "../../components/PopoutPanel";
 import PageShell from "../../components/PageShell";
 import FloatingActionButton from "../../components/FloatingActionButton";
 import { Plus, RefreshCw } from "lucide-react";
@@ -10,7 +11,9 @@ export default function WatchlistPage() {
     <AuthGuard>
       <PageShell title="Watchlist">
         <div className="space-y-6">
-          <WatchlistPanel />
+          <PopoutPanel title="Watchlist" channelName="watchlist">
+            <WatchlistPanel />
+          </PopoutPanel>
         </div>
         <FloatingActionButton
           actions={[

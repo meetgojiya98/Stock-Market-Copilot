@@ -8,14 +8,19 @@ import PublicWatchlists from "../../components/PublicWatchlists";
 import StockDiscussions from "../../components/StockDiscussions";
 import Leaderboard from "../../components/Leaderboard";
 import SharedPortfolios from "../../components/SharedPortfolios";
+import CopyTradingHub from "../../components/CopyTradingHub";
+import PaperTradingLeaderboard from "../../components/PaperTradingLeaderboard";
+import CollaborationCursors from "../../components/CollaborationCursors";
 
-type Tab = "watchlists" | "discussions" | "leaderboard" | "shared";
+type Tab = "watchlists" | "discussions" | "leaderboard" | "shared" | "copy" | "competition";
 
 const TABS: { key: Tab; label: string; icon: typeof List }[] = [
   { key: "watchlists", label: "Watchlists", icon: List },
   { key: "discussions", label: "Discussions", icon: MessageCircle },
   { key: "leaderboard", label: "Leaderboard", icon: Trophy },
   { key: "shared", label: "Shared", icon: List },
+  { key: "copy", label: "Copy Trading", icon: List },
+  { key: "competition", label: "Competition", icon: Trophy },
 ];
 
 export default function CommunityPage() {
@@ -48,6 +53,9 @@ export default function CommunityPage() {
           {activeTab === "discussions" && <StockDiscussions />}
           {activeTab === "leaderboard" && <Leaderboard />}
           {activeTab === "shared" && <SharedPortfolios />}
+          {activeTab === "copy" && <CopyTradingHub />}
+          {activeTab === "competition" && <PaperTradingLeaderboard />}
+          <CollaborationCursors />
         </div>
       </PageShell>
     </AuthGuard>

@@ -35,6 +35,8 @@ import {
   Lightbulb,
   GitCompare,
   FlaskConical,
+  Columns3,
+  PlayCircle,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import DynamicBackdrop from "./DynamicBackdrop";
@@ -81,6 +83,7 @@ const MORE_GROUPS: MoreGroup[] = [
       { name: "Crypto", href: "/crypto", icon: <Bitcoin size={16} />, protected: true },
       { name: "Broker", href: "/broker", icon: <Link2 size={16} />, protected: true },
       { name: "Simulator", href: "/simulator", icon: <FlaskConical size={16} />, protected: true },
+      { name: "Replay", href: "/replay", icon: <PlayCircle size={16} />, protected: true },
       { name: "Heatmap", href: "/heatmap", icon: <FlaskConical size={16} />, protected: true },
     ],
   },
@@ -93,6 +96,7 @@ const MORE_GROUPS: MoreGroup[] = [
       { name: "Dividends", href: "/dividends", icon: <BarChart3 size={16} />, protected: true },
       { name: "Journal", href: "/journal", icon: <BookOpen size={16} />, protected: true },
       { name: "Benchmarks", href: "/benchmarks", icon: <Trophy size={16} />, protected: true },
+      { name: "Workspace", href: "/workspace", icon: <Columns3 size={16} />, protected: true },
     ],
   },
   {

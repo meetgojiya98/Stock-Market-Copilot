@@ -3,14 +3,17 @@ import { Providers } from "./providers";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileDock from "../components/MobileDock";
-import CommandPalette from "../components/CommandPalette";
-import OnboardingModal from "../components/OnboardingModal";
+import CommandPaletteV2 from "../components/CommandPaletteV2";
+import OnboardingWizardV2 from "../components/OnboardingWizardV2";
 import KeyboardShortcutsProvider from "../components/KeyboardShortcutsProvider";
 import PriceStreamProvider from "../components/PriceStreamProvider";
 import ToastProvider from "../components/ToastProvider";
 import ConfirmDialogProvider from "../components/ConfirmDialog";
 import ContextualTips from "../components/ContextualTips";
 import StatusBar from "../components/StatusBar";
+import { StockDetailProvider } from "../components/StockDetailSlideOver";
+import VimNavigation from "../components/VimNavigation";
+import MobileGestureNav from "../components/MobileGestureNav";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -185,15 +188,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <ConfirmDialogProvider>
           <PriceStreamProvider>
             <KeyboardShortcutsProvider>
+            <StockDetailProvider>
+            <VimNavigation>
               <a href="#main-content" className="skip-link">Skip to content</a>
               <StatusBar />
               <Header />
               <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
               <MobileDock />
+              <MobileGestureNav />
               <Footer />
-              <CommandPalette />
-              <OnboardingModal />
+              <CommandPaletteV2 />
+              <OnboardingWizardV2 />
               <ContextualTips />
+            </VimNavigation>
+            </StockDetailProvider>
             </KeyboardShortcutsProvider>
           </PriceStreamProvider>
           </ConfirmDialogProvider>

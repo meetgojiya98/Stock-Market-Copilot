@@ -9,6 +9,10 @@ import AIPortfolioReview from "../../components/AIPortfolioReview";
 import PortfolioImporter from "../../components/PortfolioImporter";
 import PerformanceAttribution from "../../components/PerformanceAttribution";
 import TaxHarvestingPanel from "../../components/TaxHarvestingPanel";
+import SunburstAllocation from "../../components/SunburstAllocation";
+import PortfolioTimeline from "../../components/PortfolioTimeline";
+import RebalancingEngine from "../../components/RebalancingEngine";
+import CurrencyConverter from "../../components/CurrencyConverter";
 import FloatingActionButton from "../../components/FloatingActionButton";
 import { Plus, RefreshCw, Download } from "lucide-react";
 import { fetchPortfolioData } from "../../lib/data-client";
@@ -33,8 +37,12 @@ export default function PortfolioPage() {
           <PerformanceAttribution />
           <AdvancedAnalyticsPanel portfolio={portfolio} />
           <TaxHarvestingPanel />
+          <SunburstAllocation />
+          <RebalancingEngine />
+          <CurrencyConverter />
           <MultiPortfolio />
           <AIPortfolioReview />
+          <PortfolioTimeline />
         </div>
         <FloatingActionButton
           actions={[

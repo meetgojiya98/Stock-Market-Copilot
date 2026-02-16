@@ -38,6 +38,8 @@ const LABELS: Record<string, string> = {
   transcripts: "Transcripts",
   benchmarks: "Benchmarks",
   "reset-password": "Reset Password",
+  workspace: "Workspace",
+  replay: "Replay",
 };
 
 export default function Breadcrumbs({ className = "" }: { className?: string }) {

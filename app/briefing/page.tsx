@@ -2,6 +2,7 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import DailyBriefing from "../../components/DailyBriefing";
+import MorningBriefingAudio from "../../components/MorningBriefingAudio";
 import SwipeNewsFeed from "../../components/SwipeNewsFeed";
 
 export default function BriefingPage() {
@@ -12,6 +13,7 @@ export default function BriefingPage() {
         subtitle="Your morning market summary."
       >
         <div className="space-y-6">
+          <MorningBriefingAudio />
           <DailyBriefing />
           <SwipeNewsFeed compact />
         </div>
