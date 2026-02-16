@@ -6,12 +6,7 @@ import GoalTracker from "../../components/GoalTracker";
 export default function GoalsPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Goals"
-        title="Goal Tracker"
-        subtitle="Set targets for your portfolio and track your progress over time."
-        badges={["Milestones", "Stay on Track"]}
-      >
+      <PageShell title="Goals">
         <GoalTracker />
       </PageShell>
     </AuthGuard>

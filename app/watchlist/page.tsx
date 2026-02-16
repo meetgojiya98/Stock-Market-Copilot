@@ -6,11 +6,7 @@ import PageShell from "../../components/PageShell";
 export default function WatchlistPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Watchlist"
-        title="Your Watchlist"
-        subtitle="Keep an eye on stocks you care about. See live prices and spot trends early."
-      >
+      <PageShell title="Watchlist">
         <div className="space-y-6">
           <WatchlistPanel />
         </div>

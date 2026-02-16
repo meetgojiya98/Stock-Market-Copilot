@@ -7,10 +7,8 @@ export default function IdeasPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Ideas"
-        title="Trade Ideas"
-        subtitle="Get AI-suggested trade ideas based on your portfolio and market trends."
-        badges={["AI-Powered", "Personalized"]}
+        title="Ideas"
+        subtitle="AI-suggested trades based on your portfolio."
       >
         <AITradeIdeas />
       </PageShell>

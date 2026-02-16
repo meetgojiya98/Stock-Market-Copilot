@@ -21,12 +21,7 @@ export default function CommunityPage() {
 
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Community"
-        title="Community Hub"
-        subtitle="Share ideas, discuss stocks, and see how you rank against other traders."
-        badges={["Social", "Learn Together"]}
-      >
+      <PageShell title="Community">
         <div className="space-y-4">
           {/* Tab Navigation */}
           <div className="flex items-center gap-1.5 flex-wrap">

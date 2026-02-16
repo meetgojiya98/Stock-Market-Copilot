@@ -5,11 +5,7 @@ import PageShell from "../../components/PageShell";
 export default function TrendingPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Trending"
-        title="What's Popular"
-        subtitle="See which stocks other users are watching and holding the most right now."
-      >
+      <PageShell title="Trending">
         <div className="space-y-6">
           <TrendingStocks />
         </div>

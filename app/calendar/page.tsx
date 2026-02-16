@@ -6,12 +6,7 @@ import EarningsCalendar from "../../components/EarningsCalendar";
 export default function CalendarPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Calendar"
-        title="Earnings Calendar"
-        subtitle="See when your stocks report earnings so you're never caught off guard."
-        badges={["Earnings Dates", "Stay Prepared"]}
-      >
+      <PageShell title="Calendar">
         <EarningsCalendar />
       </PageShell>
     </AuthGuard>

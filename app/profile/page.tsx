@@ -6,11 +6,7 @@ import ProfileCommandCenter from "../../components/ProfileCommandCenter";
 export default function ProfilePage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Account"
-        title="Your Profile"
-        subtitle="Manage your account, set your preferences, and customize how Zentrade works for you."
-      >
+      <PageShell title="Profile">
         <div className="space-y-6">
           <ProfileCommandCenter />
         </div>

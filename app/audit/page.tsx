@@ -5,11 +5,7 @@ import PageShell from "../../components/PageShell";
 export default function AuditPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="History"
-        title="Activity Log"
-        subtitle="See everything you've done: portfolio changes, watchlist updates, and alert activity."
-      >
+      <PageShell title="Activity">
         <div className="space-y-6">
           <AuditTimeline />
         </div>

@@ -1,63 +1,10 @@
-<svg width="720" height="720" viewBox="0 0 720 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="zt-bg" x1="72" y1="64" x2="640" y2="668" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#08142C"/>
-      <stop offset="0.55" stop-color="#174895"/>
-      <stop offset="1" stop-color="#FF8A1F"/>
-    </linearGradient>
-    <radialGradient id="zt-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(360 358) rotate(90) scale(262)">
-      <stop stop-color="#A8DCFF" stop-opacity="0.42"/>
-      <stop offset="1" stop-color="#A8DCFF" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="zt-z" x1="186" y1="196" x2="530" y2="512" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#F7FCFF"/>
-      <stop offset="1" stop-color="#FFE9D0"/>
-    </linearGradient>
-    <linearGradient id="zt-candle-up" x1="248" y1="250" x2="248" y2="472" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#7DE9CE"/>
-      <stop offset="1" stop-color="#2EA76D"/>
-    </linearGradient>
-    <linearGradient id="zt-candle-mid" x1="358" y1="220" x2="358" y2="472" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#A8DDFF"/>
-      <stop offset="1" stop-color="#3F7DE1"/>
-    </linearGradient>
-    <linearGradient id="zt-candle-hot" x1="468" y1="198" x2="468" y2="478" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FFD0A6"/>
-      <stop offset="1" stop-color="#FF8A1F"/>
+    <linearGradient id="z-fill" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3b6de7"/>
+      <stop offset="1" stop-color="#7ba4ff"/>
     </linearGradient>
   </defs>
-
-  <rect x="30" y="30" width="660" height="660" rx="168" fill="url(#zt-bg)"/>
-  <circle cx="360" cy="360" r="252" fill="url(#zt-glow)"/>
-
-  <g opacity="0.2">
-    <path d="M128 182H592" stroke="#DDEBFF" stroke-width="2"/>
-    <path d="M128 280H592" stroke="#DDEBFF" stroke-width="2"/>
-    <path d="M128 378H592" stroke="#DDEBFF" stroke-width="2"/>
-    <path d="M128 476H592" stroke="#DDEBFF" stroke-width="2"/>
-    <path d="M128 574H592" stroke="#DDEBFF" stroke-width="2"/>
-  </g>
-
-  <path d="M206 214H520L244 506H514" stroke="url(#zt-z)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <g>
-    <rect x="224" y="320" width="48" height="138" rx="14" fill="url(#zt-candle-up)"/>
-    <path d="M248 286V484" stroke="#E8FFF6" stroke-width="7" stroke-linecap="round"/>
-
-    <rect x="334" y="274" width="48" height="184" rx="14" fill="url(#zt-candle-mid)"/>
-    <path d="M358 236V486" stroke="#EAF4FF" stroke-width="7" stroke-linecap="round"/>
-
-    <rect x="444" y="236" width="48" height="220" rx="14" fill="url(#zt-candle-hot)"/>
-    <path d="M468 204V486" stroke="#FFF0DD" stroke-width="7" stroke-linecap="round"/>
-  </g>
-
-  <path
-    d="M182 448L274 390L350 410L452 308L538 334"
-    stroke="#DFF3FF"
-    stroke-width="15"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    opacity="0.96"
-  />
-  <path d="M526 334L560 334L546 306" fill="none" stroke="#DFF3FF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect width="512" height="512" rx="128" fill="url(#z-fill)"/>
+  <path d="M152 158h208l-208 196h208" stroke="#fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

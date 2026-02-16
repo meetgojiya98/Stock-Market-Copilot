@@ -19,11 +19,7 @@ export default function AnalyticsPage() {
 
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Analytics"
-        title="Risk & Performance"
-        subtitle="See how your portfolio stacks up: risk scores, sector mix, and key performance numbers."
-      >
+      <PageShell title="Analytics">
         <div className="space-y-6">
           <AdvancedAnalyticsPanel portfolio={portfolio} />
         </div>

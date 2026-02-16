@@ -7,10 +7,8 @@ export default function BriefingPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Briefing"
-        title="Daily Briefing"
-        subtitle="Your morning market summary — what happened, what's moving, and what to watch."
-        badges={["Daily Update", "Quick Read"]}
+        title="Briefing"
+        subtitle="Your morning market summary."
       >
         <DailyBriefing />
       </PageShell>

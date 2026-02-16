@@ -7,10 +7,8 @@ export default function ResearchPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Research"
-        title="AI Research"
-        subtitle="Ask questions about any stock. Get answers with real data, sources, and clear next steps."
-        badges={["AI-Powered", "Cited Sources", "Action-Ready"]}
+        title="Research"
+        subtitle="Ask questions about any stock."
       >
         <div className="space-y-6">
           <ResearchPanel />

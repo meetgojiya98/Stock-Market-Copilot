@@ -22,7 +22,7 @@
   --shadow-sm: 0 10px 24px rgba(14, 30, 66, 0.12);
   --shadow-lg: 0 34px 90px rgba(14, 30, 66, 0.2);
   --shadow-xl: 0 64px 150px rgba(14, 30, 66, 0.26);
-  --radius-card: 1.1rem;
+  --radius-card: 0.75rem;
 }
 
 .dark {
@@ -133,46 +133,22 @@ button:active {
 
 .surface-glass {
   position: relative;
-  background: color-mix(in srgb, var(--surface-emphasis) 97%, var(--accent) 3%);
-  border: 1px solid color-mix(in srgb, var(--surface-border) 80%, transparent);
-  border-radius: calc(var(--radius-card) + 0.1rem);
-  backdrop-filter: blur(16px) saturate(110%);
-  box-shadow:
-    0 1px 2px color-mix(in srgb, var(--accent) 6%, transparent),
-    0 8px 24px color-mix(in srgb, var(--accent) 8%, transparent);
-  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  background: var(--surface-emphasis);
+  border: 1px solid color-mix(in srgb, var(--surface-border) 50%, transparent);
+  border-radius: var(--radius-card);
+  transition: border-color 0.2s ease;
 }
 
 .surface-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    to bottom,
-    color-mix(in srgb, white 40%, transparent),
-    transparent 60%
-  );
-  opacity: 0.38;
-  pointer-events: none;
+  display: none;
 }
 
 .dynamic-surface {
   position: relative;
-  overflow: hidden;
 }
 
 .dynamic-surface::after {
-  content: "";
-  position: absolute;
-  inset: -20% -10%;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at 30% 20%,
-    color-mix(in srgb, var(--accent) 8%, transparent),
-    transparent 60%
-  );
-  opacity: 0.18;
+  display: none;
 }
 
 .research-shell {
@@ -302,32 +278,30 @@ button:active {
 }
 
 .card-elevated {
-  background: color-mix(in srgb, var(--surface-emphasis) 96%, var(--accent) 4%);
-  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
-  border-radius: calc(var(--radius-card) + 0.05rem);
-  box-shadow: 0 1px 3px color-mix(in srgb, var(--accent) 6%, transparent);
-  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  background: var(--surface-emphasis);
+  border: 1px solid color-mix(in srgb, var(--surface-border) 45%, transparent);
+  border-radius: var(--radius-card);
+  transition: border-color 0.2s ease;
 }
 
 .card-elevated:hover {
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--surface-border) 70%, transparent);
 }
 
 .control-surface {
-  border: 1px solid color-mix(in srgb, var(--surface-border) 70%, transparent);
-  background: color-mix(in srgb, var(--surface-emphasis) 94%, var(--accent) 6%);
-  border-radius: 0.75rem;
-  transition: border-color 0.2s ease, transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid color-mix(in srgb, var(--surface-border) 40%, transparent);
+  background: color-mix(in srgb, var(--surface-emphasis) 97%, transparent);
+  border-radius: 0.5rem;
+  transition: border-color 0.2s ease, background 0.2s ease;
 }
 
 .control-surface:hover {
-  border-color: color-mix(in srgb, var(--accent) 30%, var(--surface-border));
-  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: color-mix(in srgb, var(--surface-border) 65%, transparent);
 }
 
 .control-surface:focus-within {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--surface-border));
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--surface-border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .section-title {
@@ -532,7 +506,6 @@ button:active {
   border: 1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
   background: color-mix(in srgb, var(--surface-emphasis) 80%, transparent);
   padding: 0.18rem;
-  overflow-x: auto;
 }
 
 .dark .topbar-nav {

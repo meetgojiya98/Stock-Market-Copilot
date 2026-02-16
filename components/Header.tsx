@@ -188,7 +188,7 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">
-      <div className="topbar-shell relative overflow-hidden">
+      <div className="topbar-shell relative">
         <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.24]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">

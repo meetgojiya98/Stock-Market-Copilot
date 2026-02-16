@@ -6,12 +6,7 @@ import PortfolioHeatmap from "../../components/PortfolioHeatmap";
 export default function HeatmapPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Heatmap"
-        title="Portfolio Heatmap"
-        subtitle="See your portfolio as a visual map — bigger blocks mean bigger positions."
-        badges={["Visual View", "At a Glance"]}
-      >
+      <PageShell title="Heatmap">
         <PortfolioHeatmap />
       </PageShell>
     </AuthGuard>

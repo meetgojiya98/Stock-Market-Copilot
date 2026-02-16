@@ -19,9 +19,8 @@ export default function PortfolioPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Portfolio"
-        title="Your Portfolio"
-        subtitle="Track your positions, see how they're doing, and review your risk at a glance."
+        title="Portfolio"
+        subtitle="Positions, performance, and risk at a glance."
       >
         <div className="space-y-6">
           <PortfolioTable onPortfolioChange={fetchPortfolio} />

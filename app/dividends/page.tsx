@@ -6,12 +6,7 @@ import DividendTracker from "../../components/DividendTracker";
 export default function DividendsPage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Dividends"
-        title="Dividend Tracker"
-        subtitle="See how much dividend income your stocks are earning you."
-        badges={["Income Tracking", "Dividend Calendar"]}
-      >
+      <PageShell title="Dividends">
         <DividendTracker />
       </PageShell>
     </AuthGuard>

@@ -6,12 +6,7 @@ import StockComparison from "../../components/StockComparison";
 export default function ComparePage() {
   return (
     <AuthGuard>
-      <PageShell
-        eyebrow="Compare"
-        title="Compare Stocks"
-        subtitle="Pick stocks and see them side by side to help you decide."
-        badges={["Side by Side", "Quick Insights"]}
-      >
+      <PageShell title="Compare">
         <StockComparison />
       </PageShell>
     </AuthGuard>
