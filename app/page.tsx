@@ -186,10 +186,6 @@ export default function LandingPage() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               style={{ y: copyY, opacity: copyOpacity }}
             >
-              <div className="landing-trust-badge">
-                <span className="landing-trust-dot" />
-                2,400+ traders already using Zentrade
-              </div>
               <p className="landing-eyebrow">Your all-in-one trading toolkit</p>
               <h1 className="landing-title">Trade smarter. Not harder.</h1>
               <p className="landing-subtitle">
