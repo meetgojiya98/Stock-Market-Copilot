@@ -3,6 +3,7 @@ import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import TradeJournal from "../../components/TradeJournal";
 import JournalAIInsights from "../../components/JournalAIInsights";
+import { VoiceNoteRecorder } from "../../components/VoiceCommand";
 
 export default function JournalPage() {
   return (
@@ -11,6 +12,7 @@ export default function JournalPage() {
         <div className="space-y-6">
           <TradeJournal />
           <JournalAIInsights />
+          <VoiceNoteRecorder />
         </div>
       </PageShell>
     </AuthGuard>

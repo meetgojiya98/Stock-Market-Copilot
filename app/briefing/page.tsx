@@ -4,6 +4,7 @@ import PageShell from "../../components/PageShell";
 import DailyBriefing from "../../components/DailyBriefing";
 import MorningBriefingAudio from "../../components/MorningBriefingAudio";
 import SwipeNewsFeed from "../../components/SwipeNewsFeed";
+import { MarketAudioBar } from "../../components/AudioFeedback";
 
 export default function BriefingPage() {
   return (
@@ -14,6 +15,7 @@ export default function BriefingPage() {
       >
         <div className="space-y-6">
           <MorningBriefingAudio />
+          <MarketAudioBar />
           <DailyBriefing />
           <SwipeNewsFeed compact />
         </div>

@@ -4,12 +4,14 @@ import PageShell from "../../components/PageShell";
 import WhatIfSimulator from "../../components/WhatIfSimulator";
 import ScenarioAnalyzer from "../../components/ScenarioAnalyzer";
 import HistoricalBacktest from "../../components/HistoricalBacktest";
+import { ChartToolbar } from "../../components/ChartToolkit";
 
 export default function SimulatorPage() {
   return (
     <AuthGuard>
       <PageShell title="Simulator">
         <div className="space-y-6">
+          <ChartToolbar />
           <WhatIfSimulator />
           <ScenarioAnalyzer />
           <HistoricalBacktest />

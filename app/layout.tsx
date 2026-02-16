@@ -14,6 +14,11 @@ import StatusBar from "../components/StatusBar";
 import { StockDetailProvider } from "../components/StockDetailSlideOver";
 import VimNavigation from "../components/VimNavigation";
 import MobileGestureNav from "../components/MobileGestureNav";
+import ContextMenuProvider from "../components/ContextMenuProvider";
+import ShortcutOverlay from "../components/ShortcutOverlay";
+import QuickTradeModal from "../components/QuickTradeModal";
+import SmartSearch from "../components/SmartSearch";
+import { AudioCueManager } from "../components/AudioFeedback";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -189,6 +194,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PriceStreamProvider>
             <KeyboardShortcutsProvider>
             <StockDetailProvider>
+            <ContextMenuProvider>
+            <AudioCueManager>
             <VimNavigation>
               <a href="#main-content" className="skip-link">Skip to content</a>
               <StatusBar />
@@ -200,7 +207,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <CommandPaletteV2 />
               <OnboardingWizardV2 />
               <ContextualTips />
+              <ShortcutOverlay />
+              <QuickTradeModal />
+              <SmartSearch />
             </VimNavigation>
+            </AudioCueManager>
+            </ContextMenuProvider>
             </StockDetailProvider>
             </KeyboardShortcutsProvider>
           </PriceStreamProvider>

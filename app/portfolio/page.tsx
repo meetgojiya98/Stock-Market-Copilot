@@ -16,6 +16,9 @@ import CurrencyConverter from "../../components/CurrencyConverter";
 import FloatingActionButton from "../../components/FloatingActionButton";
 import { Plus, RefreshCw, Download } from "lucide-react";
 import { fetchPortfolioData } from "../../lib/data-client";
+import { PresenceAvatars, VersionHistory } from "../../components/CollaborationKit";
+import AccordionPanel from "../../components/AccordionPanel";
+import NumberTransition from "../../components/NumberTransition";
 
 export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState([]);
@@ -32,6 +35,7 @@ export default function PortfolioPage() {
         subtitle="Positions, performance, and risk at a glance."
       >
         <div className="space-y-6">
+          <PresenceAvatars />
           <PortfolioImporter onImported={fetchPortfolio} />
           <PortfolioTable onPortfolioChange={fetchPortfolio} />
           <PerformanceAttribution />
@@ -43,6 +47,7 @@ export default function PortfolioPage() {
           <MultiPortfolio />
           <AIPortfolioReview />
           <PortfolioTimeline />
+          <AccordionPanel sections={[{ id: "version-history", title: "Version History", content: <VersionHistory />, defaultOpen: false }]} />
         </div>
         <FloatingActionButton
           actions={[

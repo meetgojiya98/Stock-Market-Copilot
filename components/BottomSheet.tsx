@@ -1,28 +1,52 @@
 "use client";
-import { useCallback, useEffect, useRef, useState, ReactNode } from "react";
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+
+/* ────────────────────────────────────────────────────────
+ * Types
+ * ──────────────────────────────────────────────────────── */
 
 interface BottomSheetProps {
   open: boolean;
   onClose: () => void;
   children: ReactNode;
   title?: string;
+  /** Optional snap-point fractions of viewport height (e.g. [0.5, 0.85]).
+   *  Defaults to a single snap at 85vh. */
   snapPoints?: number[];
 }
+
+/* ────────────────────────────────────────────────────────
+ * Component
+ * ──────────────────────────────────────────────────────── */
 
 export default function BottomSheet({
   open,
   onClose,
   children,
   title,
-  snapPoints = [0.5, 0.92],
+  snapPoints = [0.85],
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef(0);
-  const currentTranslate = useRef(0);
+  const handleRef = useRef<HTMLDivElement>(null);
+
+  /* ── Visibility & mounting ── */
+  const [visible, setVisible] = useState(false);
   const [snapIndex, setSnapIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
-  const [visible, setVisible] = useState(false);
 
+  /* ── Touch / mouse tracking ── */
+  const dragStartY = useRef(0);
+  const currentTranslate = useRef(0);
+  const startTime = useRef(0);
+
+  /* ── Mount / unmount ── */
   useEffect(() => {
     if (open) {
       setVisible(true);
@@ -31,98 +55,209 @@ export default function BottomSheet({
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [open]);
 
-  const getSheetHeight = useCallback(() => {
-    return snapPoints[snapIndex] * window.innerHeight;
-  }, [snapIndex, snapPoints]);
+  /* ── Escape key to close ── */
+  useEffect(() => {
+    if (!open) return;
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [open, onClose]);
+
+  /* ── Focus trap: return focus on close ── */
+  const previousFocusRef = useRef<Element | null>(null);
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement;
+      // Focus the sheet for a11y
+      setTimeout(() => sheetRef.current?.focus(), 50);
+    } else if (previousFocusRef.current instanceof HTMLElement) {
+      previousFocusRef.current.focus();
+    }
+  }, [open]);
+
+  /* ────────────────────────────────────────────────────
+   * Drag handlers (shared between touch & mouse)
+   * ──────────────────────────────────────────────────── */
 
   const handleDragStart = useCallback((clientY: number) => {
     dragStartY.current = clientY;
     currentTranslate.current = 0;
+    startTime.current = Date.now();
     setDragging(true);
   }, []);
 
-  const handleDragMove = useCallback((clientY: number) => {
-    if (!dragging) return;
-    const delta = clientY - dragStartY.current;
-    currentTranslate.current = Math.max(0, delta);
-    if (sheetRef.current) {
-      sheetRef.current.style.transform = `translateY(${currentTranslate.current}px)`;
-    }
-  }, [dragging]);
+  const handleDragMove = useCallback(
+    (clientY: number) => {
+      if (!dragging) return;
+      const delta = clientY - dragStartY.current;
+      // Only allow downward dragging (dismiss direction)
+      currentTranslate.current = Math.max(0, delta);
+      if (sheetRef.current) {
+        sheetRef.current.style.transform = `translateY(${currentTranslate.current}px)`;
+      }
+    },
+    [dragging]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDragging(false);
     if (!sheetRef.current) return;
 
-    const threshold = 100;
-    if (currentTranslate.current > threshold) {
+    const elapsed = Date.now() - startTime.current;
+    const velocity = currentTranslate.current / Math.max(elapsed, 1);
+
+    // Dismiss if dragged past threshold or flicked down fast
+    const dismissThreshold = 80;
+    const flickVelocity = 0.4;
+
+    if (
+      currentTranslate.current > dismissThreshold ||
+      velocity > flickVelocity
+    ) {
+      // If there are multiple snap points and we're not at the lowest,
+      // go to the lower snap point first
       if (snapIndex > 0) {
-        setSnapIndex(snapIndex - 1);
+        setSnapIndex((prev) => prev - 1);
+        sheetRef.current.style.transform = "";
+        currentTranslate.current = 0;
       } else {
         onClose();
       }
-    } else if (currentTranslate.current < -threshold && snapIndex < snapPoints.length - 1) {
-      setSnapIndex(snapIndex + 1);
+    } else if (
+      currentTranslate.current < -dismissThreshold &&
+      snapIndex < snapPoints.length - 1
+    ) {
+      // Swipe up to expand to next snap point
+      setSnapIndex((prev) => prev + 1);
+      sheetRef.current.style.transform = "";
+      currentTranslate.current = 0;
+    } else {
+      // Snap back
+      sheetRef.current.style.transform = "";
+      currentTranslate.current = 0;
     }
-
-    sheetRef.current.style.transform = "";
-    currentTranslate.current = 0;
   }, [snapIndex, snapPoints.length, onClose]);
 
+  /* ── Touch events on handle ── */
+  const onTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      handleDragStart(e.touches[0].clientY);
+    },
+    [handleDragStart]
+  );
+
+  const onTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      handleDragMove(e.touches[0].clientY);
+    },
+    [handleDragMove]
+  );
+
+  const onTouchEnd = useCallback(() => {
+    handleDragEnd();
+  }, [handleDragEnd]);
+
+  /* ── Mouse events on handle ── */
+  const onMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleDragStart(e.clientY);
+
+      function onMove(ev: MouseEvent) {
+        handleDragMove(ev.clientY);
+      }
+      function onUp() {
+        handleDragEnd();
+        document.removeEventListener("mousemove", onMove);
+        document.removeEventListener("mouseup", onUp);
+      }
+      document.addEventListener("mousemove", onMove);
+      document.addEventListener("mouseup", onUp);
+    },
+    [handleDragStart, handleDragMove, handleDragEnd]
+  );
+
+  /* ── Cleanup visibility after close animation ── */
   const handleTransitionEnd = useCallback(() => {
     if (!open) setVisible(false);
   }, [open]);
 
+  /* ── Early return if not visible ── */
   if (!visible && !open) return null;
 
-  const heightPercent = snapPoints[snapIndex] * 100;
+  const heightPercent = Math.min(snapPoints[snapIndex] * 100, 85);
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop overlay */}
       <div
-        className={`fixed inset-0 z-[60] bg-black/40 transition-opacity duration-300 ${
-          open ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+        className="bottom-sheet-overlay"
+        style={{
+          opacity: open ? 1 : 0,
+          pointerEvents: open ? "auto" : "none",
+          transition: "opacity 0.3s ease",
+        }}
         onClick={onClose}
-        aria-hidden
+        aria-hidden="true"
       />
 
-      {/* Sheet */}
+      {/* Sheet panel */}
       <div
         ref={sheetRef}
         role="dialog"
         aria-modal="true"
         aria-label={title || "Bottom sheet"}
-        className={`fixed bottom-0 left-0 right-0 z-[61] rounded-t-2xl bg-[var(--surface-card)] border-t border-[var(--surface-border)] shadow-2xl transition-transform duration-300 ease-out ${
-          open ? "translate-y-0" : "translate-y-full"
-        } ${dragging ? "!transition-none" : ""}`}
-        style={{ height: `${heightPercent}vh`, maxHeight: "92vh" }}
+        tabIndex={-1}
+        className={`bottom-sheet ${open ? "" : "hidden"}`}
+        style={{
+          height: `${heightPercent}vh`,
+          maxHeight: "85vh",
+          outline: "none",
+          transition: dragging
+            ? "none"
+            : "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
         onTransitionEnd={handleTransitionEnd}
-        onTouchStart={(e) => handleDragStart(e.touches[0].clientY)}
-        onTouchMove={(e) => handleDragMove(e.touches[0].clientY)}
-        onTouchEnd={handleDragEnd}
-        onMouseDown={(e) => handleDragStart(e.clientY)}
-        onMouseMove={(e) => { if (dragging) handleDragMove(e.clientY); }}
-        onMouseUp={handleDragEnd}
       >
-        {/* Drag Handle */}
-        <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
-          <div className="w-10 h-1 rounded-full bg-[var(--ink-faint)]" />
-        </div>
+        {/* Swipe handle */}
+        <div
+          ref={handleRef}
+          className="bottom-sheet-handle"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          onMouseDown={onMouseDown}
+          role="separator"
+          aria-label="Drag to dismiss"
+        />
 
         {/* Title */}
         {title && (
-          <div className="px-5 pb-3 border-b border-[var(--surface-border)]">
-            <h2 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>{title}</h2>
+          <div className="bottom-sheet-header">
+            <span style={{ color: "var(--ink)" }}>{title}</span>
           </div>
         )}
 
-        {/* Content */}
-        <div className="overflow-y-auto overscroll-contain px-5 py-4" style={{ height: "calc(100% - 3rem)" }}>
+        {/* Scrollable content */}
+        <div
+          className="bottom-sheet-body"
+          style={{
+            overflowY: "auto",
+            overscrollBehavior: "contain",
+            maxHeight: title ? "calc(85vh - 5rem)" : "calc(85vh - 2.5rem)",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           {children}
         </div>
       </div>

@@ -8,6 +8,8 @@ import RiskParityOptimizer from "../../components/RiskParityOptimizer";
 import StockDNAFingerprint from "../../components/StockDNAFingerprint";
 import PageShell from "../../components/PageShell";
 import { fetchPortfolioData } from "../../lib/data-client";
+import PatternRecognition from "../../components/PatternRecognition";
+import { CrosshairSyncProvider, SyncedMiniChart } from "../../components/CrosshairSync";
 
 export default function AnalyticsPage() {
   const [portfolio, setPortfolio] = useState([]);
@@ -25,11 +27,16 @@ export default function AnalyticsPage() {
     <AuthGuard>
       <PageShell title="Analytics">
         <div className="space-y-6">
+          <CrosshairSyncProvider>
           <AdvancedAnalyticsPanel portfolio={portfolio} />
           <TechnicalIndicators />
           <StockDNAFingerprint />
+          <PatternRecognition />
+          <SyncedMiniChart id="analytics-spy" symbol="SPY" />
+          <SyncedMiniChart id="analytics-qqq" symbol="QQQ" />
           <RiskParityOptimizer />
           <CorrelationMatrix />
+          </CrosshairSyncProvider>
         </div>
       </PageShell>
     </AuthGuard>

@@ -11,6 +11,8 @@ import SharedPortfolios from "../../components/SharedPortfolios";
 import CopyTradingHub from "../../components/CopyTradingHub";
 import PaperTradingLeaderboard from "../../components/PaperTradingLeaderboard";
 import CollaborationCursors from "../../components/CollaborationCursors";
+import { AchievementGrid } from "../../components/AchievementSystem";
+import QuestTracker, { TournamentBanner } from "../../components/QuestTracker";
 
 type Tab = "watchlists" | "discussions" | "leaderboard" | "shared" | "copy" | "competition";
 
@@ -30,6 +32,7 @@ export default function CommunityPage() {
     <AuthGuard>
       <PageShell title="Community">
         <div className="space-y-4">
+          <TournamentBanner />
           {/* Tab Navigation */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {TABS.map(({ key, label, icon: Icon }) => (
@@ -56,6 +59,8 @@ export default function CommunityPage() {
           {activeTab === "copy" && <CopyTradingHub />}
           {activeTab === "competition" && <PaperTradingLeaderboard />}
           <CollaborationCursors />
+          <AchievementGrid />
+          <QuestTracker />
         </div>
       </PageShell>
     </AuthGuard>
