@@ -1,5 +1,6 @@
 "use client";
 import AuthGuard from "../../components/AuthGuard";
+import AlertBuilder from "../../components/AlertBuilder";
 import NotificationsPanel from "../../components/NotificationsPanel";
 import PageShell from "../../components/PageShell";
 import PriceAlerts from "../../components/PriceAlerts";
@@ -12,6 +13,7 @@ export default function NotificationsPage() {
         <div className="space-y-6">
           <NotificationsPanel />
           <PriceAlerts />
+          <AlertBuilder />
           <WatchlistMovers />
         </div>
       </PageShell>

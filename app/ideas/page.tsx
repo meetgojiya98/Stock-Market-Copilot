@@ -2,6 +2,7 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import AITradeIdeas from "../../components/AITradeIdeas";
+import TradeSignals from "../../components/TradeSignals";
 
 export default function IdeasPage() {
   return (
@@ -10,7 +11,10 @@ export default function IdeasPage() {
         title="Ideas"
         subtitle="AI-suggested trades based on your portfolio."
       >
-        <AITradeIdeas />
+        <div className="space-y-6">
+          <TradeSignals />
+          <AITradeIdeas />
+        </div>
       </PageShell>
     </AuthGuard>
   );

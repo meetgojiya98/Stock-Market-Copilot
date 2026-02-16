@@ -32,6 +32,12 @@ const LABELS: Record<string, string> = {
   audit: "Activity",
   profile: "Profile",
   learn: "Learn",
+  options: "Options",
+  crypto: "Crypto",
+  broker: "Broker",
+  transcripts: "Transcripts",
+  benchmarks: "Benchmarks",
+  "reset-password": "Reset Password",
 };
 
 export default function Breadcrumbs({ className = "" }: { className?: string }) {

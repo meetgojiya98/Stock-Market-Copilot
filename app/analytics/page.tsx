@@ -2,6 +2,8 @@
 import AuthGuard from "../../components/AuthGuard";
 import { useEffect, useState } from "react";
 import AdvancedAnalyticsPanel from "../../components/AdvancedAnalyticsPanel";
+import CorrelationMatrix from "../../components/CorrelationMatrix";
+import TechnicalIndicators from "../../components/TechnicalIndicators";
 import PageShell from "../../components/PageShell";
 import { fetchPortfolioData } from "../../lib/data-client";
 
@@ -22,6 +24,8 @@ export default function AnalyticsPage() {
       <PageShell title="Analytics">
         <div className="space-y-6">
           <AdvancedAnalyticsPanel portfolio={portfolio} />
+          <TechnicalIndicators />
+          <CorrelationMatrix />
         </div>
       </PageShell>
     </AuthGuard>
