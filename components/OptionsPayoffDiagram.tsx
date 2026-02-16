@@ -424,7 +424,7 @@ export default function OptionsPayoffDiagram() {
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <Target size={20} style={{ color: "#818cf8" }} />
+        <Target size={20} style={{ color: "#60a5fa" }} />
         <span style={{ fontWeight: 700, fontSize: 16 }}>Options Payoff Diagram</span>
       </div>
 
@@ -601,7 +601,7 @@ export default function OptionsPayoffDiagram() {
           {lossPath && <path d={lossPath} fill="rgba(239,68,68,0.15)" />}
 
           {/* P/L line */}
-          <path d={linePath} fill="none" stroke="#818cf8" strokeWidth={2} />
+          <path d={linePath} fill="none" stroke="#60a5fa" strokeWidth={2} />
 
           {/* Underlying price vertical line */}
           {params.underlying && (

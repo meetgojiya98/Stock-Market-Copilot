@@ -957,9 +957,8 @@ export default function SplitScreenWorkspace() {
 
       {/* Panels */}
       <div
-        className="workspace-container"
+        className="workspace-container flex flex-col md:flex-row"
         style={{
-          display: "flex",
           flex: 1,
           overflow: "hidden",
         }}

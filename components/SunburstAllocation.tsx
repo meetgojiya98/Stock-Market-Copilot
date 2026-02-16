@@ -57,7 +57,7 @@ type TooltipInfo = {
 const PORTFOLIO: SectorNode[] = [
   {
     name: "Technology",
-    color: "#6366f1",
+    color: "#3b82f6",
     industries: [
       {
         name: "Software",

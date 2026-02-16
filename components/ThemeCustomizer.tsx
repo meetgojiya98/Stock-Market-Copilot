@@ -30,8 +30,8 @@ interface AccentColor {
 
 const ACCENTS: AccentColor[] = [
   { name: "Blue",    value: "#3b82f6", value2: "#60a5fa", value3: "#1d4ed8" },
-  { name: "Indigo",  value: "#6366f1", value2: "#818cf8", value3: "#4338ca" },
-  { name: "Violet",  value: "#8b5cf6", value2: "#a78bfa", value3: "#6d28d9" },
+  { name: "Indigo",  value: "#3b82f6", value2: "#60a5fa", value3: "#1d4ed8" },
+  { name: "Violet",  value: "#3b82f6", value2: "#60a5fa", value3: "#1d4ed8" },
   { name: "Purple",  value: "#a855f7", value2: "#c084fc", value3: "#7e22ce" },
   { name: "Pink",    value: "#ec4899", value2: "#f472b6", value3: "#be185d" },
   { name: "Rose",    value: "#f43f5e", value2: "#fb7185", value3: "#be123c" },

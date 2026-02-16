@@ -471,8 +471,8 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
                 width: 18,
                 height: 18,
                 borderRadius: 3,
-                border: `1.5px solid ${allSelected || someSelected ? "#8b5cf6" : "rgba(148,163,184,0.3)"}`,
-                background: allSelected ? "#8b5cf6" : "transparent",
+                border: `1.5px solid ${allSelected || someSelected ? "#3b82f6" : "rgba(148,163,184,0.3)"}`,
+                background: allSelected ? "#3b82f6" : "transparent",
                 cursor: "pointer",
                 display: "flex",
                 alignItems: "center",
@@ -481,7 +481,7 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
               }}
             >
               {allSelected && <Check size={12} color="#fff" />}
-              {someSelected && <Minus size={12} color="#8b5cf6" />}
+              {someSelected && <Minus size={12} color="#3b82f6" />}
             </button>
           </div>
 
@@ -568,7 +568,7 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
                   display: "flex",
                   width: "100%",
                   background: isSelected
-                    ? "rgba(139,92,246,0.08)"
+                    ? "rgba(59,130,246,0.08)"
                     : realIdx % 2 === 0
                     ? "transparent"
                     : "rgba(148,163,184,0.03)",
@@ -587,7 +587,7 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
                     position: "sticky",
                     left: 0,
                     zIndex: 4,
-                    background: isSelected ? "rgba(139,92,246,0.12)" : "rgba(30,30,40,0.8)",
+                    background: isSelected ? "rgba(59,130,246,0.12)" : "rgba(30,30,40,0.8)",
                   }}
                 >
                   <button
@@ -596,8 +596,8 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
                       width: 16,
                       height: 16,
                       borderRadius: 3,
-                      border: `1.5px solid ${isSelected ? "#8b5cf6" : "rgba(148,163,184,0.25)"}`,
-                      background: isSelected ? "#8b5cf6" : "transparent",
+                      border: `1.5px solid ${isSelected ? "#3b82f6" : "rgba(148,163,184,0.25)"}`,
+                      background: isSelected ? "#3b82f6" : "transparent",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -635,7 +635,7 @@ export default function VirtualDataTable<T extends Record<string, unknown> = Sto
                         zIndex: isPinned ? 3 : 0,
                         background: isPinned
                           ? isSelected
-                            ? "rgba(139,92,246,0.12)"
+                            ? "rgba(59,130,246,0.12)"
                             : "rgba(30,30,40,0.9)"
                           : "transparent",
                         justifyContent:

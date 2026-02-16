@@ -151,9 +151,9 @@ export default function CorrelationMatrix({
           className="correlation-grid"
           style={{
             display: "grid",
-            gridTemplateColumns: `60px repeat(${symbols.length}, 1fr)`,
+            gridTemplateColumns: `48px repeat(${symbols.length}, 1fr)`,
             gap: "2px",
-            minWidth: `${60 + symbols.length * 56}px`,
+            minWidth: `${48 + symbols.length * 48}px`,
           }}
         >
           {/* Top-left empty cell */}

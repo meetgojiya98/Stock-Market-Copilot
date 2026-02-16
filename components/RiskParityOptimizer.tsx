@@ -57,8 +57,8 @@ type PortfolioMetrics = {
 /* ------------------------------------------------------------------ */
 
 const WEIGHT_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#06b6d4", "#10b981",
-  "#f59e0b", "#ef4444", "#3b82f6",
+  "#3b82f6", "#60a5fa", "#ec4899", "#06b6d4", "#10b981",
+  "#f59e0b", "#ef4444", "#2563eb",
 ];
 
 const METHODS: { key: OptMethod; label: string; icon: typeof Scale }[] = [
@@ -341,7 +341,7 @@ function FrontierChart({ points }: { points: FrontierPoint[] }) {
             cx={scaleX(p.x)}
             cy={scaleY(p.y)}
             r={p.isOptimal ? 7 : p.label ? 5 : 4}
-            fill={p.isOptimal ? "var(--accent)" : p.label ? "#8b5cf6" : "var(--surface-border)"}
+            fill={p.isOptimal ? "var(--accent)" : p.label ? "#3b82f6" : "var(--surface-border)"}
             opacity={p.isOptimal ? 1 : p.label ? 0.85 : 0.5}
             stroke={p.isOptimal ? "white" : "none"}
             strokeWidth={p.isOptimal ? 2 : 0}
@@ -643,7 +643,7 @@ export default function RiskParityOptimizer() {
             <span className="font-semibold">Optimal Portfolio</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px]">
-            <div className="w-3 h-3 rounded-full bg-[#8b5cf6]" />
+            <div className="w-3 h-3 rounded-full bg-[#3b82f6]" />
             <span className="muted">Key Portfolios</span>
           </div>
           <div className="flex items-center gap-1.5 text-[10px]">

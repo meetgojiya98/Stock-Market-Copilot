@@ -35,7 +35,7 @@ type CollaborationCursorsProps = {
 // ---------------------------------------------------------------------------
 
 const CURSOR_USERS: Omit<CursorUser, "x" | "y" | "targetX" | "targetY">[] = [
-  { id: "u1", name: "Sarah K.", color: "#6366f1", avatar: "SK", status: "active" },
+  { id: "u1", name: "Sarah K.", color: "#3b82f6", avatar: "SK", status: "active" },
   { id: "u2", name: "James R.", color: "#f59e0b", avatar: "JR", status: "active" },
   { id: "u3", name: "Priya M.", color: "#10b981", avatar: "PM", status: "idle" },
   { id: "u4", name: "Alex T.", color: "#ef4444", avatar: "AT", status: "away" },

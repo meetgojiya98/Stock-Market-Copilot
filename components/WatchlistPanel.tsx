@@ -309,7 +309,7 @@ export default function WatchlistPanel() {
   };
 
   return (
-    <div className="grid xl:grid-cols-[1.55fr_1fr] gap-4">
+    <div className="grid md:grid-cols-[1.55fr_1fr] gap-4">
       <div className="space-y-4">
         <form onSubmit={handleAdd} className="card-elevated rounded-xl p-4 flex flex-wrap gap-2 items-center">
           <SymbolAutocomplete

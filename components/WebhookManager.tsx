@@ -313,7 +313,7 @@ export default function WebhookManager() {
           marginBottom: 6,
         }}
       >
-        <Webhook size={20} style={{ color: "var(--accent, #8b5cf6)" }} />
+        <Webhook size={20} style={{ color: "var(--accent, #3b82f6)" }} />
         <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0, flex: 1 }}>
           Webhook Integrations
         </h3>
@@ -715,7 +715,7 @@ export default function WebhookManager() {
           padding: "12px 20px",
           borderRadius: 12,
           border: "none",
-          background: "var(--accent, #8b5cf6)",
+          background: "var(--accent, #3b82f6)",
           color: "#fff",
           cursor: "pointer",
           fontSize: 14,

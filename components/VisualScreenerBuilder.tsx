@@ -288,7 +288,7 @@ export default function VisualScreenerBuilder() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Filter size={22} style={{ color: "#a78bfa" }} />
+          <Filter size={22} style={{ color: "#60a5fa" }} />
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Visual Stock Screener</h3>
             <span style={{ fontSize: 12, opacity: 0.5 }}>Drag filters to build your screen</span>
@@ -381,8 +381,8 @@ export default function VisualScreenerBuilder() {
                 display: "flex",
                 alignItems: "center",
                 gap: 6,
-                background: "rgba(167,139,250,0.08)",
-                border: "1px solid rgba(167,139,250,0.2)",
+                background: "rgba(59,130,246,0.08)",
+                border: "1px solid rgba(59,130,246,0.2)",
                 borderRadius: 8,
                 padding: "7px 12px",
                 cursor: "grab",
@@ -407,8 +407,8 @@ export default function VisualScreenerBuilder() {
         onDrop={handleDrop}
         style={{
           minHeight: 120,
-          background: dragOverBuilder ? "rgba(167,139,250,0.08)" : "rgba(0,0,0,0.15)",
-          border: `2px dashed ${dragOverBuilder ? "#a78bfa" : "rgba(255,255,255,0.08)"}`,
+          background: dragOverBuilder ? "rgba(59,130,246,0.08)" : "rgba(0,0,0,0.15)",
+          border: `2px dashed ${dragOverBuilder ? "#60a5fa" : "rgba(255,255,255,0.08)"}`,
           borderRadius: 14,
           padding: 16,
           marginBottom: 20,
@@ -434,7 +434,7 @@ export default function VisualScreenerBuilder() {
                     alignItems: "center",
                     gap: 10,
                     background: "rgba(0,0,0,0.2)",
-                    border: "1px solid rgba(167,139,250,0.15)",
+                    border: "1px solid rgba(59,130,246,0.15)",
                     borderRadius: 10,
                     padding: "10px 14px",
                     flexWrap: "wrap",
@@ -559,7 +559,7 @@ export default function VisualScreenerBuilder() {
           padding: "12px 20px",
           borderRadius: 10,
           border: "none",
-          background: activeFilters.length > 0 ? "#a78bfa" : "rgba(255,255,255,0.06)",
+          background: activeFilters.length > 0 ? "#60a5fa" : "rgba(255,255,255,0.06)",
           color: activeFilters.length > 0 ? "#fff" : "rgba(255,255,255,0.3)",
           fontSize: 14,
           fontWeight: 700,
@@ -575,7 +575,7 @@ export default function VisualScreenerBuilder() {
       {hasRun && (
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-            <Search size={16} style={{ color: "#a78bfa" }} />
+            <Search size={16} style={{ color: "#60a5fa" }} />
             <span style={{ fontSize: 14, fontWeight: 700 }}>Results</span>
             <span style={{ fontSize: 12, opacity: 0.45 }}>({results.length} matches)</span>
           </div>
@@ -599,7 +599,7 @@ export default function VisualScreenerBuilder() {
                 <tbody>
                   {results.map((row) => (
                     <tr key={row.symbol} style={{ background: "rgba(0,0,0,0.12)" }}>
-                      <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#a78bfa", borderRadius: "8px 0 0 8px" }}>{row.symbol}</td>
+                      <td style={{ padding: "10px 12px", fontSize: 14, fontWeight: 700, color: "#60a5fa", borderRadius: "8px 0 0 8px" }}>{row.symbol}</td>
                       <td style={{ padding: "10px 12px", fontSize: 13, opacity: 0.7 }}>{row.name}</td>
                       {Object.values(row.metrics).map((val, i) => (
                         <td key={i} style={{ textAlign: "right", padding: "10px 12px", fontSize: 13, fontWeight: 600, borderRadius: i === Object.values(row.metrics).length - 1 ? "0 8px 8px 0" : 0 }}>

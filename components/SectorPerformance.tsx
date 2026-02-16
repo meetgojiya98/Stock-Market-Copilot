@@ -149,7 +149,7 @@ export default function SectorPerformance() {
             return (
               <div key={sector.name} className="group">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-1.5 text-sm min-w-[160px]">
+                  <div className="flex items-center gap-1.5 text-sm min-w-[120px] sm:min-w-[160px]">
                     {isPositive ? (
                       <TrendingUp size={13} style={{ color: "var(--positive)" }} />
                     ) : (

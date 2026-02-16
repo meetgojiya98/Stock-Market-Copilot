@@ -418,7 +418,7 @@ export default function InteractiveCandlestickChart() {
     >
       {/* ----- Header info ----- */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-        <BarChart3 size={20} style={{ color: "#818cf8" }} />
+        <BarChart3 size={20} style={{ color: "#60a5fa" }} />
         <span style={{ fontWeight: 700, fontSize: 16 }}>Interactive Candlestick Chart</span>
         {hoverInfo && (
           <span style={{ marginLeft: "auto", fontSize: 13, color: "#94a3b8", display: "flex", gap: 14 }}>

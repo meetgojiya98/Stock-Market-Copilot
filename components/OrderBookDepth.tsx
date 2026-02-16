@@ -226,7 +226,7 @@ export default function OrderBookDepth() {
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <BookOpen size={20} style={{ color: "#818cf8" }} />
+        <BookOpen size={20} style={{ color: "#60a5fa" }} />
         <span style={{ fontWeight: 700, fontSize: 16 }}>Order Book Depth</span>
         <span style={{ fontSize: 12, color: "#64748b", marginLeft: 4 }}>AAPL</span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>

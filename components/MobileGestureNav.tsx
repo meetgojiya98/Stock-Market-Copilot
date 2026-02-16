@@ -398,7 +398,7 @@ export default function MobileGestureNav({
                 height: "100%",
                 width: isRefreshing ? "100%" : `${pullProgress * 100}%`,
                 background: pullReady || isRefreshing
-                  ? "linear-gradient(90deg, #8b5cf6, #6366f1)"
+                  ? "linear-gradient(90deg, #3b82f6, #3b82f6)"
                   : "rgba(148,163,184,0.3)",
                 borderRadius: 2,
                 transition: isRefreshing ? "width 0.8s ease-in-out" : "none",
@@ -458,7 +458,7 @@ export default function MobileGestureNav({
             gap: 8,
             padding: "12px 16px",
             borderRadius: "0 12px 12px 0",
-            background: "rgba(139,92,246,0.9)",
+            background: "rgba(59,130,246,0.9)",
             color: "#fff",
             boxShadow: "4px 0 16px rgba(0,0,0,0.2)",
             transition: "transform 0.05s",
@@ -488,7 +488,7 @@ export default function MobileGestureNav({
             gap: 8,
             padding: "12px 16px",
             borderRadius: "12px 0 0 12px",
-            background: "rgba(139,92,246,0.9)",
+            background: "rgba(59,130,246,0.9)",
             color: "#fff",
             boxShadow: "-4px 0 16px rgba(0,0,0,0.2)",
             transition: "transform 0.05s",
@@ -536,7 +536,7 @@ export default function MobileGestureNav({
                   borderRadius: 4,
                   background:
                     i === currentPageIndex
-                      ? "#8b5cf6"
+                      ? "#3b82f6"
                       : "rgba(148,163,184,0.3)",
                   transition: "width 0.2s, background 0.2s",
                 }}

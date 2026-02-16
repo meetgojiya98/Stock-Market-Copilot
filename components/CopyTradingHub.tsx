@@ -72,8 +72,8 @@ const RISK_COLORS: Record<RiskLevel, string> = {
 };
 
 const AVATAR_COLORS = [
-  "#6366f1", "#8b5cf6", "#ec4899", "#06b6d4", "#10b981",
-  "#f59e0b", "#ef4444", "#3b82f6", "#84cc16", "#f97316",
+  "#3b82f6", "#60a5fa", "#ec4899", "#06b6d4", "#10b981",
+  "#f59e0b", "#ef4444", "#2563eb", "#84cc16", "#f97316",
 ];
 
 const SYMBOLS = ["AAPL", "TSLA", "NVDA", "AMZN", "MSFT", "META", "GOOG", "AMD", "NFLX", "SPY"];

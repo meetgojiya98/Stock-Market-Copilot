@@ -131,7 +131,7 @@ button:active {
 
 @media (max-width: 640px) {
   .pro-container {
-    width: calc(100% - 1.1rem);
+    width: calc(100% - 1.5rem);
   }
 }
 
@@ -2485,7 +2485,7 @@ textarea::placeholder {
   font-size: 0.8rem;
   font-weight: 600;
   background: rgba(124, 58, 237, 0.08);
-  color: #6d28d9;
+  color: #1d4ed8;
 }
 
 .dark .landing-features-strip {

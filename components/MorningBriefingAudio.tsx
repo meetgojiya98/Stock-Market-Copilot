@@ -345,7 +345,7 @@ export default function MorningBriefingAudio() {
     <div className="briefing-player" style={{ background: "var(--card, #1e1e2f)", borderRadius: 16, padding: 24, color: "var(--foreground, #e2e2e2)" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-        <Headphones size={22} style={{ color: "#a78bfa" }} />
+        <Headphones size={22} style={{ color: "#60a5fa" }} />
         <div>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Morning Briefing</h3>
           <span style={{ fontSize: 12, opacity: 0.6, display: "flex", alignItems: "center", gap: 4 }}>
@@ -377,7 +377,7 @@ export default function MorningBriefingAudio() {
                 width: 4,
                 borderRadius: 2,
                 height: isPlaying ? h + Math.sin(Date.now() / 200 + i) * 4 : h,
-                background: activeBar ? "#a78bfa" : "rgba(167,139,250,0.25)",
+                background: activeBar ? "#60a5fa" : "rgba(59,130,246,0.25)",
                 transition: "height 0.15s ease, background 0.2s ease",
                 animation: isPlaying ? `wave-pulse 0.6s ease-in-out ${i * 0.04}s infinite alternate` : "none",
               }}
@@ -388,7 +388,7 @@ export default function MorningBriefingAudio() {
 
       {/* Progress bar */}
       <div style={{ width: "100%", height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, marginBottom: 6 }}>
-        <div style={{ width: `${progress}%`, height: "100%", background: "#a78bfa", borderRadius: 2, transition: "width 0.3s linear" }} />
+        <div style={{ width: `${progress}%`, height: "100%", background: "#60a5fa", borderRadius: 2, transition: "width 0.3s linear" }} />
       </div>
 
       {/* Time display */}
@@ -423,14 +423,14 @@ export default function MorningBriefingAudio() {
             height: 52,
             borderRadius: "50%",
             border: "none",
-            background: "#a78bfa",
+            background: "#60a5fa",
             color: "#fff",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             cursor: "pointer",
             fontSize: 0,
-            boxShadow: "0 0 20px rgba(167,139,250,0.35)",
+            boxShadow: "0 0 20px rgba(59,130,246,0.35)",
           }}
         >
           {isPlaying ? <Pause size={24} /> : <Play size={24} style={{ marginLeft: 2 }} />}
@@ -448,10 +448,10 @@ export default function MorningBriefingAudio() {
           onClick={cycleSpeed}
           title="Playback speed"
           style={{
-            background: "rgba(167,139,250,0.15)",
-            border: "1px solid rgba(167,139,250,0.3)",
+            background: "rgba(59,130,246,0.15)",
+            border: "1px solid rgba(59,130,246,0.3)",
             borderRadius: 8,
-            color: "#a78bfa",
+            color: "#60a5fa",
             cursor: "pointer",
             fontSize: 12,
             fontWeight: 700,
@@ -500,8 +500,8 @@ export default function MorningBriefingAudio() {
                   transcriptRefs.current[idx] = el;
                 }}
                 style={{
-                  background: isActive ? "rgba(167,139,250,0.2)" : "transparent",
-                  color: isActive ? "#a78bfa" : isPast ? "rgba(255,255,255,0.45)" : "inherit",
+                  background: isActive ? "rgba(59,130,246,0.2)" : "transparent",
+                  color: isActive ? "#60a5fa" : isPast ? "rgba(255,255,255,0.45)" : "inherit",
                   fontWeight: isActive ? 600 : 400,
                   borderRadius: 4,
                   padding: isActive ? "2px 4px" : "0 1px",

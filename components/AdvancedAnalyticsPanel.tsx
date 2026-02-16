@@ -44,7 +44,7 @@ const CHART_COLORS = [
   "#84cc16",
   "#f59e0b",
   "#ef4444",
-  "#8b5cf6",
+  "#3b82f6",
   "#14b8a6",
 ];
 
@@ -273,7 +273,7 @@ export default function AdvancedAnalyticsPanel({ portfolio }: AdvancedAnalyticsP
         </div>
       </div>
 
-      <div className="grid xl:grid-cols-[1.25fr_1fr] gap-4">
+      <div className="grid md:grid-cols-[1.25fr_1fr] gap-4">
         <div className="space-y-4">
           <div className="overflow-x-auto rounded-xl border soft-divider bg-[color-mix(in_srgb,var(--surface)_84%,transparent)]">
             <table className="w-full text-sm min-w-[420px]">

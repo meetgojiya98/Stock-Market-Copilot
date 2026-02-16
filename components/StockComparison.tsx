@@ -157,44 +157,46 @@ export default function StockComparison() {
 
       {/* Comparison grid */}
       {stocks.length > 0 && (
-        <div className="rounded-2xl surface-glass dynamic-surface p-4 sm:p-5 fade-up">
+        <div className="rounded-2xl surface-glass dynamic-surface p-4 sm:p-5 fade-up overflow-x-auto">
           <div className="flex items-center gap-2 mb-4">
             <ArrowUpDown size={15} className="text-[var(--accent)]" />
             <span className="text-[11px] tracking-[0.12em] uppercase muted font-semibold">Side-by-Side Comparison</span>
           </div>
 
-          {/* Header row */}
-          <div
-            className="grid gap-3 mb-3"
-            style={{ gridTemplateColumns: `140px repeat(${stocks.length}, 1fr)` }}
-          >
-            <div />
-            {stocks.map((s) => (
-              <div key={s.symbol} className="rounded-xl control-surface p-3 text-center">
-                <div className="font-semibold text-base section-title">{s.symbol}</div>
-                <div className={`text-xs mt-0.5 ${s.changePct >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
-                  {s.changePct >= 0 ? "+" : ""}{s.changePct}% today
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Metric rows */}
-          <div className="space-y-2">
-            {METRICS.map((metric) => (
-              <div
-                key={metric.key}
-                className="grid gap-3 items-center"
-                style={{ gridTemplateColumns: `140px repeat(${stocks.length}, 1fr)` }}
-              >
-                <div className="text-[11px] tracking-[0.12em] uppercase muted font-semibold">{metric.label}</div>
-                {stocks.map((s) => (
-                  <div key={s.symbol} className="rounded-xl control-surface p-3 text-center text-sm">
-                    {metric.render(s)}
+          <div style={{ minWidth: `${100 + stocks.length * 140}px` }}>
+            {/* Header row */}
+            <div
+              className="grid gap-3 mb-3"
+              style={{ gridTemplateColumns: `100px repeat(${stocks.length}, 1fr)` }}
+            >
+              <div />
+              {stocks.map((s) => (
+                <div key={s.symbol} className="rounded-xl control-surface p-3 text-center">
+                  <div className="font-semibold text-base section-title">{s.symbol}</div>
+                  <div className={`text-xs mt-0.5 ${s.changePct >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                    {s.changePct >= 0 ? "+" : ""}{s.changePct}% today
                   </div>
-                ))}
-              </div>
-            ))}
+                </div>
+              ))}
+            </div>
+
+            {/* Metric rows */}
+            <div className="space-y-2">
+              {METRICS.map((metric) => (
+                <div
+                  key={metric.key}
+                  className="grid gap-3 items-center"
+                  style={{ gridTemplateColumns: `100px repeat(${stocks.length}, 1fr)` }}
+                >
+                  <div className="text-[11px] tracking-[0.12em] uppercase muted font-semibold">{metric.label}</div>
+                  {stocks.map((s) => (
+                    <div key={s.symbol} className="rounded-xl control-surface p-3 text-center text-sm">
+                      {metric.render(s)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

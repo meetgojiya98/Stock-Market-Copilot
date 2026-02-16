@@ -324,7 +324,7 @@ export default function JournalAIInsights() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Brain size={22} style={{ color: "#a78bfa" }} />
+          <Brain size={22} style={{ color: "#60a5fa" }} />
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Journal AI Insights</h3>
             <span style={{ fontSize: 12, opacity: 0.5 }}>Behavioral pattern analysis from your trade journal</span>
@@ -337,10 +337,10 @@ export default function JournalAIInsights() {
             display: "flex",
             alignItems: "center",
             gap: 6,
-            background: "rgba(167,139,250,0.12)",
-            border: "1px solid rgba(167,139,250,0.3)",
+            background: "rgba(59,130,246,0.12)",
+            border: "1px solid rgba(59,130,246,0.3)",
             borderRadius: 10,
-            color: "#a78bfa",
+            color: "#60a5fa",
             padding: "8px 16px",
             cursor: isGenerating ? "not-allowed" : "pointer",
             fontSize: 13,
@@ -356,7 +356,7 @@ export default function JournalAIInsights() {
       {summary && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
           {[
-            { label: "Trades Analyzed", value: summary.totalTrades.toString(), icon: <BarChart3 size={16} style={{ color: "#a78bfa" }} /> },
+            { label: "Trades Analyzed", value: summary.totalTrades.toString(), icon: <BarChart3 size={16} style={{ color: "#60a5fa" }} /> },
             { label: "Win Rate", value: `${summary.winRate}%`, icon: <Target size={16} style={{ color: "#22c55e" }} /> },
             { label: "Avg Hold Time", value: summary.avgHoldTime, icon: <Clock size={16} style={{ color: "#facc15" }} /> },
             { label: "Top Sector", value: summary.mostTradedSector, icon: <TrendingUp size={16} style={{ color: "#38bdf8" }} /> },
@@ -445,8 +445,8 @@ export default function JournalAIInsights() {
                 {/* Recommendation */}
                 <div
                   style={{
-                    background: "rgba(167,139,250,0.06)",
-                    border: "1px solid rgba(167,139,250,0.15)",
+                    background: "rgba(59,130,246,0.06)",
+                    border: "1px solid rgba(59,130,246,0.15)",
                     borderRadius: 10,
                     padding: 12,
                     fontSize: 12,

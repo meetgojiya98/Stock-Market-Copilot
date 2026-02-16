@@ -56,7 +56,7 @@ const DEFAULT_COLORS: Record<string, string> = {
   MSFT: "#f59e0b",
   GOOGL: "#10b981",
   AMZN: "#ef4444",
-  TSLA: "#8b5cf6",
+  TSLA: "#3b82f6",
   NVDA: "#ec4899",
   META: "#06b6d4",
 };

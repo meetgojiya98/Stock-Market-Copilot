@@ -230,7 +230,7 @@ export default function EarningsWhisperTracker() {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <Target size={22} style={{ color: "#a78bfa" }} />
+          <Target size={22} style={{ color: "#60a5fa" }} />
           <div>
             <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Earnings Whisper Tracker</h3>
             <span style={{ fontSize: 12, opacity: 0.5 }}>Consensus vs whisper estimates for upcoming reports</span>
@@ -243,8 +243,8 @@ export default function EarningsWhisperTracker() {
         <div
           className="whisper-countdown"
           style={{
-            background: "linear-gradient(135deg, rgba(167,139,250,0.12), rgba(56,189,248,0.08))",
-            border: "1px solid rgba(167,139,250,0.2)",
+            background: "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(56,189,248,0.08))",
+            border: "1px solid rgba(59,130,246,0.2)",
             borderRadius: 14,
             padding: 20,
             marginBottom: 24,
@@ -260,7 +260,7 @@ export default function EarningsWhisperTracker() {
               Next Earnings Report
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 22, fontWeight: 800, color: "#a78bfa" }}>{topStock.symbol}</span>
+              <span style={{ fontSize: 22, fontWeight: 800, color: "#60a5fa" }}>{topStock.symbol}</span>
               <span style={{ fontSize: 14, opacity: 0.6 }}>{topStock.companyName}</span>
             </div>
             <div style={{ fontSize: 12, opacity: 0.45, marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
@@ -282,7 +282,7 @@ export default function EarningsWhisperTracker() {
                   style={{
                     fontSize: 26,
                     fontWeight: 800,
-                    color: "#a78bfa",
+                    color: "#60a5fa",
                     background: "rgba(0,0,0,0.3)",
                     borderRadius: 10,
                     padding: "6px 12px",
@@ -314,10 +314,10 @@ export default function EarningsWhisperTracker() {
               display: "flex",
               alignItems: "center",
               gap: 4,
-              background: sortKey === opt.key ? "rgba(167,139,250,0.15)" : "rgba(0,0,0,0.15)",
-              border: `1px solid ${sortKey === opt.key ? "rgba(167,139,250,0.3)" : "rgba(255,255,255,0.06)"}`,
+              background: sortKey === opt.key ? "rgba(59,130,246,0.15)" : "rgba(0,0,0,0.15)",
+              border: `1px solid ${sortKey === opt.key ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.06)"}`,
               borderRadius: 8,
-              color: sortKey === opt.key ? "#a78bfa" : "rgba(255,255,255,0.5)",
+              color: sortKey === opt.key ? "#60a5fa" : "rgba(255,255,255,0.5)",
               padding: "5px 10px",
               cursor: "pointer",
               fontSize: 11,
@@ -365,7 +365,7 @@ export default function EarningsWhisperTracker() {
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 17, fontWeight: 800, color: "#a78bfa" }}>{entry.symbol}</div>
+                    <div style={{ fontSize: 17, fontWeight: 800, color: "#60a5fa" }}>{entry.symbol}</div>
                     <div style={{ fontSize: 12, opacity: 0.5 }}>{entry.companyName}</div>
                   </div>
                 </div>
@@ -511,7 +511,7 @@ export default function EarningsWhisperTracker() {
                     <div style={{
                       fontSize: 20,
                       fontWeight: 800,
-                      color: "#a78bfa",
+                      color: "#60a5fa",
                     }}>
                       {entry.surprisePotential}%
                     </div>

@@ -30,7 +30,7 @@ const INDICATORS: IndicatorMeta[] = [
   { key: "sma50", label: "SMA 50", color: "#f59e0b" },
   { key: "ema12", label: "EMA 12", color: "#10b981" },
   { key: "ema26", label: "EMA 26", color: "#ef4444" },
-  { key: "rsi", label: "RSI", color: "#8b5cf6" },
+  { key: "rsi", label: "RSI", color: "#3b82f6" },
   { key: "macd", label: "MACD", color: "#ec4899" },
   { key: "bollinger", label: "Bollinger", color: "#06b6d4" },
   { key: "vwap", label: "VWAP", color: "#f97316" },

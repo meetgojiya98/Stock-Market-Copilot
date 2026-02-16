@@ -331,7 +331,7 @@ export default function RebalancingEngine() {
                         className="rebalance-bar-target h-full rounded-full transition-all duration-300"
                         style={{
                           width: `${(h.targetWeight / Math.max(maxW * 1.2, 1)) * 100}%`,
-                          background: diff > 0.5 ? "var(--positive)" : diff < -0.5 ? "var(--negative)" : "#8b5cf6",
+                          background: diff > 0.5 ? "var(--positive)" : diff < -0.5 ? "var(--negative)" : "#3b82f6",
                         }}
                       />
                     </div>

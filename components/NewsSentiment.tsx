@@ -117,7 +117,7 @@ export default function NewsSentiment() {
           Look Up Sentiment
         </div>
         <form onSubmit={handleSubmit} className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[180px]">
+          <div className="relative flex-1 min-w-[120px] sm:min-w-[180px]">
             <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 muted" />
             <input
               value={query}

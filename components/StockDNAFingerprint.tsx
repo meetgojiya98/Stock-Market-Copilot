@@ -43,7 +43,7 @@ const FACTOR_NAMES = [
 ];
 
 const FACTOR_COLORS = [
-  "#6366f1", // Growth - indigo
+  "#3b82f6", // Growth - indigo
   "#22c55e", // Value - green
   "#f59e0b", // Momentum - amber
   "#3b82f6", // Quality - blue
@@ -282,7 +282,7 @@ export default function StockDNAFingerprint() {
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-        <Dna size={20} style={{ color: "#818cf8" }} />
+        <Dna size={20} style={{ color: "#60a5fa" }} />
         <span style={{ fontWeight: 700, fontSize: 16 }}>Stock DNA Fingerprint</span>
       </div>
 
@@ -422,7 +422,7 @@ export default function StockDNAFingerprint() {
               width: 10,
               height: 10,
               borderRadius: "50%",
-              background: "#6366f1",
+              background: "#3b82f6",
             }}
           />
           <span style={{ fontWeight: 700 }}>{primaryProfile.symbol}</span>
@@ -502,7 +502,7 @@ export default function StockDNAFingerprint() {
           <polygon
             points={primaryPolygon}
             fill="rgba(99,102,241,0.15)"
-            stroke="#6366f1"
+            stroke="#3b82f6"
             strokeWidth={2}
           />
 
@@ -517,7 +517,7 @@ export default function StockDNAFingerprint() {
                 cx={x}
                 cy={y}
                 r={3}
-                fill="#6366f1"
+                fill="#3b82f6"
                 stroke="#1a1a2e"
                 strokeWidth={1}
               />

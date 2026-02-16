@@ -328,7 +328,7 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden mt-2 topbar-mobile-sheet rise-stagger">
+        <div className="lg:hidden mt-2 topbar-mobile-sheet rise-stagger max-h-[calc(100vh-120px)] overflow-y-auto">
           <div className="grid gap-2">
             <div className="topbar-mobile-meta">
               {marketMeta.statusLabel} - {marketMeta.time} ET

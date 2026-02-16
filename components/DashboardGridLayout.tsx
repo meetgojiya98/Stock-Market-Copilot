@@ -241,7 +241,7 @@ function PortfolioSummaryContent() {
           style={{
             height: "100%",
             width: `${((p.totalValue - p.cashBalance) / p.totalValue) * 100}%`,
-            background: "linear-gradient(90deg, #8b5cf6, #6366f1)",
+            background: "linear-gradient(90deg, #3b82f6, #3b82f6)",
             borderRadius: 2,
           }}
         />
@@ -659,12 +659,12 @@ export default function DashboardGridLayout() {
             style={{
               padding: "5px 12px",
               borderRadius: 6,
-              border: "1px solid rgba(139,92,246,0.3)",
-              background: "rgba(139,92,246,0.08)",
+              border: "1px solid rgba(59,130,246,0.3)",
+              background: "rgba(59,130,246,0.08)",
               cursor: "pointer",
               fontSize: 12,
               fontWeight: 500,
-              color: "#8b5cf6",
+              color: "#3b82f6",
             }}
           >
             Restore {hiddenCount} hidden
@@ -717,9 +717,9 @@ export default function DashboardGridLayout() {
               onDragEnd={handleDragEnd}
               style={{
                 borderRadius: 10,
-                border: `1px solid ${isDragOver ? "rgba(139,92,246,0.5)" : "rgba(148,163,184,0.15)"}`,
+                border: `1px solid ${isDragOver ? "rgba(59,130,246,0.5)" : "rgba(148,163,184,0.15)"}`,
                 background: isDragOver
-                  ? "rgba(139,92,246,0.04)"
+                  ? "rgba(59,130,246,0.04)"
                   : "rgba(148,163,184,0.03)",
                 opacity: isDragging ? 0.5 : 1,
                 transition: "border-color 0.15s, background 0.15s, opacity 0.15s",

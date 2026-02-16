@@ -118,7 +118,7 @@ export default function WhatIfSimulator() {
   const currentRisk = avgRisk(portfolio);
   const proposedRisk = avgRisk(proposed);
 
-  const COLORS = ["var(--accent)", "var(--positive)", "#f59e0b", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16", "#f97316"];
+  const COLORS = ["var(--accent)", "var(--positive)", "#f59e0b", "#3b82f6", "#ec4899", "#06b6d4", "#84cc16", "#f97316"];
 
   return (
     <div className="space-y-4">

@@ -143,7 +143,7 @@ function generateMockEvents(): TimelineEvent[] {
       description: "RSI dropped below 30 (currently 27.4)",
       detail: "AAPL's 14-day RSI has fallen to 27.4, entering oversold territory. The stock has declined 8.3% over the past 5 sessions. Historically, when AAPL's RSI drops below 30, it has bounced an average of 6.2% within the next 10 trading days (78% hit rate). Consider this a potential buying opportunity.",
       timestamp: makeDate(4, 8),
-      icon: <Target size={16} />, color: "#8b5cf6",
+      icon: <Target size={16} />, color: "#3b82f6",
     },
     {
       category: "alert", type: "price_alert", title: "AMZN hit stop-loss level", symbol: "AMZN",
@@ -214,7 +214,7 @@ function generateMockEvents(): TimelineEvent[] {
       description: "Federal Funds Rate unchanged at 4.25-4.50%",
       detail: "The Federal Reserve voted unanimously to hold interest rates at 4.25-4.50%. Powell's press conference signaled that the committee is monitoring inflation data closely and that rate cuts remain on the table for later in 2026. Markets rallied after the announcement, with the S&P 500 gaining 1.2%.",
       timestamp: makeDate(10, 0),
-      icon: <Landmark size={16} />, color: "#8b5cf6",
+      icon: <Landmark size={16} />, color: "#3b82f6",
     },
     {
       category: "event", type: "market_milestone", title: "S&P 500 hits new all-time high", symbol: undefined,
@@ -295,7 +295,7 @@ const CATEGORY_COLORS: Record<EventCategory, string> = {
   trade: "#22c55e",
   alert: "#3b82f6",
   dividend: "#f59e0b",
-  event: "#8b5cf6",
+  event: "#3b82f6",
 };
 
 /* ------------------------------------------------------------------ */

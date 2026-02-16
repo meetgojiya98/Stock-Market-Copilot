@@ -48,7 +48,7 @@ const STEPS: OnboardingStep[] = [
     description:
       "Your AI-powered stock market copilot. We will help you set up your workspace in just a few steps so you can start making smarter investment decisions.",
     icon: <Rocket size={40} />,
-    illustrationColor: "#8b5cf6",
+    illustrationColor: "#3b82f6",
   },
   {
     id: "add-stock",
@@ -277,9 +277,9 @@ export default function OnboardingWizardV2() {
                   borderRadius: 5,
                   background:
                     i < currentStep
-                      ? "var(--accent, #8b5cf6)"
+                      ? "var(--accent, #3b82f6)"
                       : i === currentStep
-                      ? "var(--accent, #8b5cf6)"
+                      ? "var(--accent, #3b82f6)"
                       : "rgba(255,255,255,0.12)",
                   transition: "all 0.3s ease",
                   cursor: i < currentStep ? "pointer" : "default",
@@ -708,7 +708,7 @@ export default function OnboardingWizardV2() {
                 type="checkbox"
                 checked={dontShowAgain}
                 onChange={(e) => setDontShowAgain(e.target.checked)}
-                style={{ accentColor: "var(--accent, #8b5cf6)" }}
+                style={{ accentColor: "var(--accent, #3b82f6)" }}
               />
               Don&apos;t show again
             </label>
@@ -741,7 +741,7 @@ export default function OnboardingWizardV2() {
               padding: "10px 20px",
               borderRadius: 10,
               border: "none",
-              background: "var(--accent, #8b5cf6)",
+              background: "var(--accent, #3b82f6)",
               color: "#fff",
               cursor: "pointer",
               fontSize: 14,

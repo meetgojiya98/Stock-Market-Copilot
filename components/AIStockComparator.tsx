@@ -66,7 +66,7 @@ const COMPANY_NAMES: Record<string, string> = {
   XOM: "ExxonMobil",
 };
 
-const COLORS = ["#a78bfa", "#38bdf8", "#22c55e", "#facc15"];
+const COLORS = ["#60a5fa", "#38bdf8", "#22c55e", "#facc15"];
 
 /* ------------------------------------------------------------------ */
 /*  Deterministic hash-based score                                     */
@@ -148,7 +148,7 @@ function generateComparison(symbols: string[]): ComparisonResult {
 
 function scoreColor(score: number): string {
   if (score >= 8) return "#22c55e";
-  if (score >= 6) return "#a78bfa";
+  if (score >= 6) return "#60a5fa";
   if (score >= 4) return "#facc15";
   return "#ef4444";
 }
