@@ -167,12 +167,7 @@ export default function ContextualTips() {
         if (pathname === tip.path) continue;
         setActiveTip(tip);
         setVisible(true);
-
-        // Auto-dismiss after 15 seconds
-        const timer = setTimeout(() => {
-          setVisible(false);
-        }, 15000);
-        return () => clearTimeout(timer);
+        return;
       }
     }
   }, [pathname]);
@@ -182,6 +177,17 @@ export default function ContextualTips() {
     const timer = setTimeout(checkTips, 2000);
     return () => clearTimeout(timer);
   }, [checkTips]);
+
+  // Auto-dismiss after 15 seconds and permanently mark as dismissed
+  useEffect(() => {
+    if (!activeTip || !visible) return;
+    const timer = setTimeout(() => {
+      dismissTip(activeTip.id);
+      setVisible(false);
+      setTimeout(() => setActiveTip(null), 300);
+    }, 15_000);
+    return () => clearTimeout(timer);
+  }, [activeTip, visible]);
 
   const handleDismiss = () => {
     if (activeTip) dismissTip(activeTip.id);
