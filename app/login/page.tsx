@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  BarChart3,
-  KeyRound,
-  ShieldCheck,
-  Sparkles,
-  TimerReset,
-  Waves,
-} from "lucide-react";
+import { AlertTriangle, ArrowRight, Waves } from "lucide-react";
 import BrandLogo from "../../components/BrandLogo";
-import DynamicBackdrop from "../../components/DynamicBackdrop";
 import { isApiConfigured, loginUser } from "../../lib/auth-client";
 
 export default function LoginPage() {
@@ -57,110 +48,73 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-grid">
-        <section className="auth-showcase auth-showcase-login hidden lg:flex">
-          <DynamicBackdrop variant="trading" className="opacity-[0.8]" />
-          <div className="auth-showcase-content">
-            <Link href="/" className="inline-block"><BrandLogo size={54} withWordmark showTagline /></Link>
-            <p className="auth-eyebrow">
-              <Sparkles size={14} />
-              Welcome Back
-            </p>
-            <h1 className="auth-title">Pick up right where you left off.</h1>
-            <p className="auth-subtitle">
-              Your portfolio, research, watchlists, and alerts are all waiting for you.
-              Sign in to get back to it.
-            </p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <Link href="/" className="auth-logo">
+          <BrandLogo size={32} withWordmark showTagline={false} />
+        </Link>
 
-            <div className="auth-highlight-grid">
-              <div className="auth-highlight-card">
-                <ShieldCheck size={16} />
-                <span>Secure login</span>
-              </div>
-              <div className="auth-highlight-card">
-                <BarChart3 size={16} />
-                <span>Live market data</span>
-              </div>
-              <div className="auth-highlight-card">
-                <TimerReset size={16} />
-                <span>Instant access</span>
-              </div>
-            </div>
+        <div className="auth-header">
+          <h1 className="auth-title">Sign in</h1>
+          <p className="auth-subtitle">Welcome back. Enter your details to continue.</p>
+        </div>
+
+        {!isApiConfigured() && (
+          <div className="auth-notice auth-notice-info">
+            <Waves size={13} />
+            Local Mode is enabled — no backend configured.
           </div>
-        </section>
+        )}
 
-        <section className="auth-form-card surface-glass dynamic-surface">
-          <DynamicBackdrop variant="mesh" className="opacity-[0.5]" />
-          <div className="auth-form-content">
-            <div className="lg:hidden mb-5">
-              <Link href="/" className="inline-block"><BrandLogo size={44} withWordmark showTagline /></Link>
+        <form onSubmit={handleLogin} className="auth-form">
+          <label className="auth-field">
+            <span className="auth-label">Email or username</span>
+            <input
+              type="text"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="auth-input"
+              placeholder="you@example.com"
+              required
+              autoComplete="username"
+            />
+          </label>
+
+          <label className="auth-field">
+            <div className="auth-label-row">
+              <span className="auth-label">Password</span>
+              <Link href="/reset-password" className="auth-link-sm">Forgot?</Link>
             </div>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="auth-input"
+              placeholder="Enter password"
+              required
+              autoComplete="current-password"
+            />
+          </label>
 
-            <p className="auth-form-eyebrow">Sign In</p>
-            <h2 className="auth-form-title">Sign in to Zentrade</h2>
-            <p className="auth-form-subtitle">Enter your details to access your account.</p>
-
-            {!isApiConfigured() && (
-              <div className="auth-notice auth-notice-info">
-                <Waves size={13} />
-                Backend API is not configured. Local Mode is enabled automatically.
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} className="auth-form-stack">
-              <label className="auth-input-label">
-                <span>Email or username</span>
-                <input
-                  type="text"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="auth-input"
-                  placeholder="you@domain.com or username"
-                  required
-                />
-              </label>
-
-              <label className="auth-input-label">
-                <span>Password</span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="auth-input"
-                  placeholder="Enter password"
-                  required
-                />
-              </label>
-
-              {error && (
-                <div className="auth-notice auth-notice-danger">
-                  <AlertTriangle size={14} />
-                  {error}
-                </div>
-              )}
-
-              {modeNotice && <div className="auth-notice auth-notice-success">{modeNotice}</div>}
-
-              <button type="submit" disabled={loading} className="auth-submit-btn">
-                {loading ? "Signing in..." : "Sign In"}
-              </button>
-            </form>
-
-            <div className="auth-footer-row">
-              <Link href="/reset-password" className="auth-inline-link inline-flex items-center gap-1">
-                <KeyRound size={14} />
-                Forgot password?
-              </Link>
-              <span>
-                New here?{" "}
-                <Link href="/signup" className="auth-inline-link">
-                  Create account
-                </Link>
-              </span>
+          {error && (
+            <div className="auth-notice auth-notice-danger">
+              <AlertTriangle size={14} />
+              {error}
             </div>
-          </div>
-        </section>
+          )}
+
+          {modeNotice && <div className="auth-notice auth-notice-success">{modeNotice}</div>}
+
+          <button type="submit" disabled={loading} className="auth-btn">
+            {loading ? "Signing in\u2026" : "Sign in"}
+            {!loading && <ArrowRight size={15} />}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="auth-link">Create one</Link>
+        </p>
       </div>
     </div>
   );

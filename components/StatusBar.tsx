@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Activity, Wifi, WifiOff } from "lucide-react";
+
+const HIDDEN_PREFIXES = ["/login", "/signup", "/reset-password", "/learn"];
 
 type IndexQuote = { label: string; value: number; change: number };
 
@@ -13,6 +16,7 @@ function getMarketOpen() {
 }
 
 export default function StatusBar({ className = "" }: { className?: string }) {
+  const pathname = usePathname();
   const [online, setOnline] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
   const [indices] = useState<IndexQuote[]>([
@@ -38,6 +42,9 @@ export default function StatusBar({ className = "" }: { className?: string }) {
       clearInterval(interval);
     };
   }, []);
+
+  const hidden = pathname === "/" || HIDDEN_PREFIXES.some((p) => pathname.startsWith(p));
+  if (hidden) return null;
 
   return (
     <div className={`status-bar ${className}`}>

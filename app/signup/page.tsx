@@ -3,17 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  AlertTriangle,
-  BrainCircuit,
-  Rocket,
-  ShieldCheck,
-  Sparkles,
-  Target,
-  Waves,
-} from "lucide-react";
+import { AlertTriangle, ArrowRight, Waves } from "lucide-react";
 import BrandLogo from "../../components/BrandLogo";
-import DynamicBackdrop from "../../components/DynamicBackdrop";
 import { isApiConfigured, loginUser, registerUser } from "../../lib/auth-client";
 
 export default function SignupPage() {
@@ -73,122 +64,83 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="auth-shell">
-      <div className="auth-grid">
-        <section className="auth-showcase auth-showcase-signup hidden lg:flex">
-          <DynamicBackdrop variant="trading" className="opacity-[0.8]" />
-          <div className="auth-showcase-content">
-            <Link href="/" className="inline-block"><BrandLogo size={54} withWordmark showTagline /></Link>
-            <p className="auth-eyebrow">
-              <Sparkles size={14} />
-              Get Started
-            </p>
-            <h1 className="auth-title">Create your free account and start making smarter moves.</h1>
-            <p className="auth-subtitle">
-              Set up in seconds. Get access to portfolio tracking, AI research, paper trading,
-              and everything else Zentrade offers.
-            </p>
+    <div className="auth-page">
+      <div className="auth-card">
+        <Link href="/" className="auth-logo">
+          <BrandLogo size={32} withWordmark showTagline={false} />
+        </Link>
 
-            <div className="auth-highlight-grid">
-              <div className="auth-highlight-card">
-                <Rocket size={16} />
-                <span>Quick signup</span>
-              </div>
-              <div className="auth-highlight-card">
-                <BrainCircuit size={16} />
-                <span>AI-powered tools</span>
-              </div>
-              <div className="auth-highlight-card">
-                <Target size={16} />
-                <span>Free to use</span>
-              </div>
-            </div>
+        <div className="auth-header">
+          <h1 className="auth-title">Create account</h1>
+          <p className="auth-subtitle">Free forever. Set up in seconds.</p>
+        </div>
+
+        {!isApiConfigured() && (
+          <div className="auth-notice auth-notice-info">
+            <Waves size={13} />
+            Local Mode is enabled — accounts are stored in your browser.
           </div>
-        </section>
+        )}
 
-        <section className="auth-form-card surface-glass dynamic-surface">
-          <DynamicBackdrop variant="mesh" className="opacity-[0.5]" />
-          <div className="auth-form-content">
-            <div className="lg:hidden mb-5">
-              <Link href="/" className="inline-block"><BrandLogo size={44} withWordmark showTagline /></Link>
+        <form onSubmit={handleSignup} className="auth-form">
+          <label className="auth-field">
+            <span className="auth-label">Username</span>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="auth-input"
+              placeholder="Choose a username"
+              required
+              autoComplete="username"
+            />
+          </label>
+
+          <label className="auth-field">
+            <span className="auth-label">Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="auth-input"
+              placeholder="you@example.com"
+              required
+              autoComplete="email"
+            />
+          </label>
+
+          <label className="auth-field">
+            <span className="auth-label">Password</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="auth-input"
+              placeholder="Create a password"
+              required
+              autoComplete="new-password"
+            />
+          </label>
+
+          {error && (
+            <div className="auth-notice auth-notice-danger">
+              <AlertTriangle size={14} />
+              {error}
             </div>
+          )}
 
-            <p className="auth-form-eyebrow">Create Account</p>
-            <h2 className="auth-form-title">Join Zentrade</h2>
-            <p className="auth-form-subtitle">It only takes a few seconds to get started.</p>
+          {modeNotice && <div className="auth-notice auth-notice-success">{modeNotice}</div>}
 
-            {!isApiConfigured() && (
-              <div className="auth-notice auth-notice-info">
-                <Waves size={13} />
-                Backend API is not configured. New accounts are stored in Local Mode.
-              </div>
-            )}
+          <button type="submit" disabled={loading} className="auth-btn">
+            {loading ? "Creating account\u2026" : "Create account"}
+            {!loading && <ArrowRight size={15} />}
+          </button>
+        </form>
 
-            <form onSubmit={handleSignup} className="auth-form-stack">
-              <label className="auth-input-label">
-                <span>Username</span>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  className="auth-input"
-                  placeholder="Choose a username"
-                  required
-                />
-              </label>
-
-              <label className="auth-input-label">
-                <span>Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  className="auth-input"
-                  placeholder="you@domain.com"
-                  required
-                />
-              </label>
-
-              <label className="auth-input-label">
-                <span>Password</span>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  className="auth-input"
-                  placeholder="Create password"
-                  required
-                />
-              </label>
-
-              {error && (
-                <div className="auth-notice auth-notice-danger">
-                  <AlertTriangle size={14} />
-                  {error}
-                </div>
-              )}
-
-              {modeNotice && <div className="auth-notice auth-notice-success">{modeNotice}</div>}
-
-              <button type="submit" disabled={loading} className="auth-submit-btn">
-                {loading ? "Creating account..." : "Create Account"}
-              </button>
-            </form>
-
-            <div className="auth-footer-row">
-              <span className="inline-flex items-center gap-1">
-                <ShieldCheck size={13} />
-                Your data is secure
-              </span>
-              <span>
-                Already registered?{" "}
-                <Link href="/login" className="auth-inline-link">
-                  Sign in
-                </Link>
-              </span>
-            </div>
-          </div>
-        </section>
+        <p className="auth-footer">
+          Already have an account?{" "}
+          <Link href="/login" className="auth-link">Sign in</Link>
+        </p>
       </div>
     </div>
   );
