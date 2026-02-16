@@ -516,21 +516,16 @@ export default function SunburstAllocation() {
 
   return (
     <div
-      className="sunburst-container"
+      className="surface-glass"
       style={{
-        background: "var(--card-bg, #1a1a2e)",
-        borderRadius: 12,
-        border: "1px solid var(--border-color, rgba(255,255,255,0.08))",
+        borderRadius: "var(--radius-card)",
         padding: "16px 20px",
-        color: "#e2e8f0",
-        fontFamily: "'Inter', system-ui, sans-serif",
-        maxWidth: 520,
-        width: "100%",
+        color: "var(--ink)",
       }}
     >
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
-        <PieChart size={20} style={{ color: "#818cf8" }} />
+        <PieChart size={20} style={{ color: "var(--accent)" }} />
         <span style={{ fontWeight: 700, fontSize: 16 }}>Portfolio Allocation</span>
         {(drillSector !== null) && (
           <button
@@ -545,8 +540,8 @@ export default function SunburstAllocation() {
               borderRadius: 6,
               border: "none",
               cursor: "pointer",
-              background: "rgba(255,255,255,0.06)",
-              color: "#94a3b8",
+              background: "var(--surface-emphasis)",
+              color: "var(--ink-muted)",
             }}
           >
             <RotateCcw size={12} />
@@ -556,7 +551,7 @@ export default function SunburstAllocation() {
       </div>
 
       {/* Breadcrumbs */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#64748b", marginBottom: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "var(--ink-muted)", marginBottom: 10 }}>
         {breadcrumbs.map((bc, i) => (
           <span key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
             {i > 0 && <ChevronRight size={10} />}
@@ -564,7 +559,7 @@ export default function SunburstAllocation() {
               onClick={bc.action}
               style={{
                 cursor: i < breadcrumbs.length - 1 ? "pointer" : "default",
-                color: i < breadcrumbs.length - 1 ? "#818cf8" : "#94a3b8",
+                color: i < breadcrumbs.length - 1 ? "var(--accent)" : "var(--ink-muted)",
               }}
             >
               {bc.label}
@@ -593,7 +588,7 @@ export default function SunburstAllocation() {
                 key={`seg-${i}`}
                 d={d}
                 fill={seg.color}
-                stroke="#1a1a2e"
+                stroke="var(--bg-canvas)"
                 strokeWidth={1.5}
                 style={{
                   cursor: seg.ring < 2 ? "pointer" : "default",
@@ -617,7 +612,7 @@ export default function SunburstAllocation() {
               textAnchor="middle"
               fontSize={13}
               fontWeight={700}
-              fill="#e2e8f0"
+              fill="var(--ink)"
             >
               {centerLabel.name}
             </text>
@@ -627,7 +622,7 @@ export default function SunburstAllocation() {
               y={CY + 14}
               textAnchor="middle"
               fontSize={12}
-              fill="#94a3b8"
+              fill="var(--ink-muted)"
             >
               {centerLabel.value}
             </text>
@@ -642,19 +637,20 @@ export default function SunburstAllocation() {
               left: tooltip.x,
               top: tooltip.y,
               transform: "translateX(-50%)",
-              background: "rgba(15,15,30,0.95)",
-              border: "1px solid rgba(255,255,255,0.12)",
+              background: "var(--surface-card)",
+              border: "1px solid var(--surface-border)",
               borderRadius: 8,
               padding: "6px 12px",
               fontSize: 12,
-              color: "#e2e8f0",
+              color: "var(--ink)",
+              boxShadow: "var(--shadow-sm)",
               pointerEvents: "none",
               whiteSpace: "nowrap",
               zIndex: 30,
             }}
           >
             <div style={{ fontWeight: 600 }}>{tooltip.name}</div>
-            <div style={{ color: "#94a3b8", marginTop: 2 }}>
+            <div style={{ color: "var(--ink-muted)", marginTop: 2 }}>
               {formatMoney(tooltip.value)} ({tooltip.pct})
             </div>
           </div>
@@ -686,7 +682,7 @@ export default function SunburstAllocation() {
                 padding: "4px 8px",
                 borderRadius: 6,
                 background:
-                  drillSector === i ? "rgba(255,255,255,0.06)" : "transparent",
+                  drillSector === i ? "var(--surface-emphasis)" : "transparent",
                 cursor: "pointer",
               }}
               onClick={() => {
@@ -705,8 +701,8 @@ export default function SunburstAllocation() {
                   flexShrink: 0,
                 }}
               />
-              <span style={{ color: "#cbd5e1", flex: 1 }}>{s.name}</span>
-              <span style={{ color: "#64748b", fontSize: 11 }}>{pct}%</span>
+              <span style={{ color: "var(--ink)", flex: 1 }}>{s.name}</span>
+              <span style={{ color: "var(--ink-muted)", fontSize: 11 }}>{pct}%</span>
             </div>
           );
         })}

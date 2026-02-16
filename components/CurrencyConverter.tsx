@@ -140,15 +140,12 @@ export default function CurrencyConverter() {
 
   return (
     <div
-      className="currency-selector"
+      className="surface-glass"
       style={{
-        background: "var(--surface-strong, #1e1e2e)",
-        border: "1px solid var(--surface-border, #333)",
-        borderRadius: 16,
+        borderRadius: "var(--radius-card)",
         padding: 24,
         fontFamily: "inherit",
-        color: "var(--ink, #e0e0e0)",
-        maxWidth: 560,
+        color: "var(--ink)",
       }}
     >
       {/* Header */}
@@ -160,7 +157,7 @@ export default function CurrencyConverter() {
           marginBottom: 20,
         }}
       >
-        <Globe size={20} style={{ color: "var(--accent, #8b5cf6)" }} />
+        <Globe size={20} style={{ color: "var(--accent)" }} />
         <h3 style={{ fontSize: 17, fontWeight: 700, margin: 0 }}>
           Currency Converter
         </h3>
@@ -177,8 +174,8 @@ export default function CurrencyConverter() {
             gap: 10,
             padding: "12px 16px",
             borderRadius: 12,
-            border: "1px solid var(--surface-border, #444)",
-            background: "rgba(255,255,255,0.03)",
+            border: "1px solid var(--surface-border)",
+            background: "var(--surface)",
             color: "inherit",
             cursor: "pointer",
             fontFamily: "inherit",
@@ -210,8 +207,8 @@ export default function CurrencyConverter() {
               top: "calc(100% + 4px)",
               left: 0,
               right: 0,
-              background: "var(--surface-strong, #1e1e2e)",
-              border: "1px solid var(--surface-border, #444)",
+              background: "var(--surface-card)",
+              border: "1px solid var(--surface-border)",
               borderRadius: 12,
               zIndex: 50,
               boxShadow: "0 12px 40px rgba(0,0,0,.4)",
@@ -237,7 +234,7 @@ export default function CurrencyConverter() {
                   border: "none",
                   background:
                     c.code === selectedCode
-                      ? "rgba(139, 92, 246, 0.12)"
+                      ? "color-mix(in srgb, var(--accent) 12%, transparent)"
                       : "transparent",
                   color: "inherit",
                   cursor: "pointer",
@@ -248,13 +245,13 @@ export default function CurrencyConverter() {
                 onMouseEnter={(e) => {
                   if (c.code !== selectedCode) {
                     (e.currentTarget as HTMLButtonElement).style.background =
-                      "rgba(255,255,255,0.05)";
+                      "var(--surface-emphasis)";
                   }
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.background =
                     c.code === selectedCode
-                      ? "rgba(139, 92, 246, 0.12)"
+                      ? "color-mix(in srgb, var(--accent) 12%, transparent)"
                       : "transparent";
                 }}
               >
@@ -264,7 +261,7 @@ export default function CurrencyConverter() {
                   {c.name}
                 </span>
                 {c.code === selectedCode && (
-                  <Check size={14} style={{ color: "var(--accent, #8b5cf6)" }} />
+                  <Check size={14} style={{ color: "var(--accent)" }} />
                 )}
               </button>
             ))}
@@ -289,8 +286,8 @@ export default function CurrencyConverter() {
             gap: 8,
             padding: "12px 14px",
             borderRadius: 12,
-            border: "1px solid var(--surface-border, #444)",
-            background: "rgba(255,255,255,0.03)",
+            border: "1px solid var(--surface-border)",
+            background: "var(--surface)",
           }}
         >
           <DollarSign size={16} style={{ opacity: 0.4 }} />
@@ -323,8 +320,8 @@ export default function CurrencyConverter() {
             flex: 1,
             padding: "12px 14px",
             borderRadius: 12,
-            border: "1px solid var(--surface-border, #444)",
-            background: "rgba(var(--accent, 139, 92, 246), 0.05)",
+            border: "1px solid var(--surface-border)",
+            background: "color-mix(in srgb, var(--accent) 5%, transparent)",
             display: "flex",
             alignItems: "center",
             gap: 8,
@@ -386,12 +383,12 @@ export default function CurrencyConverter() {
               borderRadius: 10,
               border:
                 c.code === selectedCode
-                  ? "1px solid var(--accent, #8b5cf6)"
-                  : "1px solid var(--surface-border, #333)",
+                  ? "1px solid var(--accent)"
+                  : "1px solid var(--surface-border)",
               background:
                 c.code === selectedCode
-                  ? "rgba(139, 92, 246, 0.08)"
-                  : "rgba(255,255,255,0.02)",
+                  ? "color-mix(in srgb, var(--accent) 8%, transparent)"
+                  : "var(--surface)",
               cursor: "pointer",
               transition: "all 0.15s",
             }}
@@ -440,10 +437,10 @@ export default function CurrencyConverter() {
       <div
         style={{
           borderRadius: 12,
-          border: "1px solid var(--surface-border, #333)",
+          border: "1px solid var(--surface-border)",
           padding: 16,
           marginBottom: 20,
-          background: "rgba(255,255,255,0.02)",
+          background: "var(--surface)",
         }}
       >
         <div
@@ -512,7 +509,7 @@ export default function CurrencyConverter() {
           padding: "12px 20px",
           borderRadius: 12,
           border: "none",
-          background: "var(--accent, #8b5cf6)",
+          background: "var(--accent)",
           color: "#fff",
           cursor: "pointer",
           fontSize: 14,

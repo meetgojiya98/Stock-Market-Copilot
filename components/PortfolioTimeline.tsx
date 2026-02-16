@@ -335,7 +335,7 @@ export default function PortfolioTimeline() {
   }, []);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 700 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Filter bar */}
       <div
         className="timeline-filter-bar"
@@ -355,12 +355,12 @@ export default function PortfolioTimeline() {
             style={{
               padding: "5px 14px",
               borderRadius: 20,
-              border: `1px solid ${filter === f ? "rgba(139,92,246,0.4)" : "rgba(148,163,184,0.2)"}`,
-              background: filter === f ? "rgba(139,92,246,0.1)" : "rgba(148,163,184,0.04)",
+              border: `1px solid ${filter === f ? "var(--surface-border-strong)" : "var(--surface-border)"}`,
+              background: filter === f ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent",
               cursor: "pointer",
               fontSize: 12,
               fontWeight: filter === f ? 600 : 400,
-              color: filter === f ? "#8b5cf6" : "inherit",
+              color: filter === f ? "var(--accent)" : "inherit",
             }}
           >
             {CATEGORY_LABELS[f]}
@@ -382,8 +382,8 @@ export default function PortfolioTimeline() {
               style={{
                 padding: "4px 10px",
                 borderRadius: 4,
-                border: `1px solid ${zoom === z.value ? "rgba(139,92,246,0.4)" : "rgba(148,163,184,0.2)"}`,
-                background: zoom === z.value ? "rgba(139,92,246,0.1)" : "transparent",
+                border: `1px solid ${zoom === z.value ? "var(--surface-border-strong)" : "var(--surface-border)"}`,
+                background: zoom === z.value ? "color-mix(in srgb, var(--accent) 10%, transparent)" : "transparent",
                 cursor: "pointer",
                 fontSize: 11,
                 fontWeight: zoom === z.value ? 600 : 400,
@@ -409,7 +409,7 @@ export default function PortfolioTimeline() {
             top: 0,
             bottom: 0,
             width: 2,
-            background: "rgba(148,163,184,0.15)",
+            background: "var(--surface-border)",
             borderRadius: 1,
           }}
         />
@@ -444,7 +444,7 @@ export default function PortfolioTimeline() {
                   height: 14,
                   borderRadius: "50%",
                   background: dotColor,
-                  border: "3px solid rgba(20,20,30,1)",
+                  border: "3px solid var(--bg-canvas)",
                   zIndex: 2,
                   boxShadow: `0 0 0 2px ${dotColor}40`,
                 }}
@@ -456,8 +456,8 @@ export default function PortfolioTimeline() {
                 onClick={() => toggleExpand(event.id)}
                 style={{
                   borderRadius: 10,
-                  border: `1px solid ${isExpanded ? `${dotColor}40` : "rgba(148,163,184,0.12)"}`,
-                  background: isExpanded ? `${dotColor}08` : "rgba(148,163,184,0.03)",
+                  border: `1px solid ${isExpanded ? `${dotColor}40` : "var(--surface-border)"}`,
+                  background: isExpanded ? `${dotColor}08` : "var(--surface)",
                   cursor: "pointer",
                   overflow: "hidden",
                   transition: "border-color 0.2s, background 0.2s",
@@ -509,7 +509,7 @@ export default function PortfolioTimeline() {
                             fontWeight: 700,
                             padding: "1px 6px",
                             borderRadius: 4,
-                            background: "rgba(148,163,184,0.1)",
+                            background: "var(--surface-emphasis)",
                           }}
                         >
                           {event.symbol}
@@ -547,7 +547,7 @@ export default function PortfolioTimeline() {
                           style={{
                             marginLeft: 8,
                             fontWeight: 600,
-                            color: event.amount >= 0 ? "#22c55e" : "#ef4444",
+                            color: event.amount >= 0 ? "var(--positive)" : "var(--negative)",
                           }}
                         >
                           {event.amount >= 0 ? "+" : ""}${Math.abs(event.amount).toLocaleString()}
@@ -567,7 +567,7 @@ export default function PortfolioTimeline() {
                   <div
                     style={{
                       padding: "0 14px 14px 56px",
-                      borderTop: "1px solid rgba(148,163,184,0.08)",
+                      borderTop: "1px solid var(--surface-border)",
                     }}
                   >
                     <div
