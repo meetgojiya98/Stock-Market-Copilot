@@ -2,7 +2,6 @@
 import AuthGuard from "../../components/AuthGuard";
 import WatchlistPanel from "../../components/WatchlistPanel";
 import PageShell from "../../components/PageShell";
-import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 
 export default function WatchlistPage() {
   return (
@@ -14,7 +13,6 @@ export default function WatchlistPage() {
       >
         <div className="space-y-6">
           <WatchlistPanel />
-          <FeatureExpansionHub module="watchlist" />
         </div>
       </PageShell>
     </AuthGuard>

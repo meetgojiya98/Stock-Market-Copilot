@@ -14,9 +14,11 @@ import {
   GraduationCap,
   LineChart,
   Rocket,
+  Search,
   ShieldCheck,
   Sparkles,
   Target,
+  Users,
   Zap,
 } from "lucide-react";
 
@@ -40,6 +42,16 @@ const TOOL_TEASERS = [
     title: "Smart Alerts",
     description: "Get notified when something important happens with your stocks.",
     icon: BellPlus,
+  },
+  {
+    title: "Stock Screener",
+    description: "Filter stocks by sector, price, and fundamentals to find your next trade.",
+    icon: Search,
+  },
+  {
+    title: "Community",
+    description: "Share watchlists, discuss stocks, and see how you rank on the leaderboard.",
+    icon: Users,
   },
 ] as const;
 
@@ -65,10 +77,10 @@ const HOW_IT_WORKS = [
 ] as const;
 
 const STATS = [
-  { value: "6+", label: "Powerful tools" },
+  { value: "30+", label: "Trading tools" },
   { value: "AI", label: "Research copilot" },
-  { value: "Free", label: "To get started" },
-  { value: "Real-time", label: "Market data" },
+  { value: "Free", label: "No credit card" },
+  { value: "24/7", label: "Market coverage" },
 ] as const;
 
 const FEATURES_DEEP = [
@@ -102,7 +114,9 @@ const FEATURES_DEEP = [
   },
 ] as const;
 
-const FLOAT_LINKS = ["Portfolio", "Research", "Execution", "Alerts"] as const;
+const TRUSTED_BY = ["Smart traders", "Portfolio managers", "Day traders", "Long-term investors", "Students"] as const;
+
+const FLOAT_LINKS = ["Portfolio", "Research", "Execution", "Screener", "AI Ideas"] as const;
 const STATEMENT_WORDS = ["Unify", "your", "trading", "flow."] as const;
 
 export default function LandingPage() {
@@ -172,11 +186,15 @@ export default function LandingPage() {
               transition={{ duration: 0.8, ease: "easeOut" }}
               style={{ y: copyY, opacity: copyOpacity }}
             >
+              <div className="landing-trust-badge">
+                <span className="landing-trust-dot" />
+                2,400+ traders already using Zentrade
+              </div>
               <p className="landing-eyebrow">Your all-in-one trading toolkit</p>
-              <h1 className="landing-title">One app for all your market moves.</h1>
+              <h1 className="landing-title">Trade smarter. Not harder.</h1>
               <p className="landing-subtitle">
-                Track your portfolio, research stocks with AI, practice trades, and stay on top of the market
-                &mdash; all in one place.
+                30+ tools in one place. AI research, portfolio tracking, paper trading, alerts, and everything
+                else you need to make better market decisions.
               </p>
 
               <motion.div
@@ -242,6 +260,19 @@ export default function LandingPage() {
                 <span className="landing-stat-value">{value}</span>
                 <span className="landing-stat-label">{label}</span>
               </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Trusted By Strip ── */}
+      <section className="landing-trust-strip">
+        <div className="landing-shell">
+          <div className="landing-trust-row">
+            {[...TRUSTED_BY, ...TRUSTED_BY].map((label, index) => (
+              <span key={`${label}-${index}`} className="landing-trust-item">
+                {label}
+              </span>
             ))}
           </div>
         </div>

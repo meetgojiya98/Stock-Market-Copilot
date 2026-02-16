@@ -2,7 +2,6 @@
 import AuthGuard from "../../components/AuthGuard";
 import TrendingStocks from "../../components/TrendingStocks";
 import PageShell from "../../components/PageShell";
-import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 export default function TrendingPage() {
   return (
     <AuthGuard>
@@ -13,7 +12,6 @@ export default function TrendingPage() {
       >
         <div className="space-y-6">
           <TrendingStocks />
-          <FeatureExpansionHub module="trending" />
         </div>
       </PageShell>
     </AuthGuard>

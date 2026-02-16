@@ -2,7 +2,6 @@
 import AuthGuard from "../../components/AuthGuard";
 import NotificationsPanel from "../../components/NotificationsPanel";
 import PageShell from "../../components/PageShell";
-import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 import PriceAlerts from "../../components/PriceAlerts";
 import WatchlistMovers from "../../components/WatchlistMovers";
 
@@ -18,7 +17,6 @@ export default function NotificationsPage() {
           <NotificationsPanel />
           <PriceAlerts />
           <WatchlistMovers />
-          <FeatureExpansionHub module="notifications" />
         </div>
       </PageShell>
     </AuthGuard>

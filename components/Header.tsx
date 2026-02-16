@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Activity,
   BellPlus,
   Bot,
   BriefcaseBusiness,
+  ChevronDown,
   LogIn,
   LogOut,
   Menu,
@@ -54,24 +55,41 @@ const NAV_LINKS: NavLink[] = [
   { name: "Alerts", href: "/notifications", icon: <BellPlus size={16} />, protected: true },
 ];
 
-const MORE_LINKS: NavLink[] = [
-  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={16} />, protected: true },
-  { name: "Briefing", href: "/briefing", icon: <Newspaper size={16} />, protected: true },
-  { name: "Screener", href: "/screener", icon: <Search size={16} />, protected: true },
-  { name: "Compare", href: "/compare", icon: <GitCompare size={16} />, protected: true },
-  { name: "Sectors", href: "/sectors", icon: <BarChart3 size={16} />, protected: true },
-  { name: "Sentiment", href: "/sentiment", icon: <TrendingUp size={16} />, protected: true },
-  { name: "Ideas", href: "/ideas", icon: <Lightbulb size={16} />, protected: true },
-  { name: "Calendar", href: "/calendar", icon: <CalendarDays size={16} />, protected: true },
-  { name: "Journal", href: "/journal", icon: <BookOpen size={16} />, protected: true },
-  { name: "Heatmap", href: "/heatmap", icon: <FlaskConical size={16} />, protected: true },
-  { name: "Simulator", href: "/simulator", icon: <FlaskConical size={16} />, protected: true },
-  { name: "Goals", href: "/goals", icon: <Target size={16} />, protected: true },
-  { name: "Dividends", href: "/dividends", icon: <BarChart3 size={16} />, protected: true },
-  { name: "Community", href: "/community", icon: <Users size={16} />, protected: true },
-  { name: "Export", href: "/export", icon: <Download size={16} />, protected: true },
-  { name: "Glossary", href: "/glossary", icon: <BookOpen size={16} /> },
-  { name: "Strategies", href: "/strategies", icon: <BookOpen size={16} /> },
+type MoreGroup = { label: string; links: NavLink[] };
+
+const MORE_GROUPS: MoreGroup[] = [
+  {
+    label: "Insights",
+    links: [
+      { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={16} />, protected: true },
+      { name: "Briefing", href: "/briefing", icon: <Newspaper size={16} />, protected: true },
+      { name: "Screener", href: "/screener", icon: <Search size={16} />, protected: true },
+      { name: "Sectors", href: "/sectors", icon: <BarChart3 size={16} />, protected: true },
+      { name: "Sentiment", href: "/sentiment", icon: <TrendingUp size={16} />, protected: true },
+    ],
+  },
+  {
+    label: "Portfolio Tools",
+    links: [
+      { name: "Compare", href: "/compare", icon: <GitCompare size={16} />, protected: true },
+      { name: "Heatmap", href: "/heatmap", icon: <FlaskConical size={16} />, protected: true },
+      { name: "Simulator", href: "/simulator", icon: <FlaskConical size={16} />, protected: true },
+      { name: "Goals", href: "/goals", icon: <Target size={16} />, protected: true },
+      { name: "Dividends", href: "/dividends", icon: <BarChart3 size={16} />, protected: true },
+      { name: "Journal", href: "/journal", icon: <BookOpen size={16} />, protected: true },
+    ],
+  },
+  {
+    label: "Community & Learn",
+    links: [
+      { name: "Ideas", href: "/ideas", icon: <Lightbulb size={16} />, protected: true },
+      { name: "Calendar", href: "/calendar", icon: <CalendarDays size={16} />, protected: true },
+      { name: "Community", href: "/community", icon: <Users size={16} />, protected: true },
+      { name: "Export", href: "/export", icon: <Download size={16} />, protected: true },
+      { name: "Glossary", href: "/glossary", icon: <BookOpen size={16} /> },
+      { name: "Strategies", href: "/strategies", icon: <BookOpen size={16} /> },
+    ],
+  },
 ];
 
 function getMarketMeta() {
@@ -106,6 +124,8 @@ export default function Header() {
     () => typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const moreRef = useRef<HTMLDivElement>(null);
   const [clockTick, setClockTick] = useState(0);
   const showThemeControl =
     loggedIn || pathname.startsWith("/login") || pathname.startsWith("/signup");
@@ -126,6 +146,23 @@ export default function Header() {
     return () => window.clearInterval(id);
   }, []);
 
+  /* Close the "More" dropdown on outside click */
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [moreOpen]);
+
+  /* Close the "More" dropdown on navigation */
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
   const marketMeta = useMemo(() => getMarketMeta(), [clockTick]);
   const homeHref = loggedIn ? "/portfolio" : "/login";
 
@@ -137,6 +174,7 @@ export default function Header() {
 
     router.push(href);
     setMenuOpen(false);
+    setMoreOpen(false);
   };
 
   const handleLogout = () => {
@@ -180,9 +218,51 @@ export default function Header() {
                 </button>
               );
             })}
+            <div ref={moreRef} className="relative">
+              <button
+                onClick={() => setMoreOpen((v) => !v)}
+                className={`topbar-link ${moreOpen ? "topbar-link-active" : ""}`}
+              >
+                <LayoutDashboard size={16} />
+                More
+                <ChevronDown size={14} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+              </button>
+              {moreOpen && (
+                <div className="topbar-more-panel">
+                  {MORE_GROUPS.map((group) => (
+                    <div key={group.label}>
+                      <div className="topbar-more-group-label">{group.label}</div>
+                      <div className="grid grid-cols-2 gap-1">
+                        {group.links.map((link) => {
+                          const active = pathname === link.href;
+                          return (
+                            <button
+                              key={link.href}
+                              onClick={() => navigate(link.href, link.protected)}
+                              className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
+                            >
+                              {link.icon}
+                              {link.name}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+              className="topbar-search-btn hidden lg:inline-flex"
+            >
+              <Search size={14} />
+              <span>Search</span>
+              <kbd className="topbar-kbd">{"\u2318"}K</kbd>
+            </button>
             <button onClick={() => navigate("/research", true)} className="topbar-ai hidden sm:inline-flex">
               <Sparkles size={14} />
               <span className="hidden xl:inline">AI Research</span>
@@ -245,22 +325,26 @@ export default function Header() {
               );
             })}
 
-            <div className="topbar-mobile-meta mt-1">More Tools</div>
-            <div className="grid grid-cols-2 gap-1">
-              {MORE_LINKS.map((link) => {
-                const active = pathname === link.href;
-                return (
-                  <button
-                    key={link.href}
-                    onClick={() => navigate(link.href, link.protected)}
-                    className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
-                  >
-                    {link.icon}
-                    {link.name}
-                  </button>
-                );
-              })}
-            </div>
+            {MORE_GROUPS.map((group) => (
+              <div key={group.label}>
+                <div className="topbar-mobile-meta mt-1">{group.label}</div>
+                <div className="grid grid-cols-2 gap-1 mt-2">
+                  {group.links.map((link) => {
+                    const active = pathname === link.href;
+                    return (
+                      <button
+                        key={link.href}
+                        onClick={() => navigate(link.href, link.protected)}
+                        className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
+                      >
+                        {link.icon}
+                        {link.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
 
             {!loggedIn ? (
               <button className="topbar-mobile-auth" onClick={() => navigate("/login")}>

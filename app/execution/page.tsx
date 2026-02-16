@@ -3,7 +3,6 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import ExecutionHub from "../../components/ExecutionHub";
-import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 
 export default function ExecutionPage() {
   return (
@@ -15,7 +14,6 @@ export default function ExecutionPage() {
       >
         <div className="space-y-6">
           <ExecutionHub />
-          <FeatureExpansionHub module="execution" />
         </div>
       </PageShell>
     </AuthGuard>

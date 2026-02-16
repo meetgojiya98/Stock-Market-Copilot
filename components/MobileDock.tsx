@@ -63,14 +63,16 @@ export default function MobileDock() {
       <div className="dock-shell">
         <div className="grid grid-cols-6 gap-1">
           {ITEMS.map((item) => {
-            const active = pathname === item.href;
+            const active = pathname.startsWith(item.href);
             return (
               <button
                 key={item.href}
                 onClick={() => navigate(item)}
                 className={`dock-link ${active ? "dock-link-active" : ""}`}
               >
-                {item.icon}
+                <span className={`dock-icon-wrap ${active ? "dock-icon-active" : ""}`}>
+                  {item.icon}
+                </span>
                 <span>{item.label}</span>
               </button>
             );

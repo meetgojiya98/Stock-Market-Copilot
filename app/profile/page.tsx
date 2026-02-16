@@ -2,7 +2,6 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import ProfileCommandCenter from "../../components/ProfileCommandCenter";
-import FeatureExpansionHub from "../../components/FeatureExpansionHub";
 
 export default function ProfilePage() {
   return (
@@ -14,7 +13,6 @@ export default function ProfilePage() {
       >
         <div className="space-y-6">
           <ProfileCommandCenter />
-          <FeatureExpansionHub module="profile" />
         </div>
       </PageShell>
     </AuthGuard>
