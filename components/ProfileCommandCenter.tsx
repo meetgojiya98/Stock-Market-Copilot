@@ -9,12 +9,14 @@ import {
   Clock3,
   LayoutDashboard,
   LockKeyhole,
+  Palette,
   Radar,
   ShieldCheck,
   Sparkles,
   UserRound,
   Workflow,
 } from "lucide-react";
+import ThemeModeSwitch from "./ThemeModeSwitch";
 import {
   fetchNotificationsData,
   fetchPortfolioData,
@@ -421,6 +423,17 @@ export default function ProfileCommandCenter() {
               {syncNotice}
             </p>
           )}
+        </div>
+      </section>
+
+      <section className="surface-panel p-5 sm:p-6 fade-up">
+        <h3 className="text-lg font-semibold section-title inline-flex items-center gap-2">
+          <Palette size={18} />
+          Appearance
+        </h3>
+        <p className="mt-1 text-sm muted">Choose your preferred color mode.</p>
+        <div className="mt-3">
+          <ThemeModeSwitch />
         </div>
       </section>
 

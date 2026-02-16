@@ -489,6 +489,52 @@ export function getAuthModeLabel() {
   return mode === "local" ? "Local Mode" : "Remote Mode";
 }
 
+export async function resetPassword(input: { email: string; newPassword: string }): Promise<AuthOutcome> {
+  const email = normalizeEmail(input.email);
+
+  // Try remote first
+  if (API_BASE) {
+    try {
+      const response = await fetchWithTimeout(`${API_BASE}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, new_password: input.newPassword }),
+      });
+
+      if (response.ok) {
+        // Also update local copy
+        const users = readUsers();
+        const idx = users.findIndex((u) => u.email === email);
+        if (idx >= 0) {
+          users[idx] = { ...users[idx], password: input.newPassword };
+          writeUsers(users);
+        }
+        return { ok: true, mode: "remote" };
+      }
+
+      if (response.status !== 404 && response.status !== 405) {
+        const detail = await readRemoteDetail(response, "Password reset failed.");
+        return { ok: false, mode: "remote", detail };
+      }
+    } catch (error) {
+      if (!isUnavailableError(error)) {
+        return { ok: false, mode: "remote", detail: "Password reset failed." };
+      }
+    }
+  }
+
+  // Local fallback
+  const users = readUsers();
+  const idx = users.findIndex((u) => u.email === email);
+  if (idx < 0) {
+    return { ok: false, mode: "local", detail: "No account found with that email." };
+  }
+
+  users[idx] = { ...users[idx], password: input.newPassword };
+  writeUsers(users);
+  return { ok: true, mode: "local" };
+}
+
 export function isApiConfigured() {
   return Boolean(API_BASE);
 }

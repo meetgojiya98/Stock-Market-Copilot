@@ -148,10 +148,10 @@ export default function LoginPage() {
             </form>
 
             <div className="auth-footer-row">
-              <span className="inline-flex items-center gap-1">
+              <Link href="/reset-password" className="auth-inline-link inline-flex items-center gap-1">
                 <KeyRound size={14} />
-                You'll stay signed in
-              </span>
+                Forgot password?
+              </Link>
               <span>
                 New here?{" "}
                 <Link href="/signup" className="auth-inline-link">

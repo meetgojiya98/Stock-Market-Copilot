@@ -31,9 +31,7 @@ import {
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import DynamicBackdrop from "./DynamicBackdrop";
-import ThemeModeSwitch from "./ThemeModeSwitch";
 import { clearAuthSession } from "../lib/auth-client";
-import { useThemeMode } from "../lib/use-theme-mode";
 
 type NavLink = {
   name: string;
@@ -117,9 +115,8 @@ function getMarketMeta() {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/learn");
+  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/reset-password") || pathname.startsWith("/learn");
 
-  const { mode, resolvedMode, setThemeMode } = useThemeMode();
   const [loggedIn, setLoggedIn] = useState(
     () => typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
   );
@@ -129,8 +126,6 @@ export default function Header() {
   const navRef = useRef<HTMLElement>(null);
   const indicatorRef = useRef<HTMLSpanElement>(null);
   const [clockTick, setClockTick] = useState(0);
-  const showThemeControl =
-    loggedIn || pathname.startsWith("/login") || pathname.startsWith("/signup");
 
   useEffect(() => {
     const checkLogin = () => {
@@ -205,7 +200,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">
       <div className="topbar-shell relative">
-        <DynamicBackdrop variant={resolvedMode === "dark" ? "mesh" : "aurora"} className="opacity-[0.24]" />
+        <DynamicBackdrop variant="aurora" className="opacity-[0.24]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button className="topbar-brand" onClick={() => navigate(homeHref)}>
@@ -284,10 +279,6 @@ export default function Header() {
               <Sparkles size={14} />
               <span className="hidden xl:inline">AI Research</span>
             </button>
-            {showThemeControl && (
-              <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />
-            )}
-
             {!loggedIn ? (
               <button className="topbar-action hidden sm:inline-flex" onClick={() => navigate("/login")}>
                 <LogIn size={15} />
@@ -304,10 +295,6 @@ export default function Header() {
                   <span className="hidden xl:inline">Logout</span>
                 </button>
               </>
-            )}
-
-            {showThemeControl && (
-              <ThemeModeSwitch className="md:hidden" mode={mode} onModeChange={setThemeMode} />
             )}
 
             <button

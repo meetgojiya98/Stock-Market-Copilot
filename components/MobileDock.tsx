@@ -25,7 +25,7 @@ const ITEMS: DockItem[] = [
   { label: "More", href: "/dashboard", protected: true, icon: <LayoutGrid size={16} /> },
 ];
 
-const HIDDEN_PREFIXES = ["/login", "/signup", "/learn"];
+const HIDDEN_PREFIXES = ["/login", "/signup", "/reset-password", "/learn"];
 
 export default function MobileDock() {
   const router = useRouter();
