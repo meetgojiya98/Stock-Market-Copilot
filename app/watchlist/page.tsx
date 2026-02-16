@@ -21,13 +21,13 @@ export default function WatchlistPage() {
             <div className="surface-glass p-4 rounded-xl min-w-[260px]"><h3 className="text-sm font-semibold" style={{ color: "var(--ink)" }}>Alerts Triggered</h3><p className="text-xs mt-1" style={{ color: "var(--ink-muted)" }}>Recent price alerts</p></div>
           </ScrollSnapGallery>
         </div>
-        <FloatingActionButton
-          actions={[
-            { icon: <Plus size={16} />, label: "Add Symbol", onClick: () => { const input = document.querySelector<HTMLInputElement>('input[placeholder="Add symbol"]'); input?.focus(); } },
-            { icon: <RefreshCw size={16} />, label: "Refresh", onClick: () => { window.location.reload(); } },
-          ]}
-        />
       </PageShell>
+      <FloatingActionButton
+        actions={[
+          { icon: <Plus size={16} />, label: "Add Symbol", onClick: () => { const input = document.querySelector<HTMLInputElement>('input[placeholder="Add symbol"]'); input?.focus(); } },
+          { icon: <RefreshCw size={16} />, label: "Refresh", onClick: () => { window.location.reload(); } },
+        ]}
+      />
     </AuthGuard>
   );
 }

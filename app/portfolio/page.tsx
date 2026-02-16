@@ -48,14 +48,14 @@ export default function PortfolioPage() {
           <PortfolioTimeline />
           <AccordionPanel sections={[{ id: "version-history", title: "Version History", content: <VersionHistory />, defaultOpen: false }]} />
         </div>
-        <FloatingActionButton
-          actions={[
-            { icon: <Plus size={16} />, label: "Add Position", onClick: () => { const input = document.querySelector<HTMLInputElement>('input[placeholder="Add symbol"]'); input?.focus(); } },
-            { icon: <RefreshCw size={16} />, label: "Refresh Prices", onClick: () => { window.location.reload(); } },
-            { icon: <Download size={16} />, label: "Export CSV", onClick: () => { /* trigger export */ } },
-          ]}
-        />
       </PageShell>
+      <FloatingActionButton
+        actions={[
+          { icon: <Plus size={16} />, label: "Add Position", onClick: () => { const input = document.querySelector<HTMLInputElement>('input[placeholder="Add symbol"]'); input?.focus(); } },
+          { icon: <RefreshCw size={16} />, label: "Refresh Prices", onClick: () => { window.location.reload(); } },
+          { icon: <Download size={16} />, label: "Export CSV", onClick: () => { /* trigger export */ } },
+        ]}
+      />
     </AuthGuard>
   );
 }
