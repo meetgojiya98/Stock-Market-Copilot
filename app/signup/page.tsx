@@ -78,7 +78,7 @@ export default function SignupPage() {
         <section className="auth-showcase auth-showcase-signup hidden lg:flex">
           <DynamicBackdrop variant="trading" className="opacity-[0.8]" />
           <div className="auth-showcase-content">
-            <BrandLogo size={54} withWordmark showTagline />
+            <Link href="/" className="inline-block"><BrandLogo size={54} withWordmark showTagline /></Link>
             <p className="auth-eyebrow">
               <Sparkles size={14} />
               Get Started
@@ -110,7 +110,7 @@ export default function SignupPage() {
           <DynamicBackdrop variant="mesh" className="opacity-[0.5]" />
           <div className="auth-form-content">
             <div className="lg:hidden mb-5">
-              <BrandLogo size={44} withWordmark showTagline />
+              <Link href="/" className="inline-block"><BrandLogo size={44} withWordmark showTagline /></Link>
             </div>
 
             <p className="auth-form-eyebrow">Create Account</p>
