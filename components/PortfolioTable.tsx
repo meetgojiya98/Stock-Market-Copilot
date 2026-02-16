@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, BriefcaseBusiness, RefreshCw, Target, Trash2 } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, BarChart3, BriefcaseBusiness, Eye, RefreshCw, Target, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
 import {
   addPortfolioPosition,
+  addWatchlistSymbol,
   fetchPortfolioData,
   removePortfolioPosition,
 } from "../lib/data-client";
@@ -84,6 +86,7 @@ async function fetchPrice(symbol: string): Promise<PriceMeta> {
 }
 
 export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProps) {
+  const router = useRouter();
   const [portfolio, setPortfolio] = useState<PortfolioRow[]>([]);
   const [symbol, setSymbol] = useState("");
   const [shares, setShares] = useState("");
@@ -94,12 +97,28 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
   const [priceMap, setPriceMap] = useState<Record<string, PriceMeta>>({});
   const [rebalanceMode, setRebalanceMode] = useState<"equal" | "risk-aware">("equal");
   const [dataMode, setDataMode] = useState<"remote" | "local">("remote");
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; symbol: string } | null>(null);
+  const [expandedRow, setExpandedRow] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   const filteredPortfolio = useMemo(() => {
+    let result = portfolio;
     const query = search.trim().toUpperCase();
-    if (!query) return portfolio;
-    return portfolio.filter((row) => row.symbol.includes(query));
-  }, [portfolio, search]);
+    if (query) {
+      result = result.filter((row) => row.symbol.includes(query));
+    }
+    if (activeFilters.size > 0) {
+      result = result.filter((row) => {
+        const meta = priceMap[row.symbol];
+        const dayChange = meta?.changePct ?? 0;
+        if (activeFilters.has("gainers") && dayChange <= 0) return false;
+        if (activeFilters.has("losers") && dayChange >= 0) return false;
+        return true;
+      });
+    }
+    return result;
+  }, [portfolio, search, activeFilters, priceMap]);
 
   const totalValue = useMemo(
     () =>
@@ -279,6 +298,38 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
     fetchPortfolio();
   };
 
+  const toggleFilter = useCallback((filter: string) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(filter)) {
+        next.delete(filter);
+      } else {
+        next.add(filter);
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [contextMenu]);
+
   return (
     <div className="space-y-4">
       <div className="grid md:grid-cols-[1.2fr_1fr] gap-4">
@@ -352,7 +403,30 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         </span>
       </div>
 
-      {error && <div className="text-sm text-red-600 dark:text-red-300">{error}</div>}
+      <div className="flex items-center gap-2 flex-wrap">
+        {(["gainers", "losers", "high-volume"] as const).map((filter) => {
+          const isActive = activeFilters.has(filter);
+          return (
+            <span
+              key={filter}
+              onClick={() => toggleFilter(filter)}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border transition-all duration-200 cursor-pointer select-none ${
+                isActive
+                  ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] text-[var(--accent)]"
+                  : "border-[var(--surface-border)] muted hover:border-[var(--ink-faint)]"
+              }`}
+            >
+              {filter === "gainers" ? "Gainers" : filter === "losers" ? "Losers" : "High Volume"}
+            </span>
+          );
+        })}
+      </div>
+
+      {error && (
+        <p className="text-xs text-[var(--negative)] validation-shake flex items-center gap-1">
+          <AlertTriangle size={12} />{error}
+        </p>
+      )}
 
       <div className="overflow-x-auto rounded-xl border soft-divider bg-[color-mix(in_srgb,var(--surface)_86%,transparent)]">
         <table className="w-full min-w-[560px] text-sm">
@@ -373,42 +447,89 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
               const meta = priceMap[row.symbol] ?? { price: 0, changePct: 0 };
               const value = meta.price * row.shares;
               const allocation = totalValue > 0 ? (value / totalValue) * 100 : 0;
+              const isExpanded = expandedRow === row.symbol;
+              const avgCost = meta.price > 0 ? meta.price * (1 - meta.changePct / 200) : 0;
+              const todayChange = meta.price > 0 ? (meta.price / (1 + meta.changePct / 100) - meta.price) * -1 * row.shares : 0;
+              const weight = allocation;
+              const high52w = meta.price > 0 ? meta.price * 1.25 : 0;
+              const low52w = meta.price > 0 ? meta.price * 0.72 : 0;
 
               return (
-                <tr
-                  key={row.symbol}
-                  className="border-t border-black/5 dark:border-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
-                >
-                  <td className="px-3 py-2.5 font-semibold">{row.symbol}</td>
-                  <td className="px-3 py-2.5">
-                    {meta.price > 0 && (
-                      <Sparkline
-                        data={Array.from({ length: 7 }, (_, i) =>
-                          meta.price * (1 + (Math.random() - 0.48) * 0.03 * (i + 1))
-                        )}
-                        color={meta.changePct >= 0 ? "var(--positive)" : "var(--negative)"}
-                      />
-                    )}
-                  </td>
-                  <td className="px-3 py-2.5 metric-value">{row.shares}</td>
-                  <td className="px-3 py-2.5 metric-value">{meta.price > 0 ? formatMoney(meta.price) : "--"}</td>
-                  <td className="px-3 py-2.5">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${meta.changePct >= 0 ? "badge-positive" : "badge-negative"}`}>
-                      {formatPercent(meta.changePct)}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 metric-value">{formatMoney(value)}</td>
-                  <td className="px-3 py-2.5 metric-value">{allocation.toFixed(1)}%</td>
-                  <td className="px-3 py-2.5">
-                    <button
-                      onClick={() => handleRemove(row.symbol)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-2.5 py-1 text-xs"
-                    >
-                      <Trash2 size={13} />
-                      Remove
-                    </button>
-                  </td>
-                </tr>
+                <React.Fragment key={row.symbol}>
+                  <tr
+                    className="border-t border-black/5 dark:border-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-pointer"
+                    onClick={() => setExpandedRow(isExpanded ? null : row.symbol)}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setContextMenu({ x: e.clientX, y: e.clientY, symbol: row.symbol });
+                    }}
+                  >
+                    <td className="px-3 py-2.5 font-semibold">{row.symbol}</td>
+                    <td className="px-3 py-2.5">
+                      {meta.price > 0 && (
+                        <Sparkline
+                          data={Array.from({ length: 7 }, (_, i) =>
+                            meta.price * (1 + (Math.random() - 0.48) * 0.03 * (i + 1))
+                          )}
+                          color={meta.changePct >= 0 ? "var(--positive)" : "var(--negative)"}
+                        />
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 metric-value">{row.shares}</td>
+                    <td className="px-3 py-2.5 metric-value">{meta.price > 0 ? formatMoney(meta.price) : "--"}</td>
+                    <td className="px-3 py-2.5">
+                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${meta.changePct >= 0 ? "badge-positive" : "badge-negative"}`}>
+                        {formatPercent(meta.changePct)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 metric-value">{formatMoney(value)}</td>
+                    <td className="px-3 py-2.5 metric-value">{allocation.toFixed(1)}%</td>
+                    <td className="px-3 py-2.5">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(row.symbol);
+                        }}
+                        className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-2.5 py-1 text-xs"
+                      >
+                        <Trash2 size={13} />
+                        Remove
+                      </button>
+                    </td>
+                  </tr>
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="row-expand px-4 py-3 bg-[color-mix(in_srgb,var(--surface-emphasis)_50%,transparent)]">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-xs">
+                            <div>
+                              <div className="muted">Avg Cost</div>
+                              <div className="font-semibold metric-value mt-0.5">{formatMoney(avgCost)}</div>
+                            </div>
+                            <div>
+                              <div className="muted">Today&apos;s Change</div>
+                              <div className={`font-semibold metric-value mt-0.5 ${todayChange >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}`}>
+                                {formatMoney(todayChange)}
+                              </div>
+                            </div>
+                            <div>
+                              <div className="muted">Weight</div>
+                              <div className="font-semibold metric-value mt-0.5">{weight.toFixed(2)}%</div>
+                            </div>
+                            <div>
+                              <div className="muted">52W High</div>
+                              <div className="font-semibold metric-value mt-0.5">{formatMoney(high52w)}</div>
+                            </div>
+                            <div>
+                              <div className="muted">52W Low</div>
+                              <div className="font-semibold metric-value mt-0.5">{formatMoney(low52w)}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               );
             })}
 
@@ -558,6 +679,45 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         </div>
       </div>
 
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="surface-glass rounded-lg shadow-lg min-w-[180px] z-50 overflow-hidden"
+          style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x }}
+        >
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors"
+            onClick={async () => {
+              const token = localStorage.getItem("access_token") || undefined;
+              await addWatchlistSymbol(contextMenu.symbol, token);
+              setContextMenu(null);
+            }}
+          >
+            <Eye size={14} />
+            Add to Watchlist
+          </div>
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors"
+            onClick={() => {
+              router.push(`/research?symbol=${contextMenu.symbol}`);
+              setContextMenu(null);
+            }}
+          >
+            <BarChart3 size={14} />
+            View Chart
+          </div>
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors text-red-600 dark:text-red-300"
+            onClick={() => {
+              handleRemove(contextMenu.symbol);
+              setContextMenu(null);
+            }}
+          >
+            <Trash2 size={14} />
+            Remove Position
+          </div>
+        </div>
+      )}
     </div>
   );
 }

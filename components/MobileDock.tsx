@@ -31,6 +31,7 @@ export default function MobileDock() {
   const router = useRouter();
   const pathname = usePathname();
   const [loggedIn, setLoggedIn] = useState(false);
+  const [bouncingItem, setBouncingItem] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setLoggedIn(Boolean(localStorage.getItem("access_token")));
@@ -52,7 +53,11 @@ export default function MobileDock() {
       return;
     }
 
-    router.push(item.href);
+    setBouncingItem(item.href);
+    setTimeout(() => {
+      router.push(item.href);
+      setBouncingItem(null);
+    }, 200);
   };
 
   return (
@@ -70,7 +75,7 @@ export default function MobileDock() {
                 onClick={() => navigate(item)}
                 className={`dock-link ${active ? "dock-link-active" : ""}`}
               >
-                <span className={`dock-icon-wrap ${active ? "dock-icon-active" : ""}`}>
+                <span className={`dock-icon-wrap ${active ? "dock-icon-active" : ""} ${bouncingItem === item.href ? "dock-bounce" : ""}`}>
                   {item.icon}
                 </span>
                 <span>{item.label}</span>

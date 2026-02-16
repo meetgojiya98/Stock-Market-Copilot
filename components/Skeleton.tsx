@@ -4,6 +4,8 @@ type SkeletonProps = {
   height?: string;
   className?: string;
   count?: number;
+  stagger?: boolean;
+  index?: number;
 };
 
 function SkeletonUnit({
@@ -11,8 +13,10 @@ function SkeletonUnit({
   width,
   height,
   className,
+  stagger = false,
+  index = 0,
 }: Omit<SkeletonProps, "count">) {
-  const baseClass = "skeleton-pulse bg-[var(--surface-border)]";
+  const baseClass = `skeleton-pulse bg-[var(--surface-border)]${stagger ? " skeleton-stagger" : ""}`;
 
   const variantStyles: Record<string, React.CSSProperties> = {
     text: {
@@ -40,7 +44,10 @@ function SkeletonUnit({
   return (
     <div
       className={`${baseClass} ${className || ""}`}
-      style={variantStyles[variant || "rect"]}
+      style={{
+        ...variantStyles[variant || "rect"],
+        ...(stagger ? { animationDelay: `${index * 80}ms` } : {}),
+      }}
     />
   );
 }
@@ -51,6 +58,8 @@ export default function Skeleton({
   height,
   className,
   count = 1,
+  stagger = false,
+  index = 0,
 }: SkeletonProps) {
   if (count <= 1) {
     return (
@@ -59,6 +68,8 @@ export default function Skeleton({
         width={width}
         height={height}
         className={className}
+        stagger={stagger}
+        index={index}
       />
     );
   }
@@ -72,6 +83,8 @@ export default function Skeleton({
           width={width}
           height={height}
           className={className}
+          stagger={stagger}
+          index={stagger ? i : 0}
         />
       ))}
     </div>

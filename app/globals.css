@@ -499,6 +499,7 @@ button:active {
 }
 
 .topbar-nav {
+  position: relative;
   min-width: 0;
   align-items: center;
   gap: 0.12rem;
@@ -3394,4 +3395,319 @@ textarea::placeholder {
 
 .template-card:hover {
   border-color: var(--accent);
+}
+
+/* ───────────────────────────────────────
+   UI/UX Enhancement Animations
+   ─────────────────────────────────────── */
+
+/* 1. Animated chart transitions */
+.chart-transition-enter {
+  animation: chartFadeScale 350ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes chartFadeScale {
+  from {
+    opacity: 0;
+    transform: scaleY(0.92);
+    transform-origin: bottom;
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+/* 2. Context menu */
+.context-menu {
+  position: fixed;
+  z-index: 50;
+  min-width: 180px;
+  border-radius: 0.6rem;
+  border: 1px solid var(--surface-border);
+  background: var(--surface-card);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.12);
+  padding: 0.25rem;
+  animation: contextMenuIn 120ms cubic-bezier(0.2, 0, 0.13, 1.5) forwards;
+  overflow: hidden;
+}
+
+.context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--ink);
+  border-radius: 0.4rem;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+  width: 100%;
+  border: none;
+  background: none;
+  text-align: left;
+}
+
+.context-menu-item:hover {
+  background: var(--surface-emphasis);
+}
+
+.context-menu-item.destructive {
+  color: var(--negative);
+}
+
+.context-menu-separator {
+  height: 1px;
+  background: var(--surface-border);
+  margin: 0.25rem 0;
+}
+
+@keyframes contextMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* 3. Bottom sheet */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgb(0 0 0 / 0.4);
+  transition: opacity 300ms ease;
+}
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 61;
+  border-radius: 1rem 1rem 0 0;
+  background: var(--surface-card);
+  border-top: 1px solid var(--surface-border);
+  box-shadow: 0 -8px 40px rgb(0 0 0 / 0.12);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 92vh;
+  overscroll-behavior: contain;
+}
+
+.bottom-sheet-handle {
+  display: flex;
+  justify-content: center;
+  padding: 0.75rem 0 0.5rem;
+  cursor: grab;
+}
+
+.bottom-sheet-handle:active {
+  cursor: grabbing;
+}
+
+.bottom-sheet-handle::after {
+  content: "";
+  width: 2.5rem;
+  height: 0.25rem;
+  border-radius: 9999px;
+  background: var(--ink-faint);
+}
+
+/* 4. Animated number ticker */
+.animated-ticker {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  transition: color 0.3s ease;
+}
+
+.ticker-flash-up {
+  animation: tickerUp 600ms ease-out;
+}
+
+.ticker-flash-down {
+  animation: tickerDown 600ms ease-out;
+}
+
+@keyframes tickerUp {
+  0% { color: inherit; }
+  20% { color: var(--positive); }
+  100% { color: inherit; }
+}
+
+@keyframes tickerDown {
+  0% { color: inherit; }
+  20% { color: var(--negative); }
+  100% { color: inherit; }
+}
+
+/* 5. Staggered skeleton reveal */
+.skeleton-stagger {
+  animation: skeletonReveal 500ms ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes skeletonReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 6. Inline row expansion */
+.row-expand {
+  overflow: hidden;
+  animation: rowExpand 250ms ease-out forwards;
+}
+
+.row-expand-detail {
+  padding: 0.75rem 1rem;
+  background: color-mix(in srgb, var(--surface-emphasis) 50%, transparent);
+  border-radius: 0 0 0.5rem 0.5rem;
+}
+
+@keyframes rowExpand {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 300px;
+    opacity: 1;
+  }
+}
+
+/* Clickable table row */
+.table-row-interactive {
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.table-row-interactive:hover {
+  background: color-mix(in srgb, var(--surface-emphasis) 40%, transparent);
+}
+
+.table-row-interactive.expanded {
+  background: color-mix(in srgb, var(--surface-emphasis) 30%, transparent);
+}
+
+/* 7. Validation shake */
+@keyframes validationShake {
+  0%, 100% { transform: translateX(0); }
+  15% { transform: translateX(-6px); }
+  30% { transform: translateX(5px); }
+  45% { transform: translateX(-4px); }
+  60% { transform: translateX(3px); }
+  75% { transform: translateX(-2px); }
+}
+
+.validation-shake {
+  animation: validationShake 400ms ease-out;
+}
+
+.validation-glow {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--negative) 30%, transparent);
+  border-color: var(--negative) !important;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+/* 8. Page transition */
+.page-enter {
+  opacity: 0;
+  transform: translateY(4px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 300ms ease-out, transform 300ms ease-out;
+}
+
+/* 9. Topbar sliding indicator */
+.topbar-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+              width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+/* Dock icon bounce */
+@keyframes dockBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(0.85); }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); }
+}
+
+.dock-bounce {
+  animation: dockBounce 200ms ease-out;
+}
+
+/* 10. Filter chips */
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid var(--surface-border);
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  background: transparent;
+}
+
+.filter-chip:hover {
+  border-color: var(--ink-faint);
+}
+
+.filter-chip.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.filter-chip .chip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.filter-chip .chip-dot.positive { background: var(--positive); }
+.filter-chip .chip-dot.negative { background: var(--negative); }
+.filter-chip .chip-dot.neutral { background: var(--ink-faint); }
+
+/* Filter chip count badge */
+.filter-chip .chip-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.1rem;
+  height: 1.1rem;
+  padding: 0 0.25rem;
+  border-radius: 9999px;
+  font-size: 0.625rem;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+  transition: transform 0.15s ease;
+}
+
+.filter-chip.active .chip-count {
+  transform: scale(1.1);
 }

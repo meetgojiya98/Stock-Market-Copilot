@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Plus, ScanSearch, Star, TrendingUp, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BarChart3, Plus, ScanSearch, Star, TrendingUp, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import AdvancedMarketChart from "./AdvancedMarketChart";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
@@ -85,6 +86,7 @@ async function fetchQuote(symbol: string): Promise<PriceMeta> {
 }
 
 export default function WatchlistPanel() {
+  const router = useRouter();
   const [watchlist, setWatchlist] = useState<WatchlistItem[]>([]);
   const [symbol, setSymbol] = useState("");
   const [prices, setPrices] = useState<Record<string, PriceMeta>>({});
@@ -96,6 +98,8 @@ export default function WatchlistPanel() {
   const [selectedSymbol, setSelectedSymbol] = useState("");
   const [selectedSeries, setSelectedSeries] = useState<MarketSeriesPoint[]>([]);
   const [selectedSource, setSelectedSource] = useState<"local" | "remote" | "synthetic">("local");
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; symbol: string } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   const sortedWatchlist = useMemo(
     () =>
@@ -202,6 +206,26 @@ export default function WatchlistPanel() {
       cancelled = true;
     };
   }, [selectedSymbol]);
+
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClick = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setContextMenu(null);
+    };
+
+    document.addEventListener("mousedown", handleClick);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleClick);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [contextMenu]);
 
   const handleAdd = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -325,6 +349,10 @@ export default function WatchlistPanel() {
             return (
               <div
                 key={item.symbol}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setContextMenu({ x: e.clientX, y: e.clientY, symbol: item.symbol });
+                }}
                 className={`card-elevated rounded-xl p-4 ${
                   selectedSymbol === item.symbol
                     ? "border-[color-mix(in_srgb,var(--accent)_45%,var(--surface-border))]"
@@ -426,6 +454,45 @@ export default function WatchlistPanel() {
           ))}
         </ul>
       </aside>
+
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="surface-glass rounded-lg shadow-lg min-w-[180px] z-50 overflow-hidden"
+          style={{ position: "fixed", top: contextMenu.y, left: contextMenu.x }}
+        >
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors"
+            onClick={async () => {
+              await handlePromote(contextMenu.symbol);
+              setContextMenu(null);
+            }}
+          >
+            <TrendingUp size={14} />
+            Add to Portfolio
+          </div>
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors"
+            onClick={() => {
+              router.push(`/research?symbol=${contextMenu.symbol}`);
+              setContextMenu(null);
+            }}
+          >
+            <BarChart3 size={14} />
+            View Chart
+          </div>
+          <div
+            className="px-3 py-2 text-sm hover:bg-[var(--surface-emphasis)] cursor-pointer flex items-center gap-2 transition-colors text-red-600 dark:text-red-300"
+            onClick={() => {
+              handleRemove(contextMenu.symbol);
+              setContextMenu(null);
+            }}
+          >
+            <Trash2 size={14} />
+            Remove from Watchlist
+          </div>
+        </div>
+      )}
     </div>
   );
 }

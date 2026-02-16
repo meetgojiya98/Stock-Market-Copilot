@@ -26,6 +26,7 @@ const STORAGE_KEY = "smc_onboarding_done";
 export default function OnboardingModal() {
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
+  const [stepTransition, setStepTransition] = useState(false);
 
   useEffect(() => {
     try {
@@ -36,6 +37,12 @@ export default function OnboardingModal() {
       // localStorage unavailable
     }
   }, []);
+
+  useEffect(() => {
+    setStepTransition(true);
+    const timer = setTimeout(() => setStepTransition(false), 10);
+    return () => clearTimeout(timer);
+  }, [step]);
 
   const dismiss = useCallback(() => {
     setVisible(false);
@@ -77,7 +84,7 @@ export default function OnboardingModal() {
         </button>
 
         {/* Content */}
-        <div className="flex flex-col items-center text-center px-6 pt-10 pb-6 gap-4">
+        <div className={`flex flex-col items-center text-center px-6 pt-10 pb-6 gap-4 transition-transform duration-200 ${stepTransition ? "scale-[0.97] opacity-90" : "scale-100 opacity-100"}`}>
           <div
             className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{

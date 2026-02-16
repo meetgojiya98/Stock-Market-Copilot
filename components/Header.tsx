@@ -126,6 +126,8 @@ export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+  const indicatorRef = useRef<HTMLSpanElement>(null);
   const [clockTick, setClockTick] = useState(0);
   const showThemeControl =
     loggedIn || pathname.startsWith("/login") || pathname.startsWith("/signup");
@@ -161,6 +163,20 @@ export default function Header() {
   /* Close the "More" dropdown on navigation */
   useEffect(() => {
     setMoreOpen(false);
+  }, [pathname]);
+
+  /* Slide the active indicator under the current nav link */
+  useEffect(() => {
+    const nav = navRef.current;
+    const indicator = indicatorRef.current;
+    if (!nav || !indicator) return;
+    const activeLink = nav.querySelector<HTMLElement>(".topbar-link-active");
+    if (activeLink) {
+      indicator.style.width = `${activeLink.offsetWidth}px`;
+      indicator.style.transform = `translateX(${activeLink.offsetLeft}px)`;
+    } else {
+      indicator.style.width = "0";
+    }
   }, [pathname]);
 
   const marketMeta = useMemo(() => getMarketMeta(), [clockTick]);
@@ -204,7 +220,7 @@ export default function Header() {
             </div>
           </div>
 
-          <nav className="topbar-nav hidden lg:flex">
+          <nav ref={navRef} className="topbar-nav hidden lg:flex" style={{ position: "relative" }}>
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
               return (
@@ -218,6 +234,7 @@ export default function Header() {
                 </button>
               );
             })}
+            <span ref={indicatorRef} className="topbar-indicator" />
           </nav>
 
           <div className="flex items-center gap-2 shrink-0">
