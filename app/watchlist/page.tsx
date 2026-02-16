@@ -9,8 +9,8 @@ export default function WatchlistPage() {
     <AuthGuard>
       <PageShell
         eyebrow="Watchlist"
-        title="Watchlist & Trend Monitor"
-        subtitle="Maintain focused symbols, track realtime snapshots, and keep an eye on community momentum."
+        title="Your Watchlist"
+        subtitle="Keep an eye on stocks you care about. See live prices and spot trends early."
       >
         <div className="space-y-6">
           <WatchlistPanel />

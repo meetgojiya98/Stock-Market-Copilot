@@ -9,9 +9,9 @@ export default function ExecutionPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Execution Hub"
-        title="Trader OS: Execution, Backtesting, Risk, and Automation"
-        subtitle="Run paper trades, validate strategies, track risk attribution, version AI theses, configure rule-based automation, connect broker profiles, and collaborate from one command surface."
+        eyebrow="Execution"
+        title="Practice & Test Trades"
+        subtitle="Paper trade, backtest strategies, check risk, and build your playbook before going live."
       >
         <div className="space-y-6">
           <ExecutionHub />

@@ -18,7 +18,7 @@ export default function PageShell({
   eyebrow,
   heroBackdrop = "mesh",
   bodyBackdrop = "mesh",
-  badges = ["Guided Workflows", "Narrative Insights"],
+  badges = ["Smart Tools", "Live Data"],
   children,
 }: PageShellProps) {
   return (
@@ -39,10 +39,10 @@ export default function PageShell({
             </div>
 
             <div className="mission-status-card">
-              <span className="mission-status-kicker">Workspace</span>
-              <div className="mission-status-title">Operator Ready</div>
+              <span className="mission-status-kicker">Status</span>
+              <div className="mission-status-title">Ready</div>
               <p className="mission-status-note">
-                Authenticated routes, AI workflows, and market tools are active for this session.
+                You're logged in. All tools and data are available.
               </p>
             </div>
           </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bot, BriefcaseBusiness, Gauge, SearchCode, Target } from "lucide-react";
+import { Bell, Bot, BriefcaseBusiness, SearchCode, Target } from "lucide-react";
 
 type DockItem = {
   label: string;
@@ -12,7 +12,6 @@ type DockItem = {
 };
 
 const ITEMS: DockItem[] = [
-  { label: "Command", href: "/portfolio", protected: true, icon: <Gauge size={16} /> },
   {
     label: "Portfolio",
     href: "/portfolio",
@@ -25,7 +24,7 @@ const ITEMS: DockItem[] = [
   { label: "Alerts", href: "/notifications", protected: true, icon: <Bell size={16} /> },
 ];
 
-const HIDDEN_PREFIXES = ["/login", "/signup"];
+const HIDDEN_PREFIXES = ["/login", "/signup", "/learn"];
 
 export default function MobileDock() {
   const router = useRouter();
@@ -61,7 +60,7 @@ export default function MobileDock() {
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       <div className="dock-shell">
-        <div className="grid grid-cols-6 gap-1">
+        <div className="grid grid-cols-5 gap-1">
           {ITEMS.map((item) => {
             const active = pathname === item.href;
             return (

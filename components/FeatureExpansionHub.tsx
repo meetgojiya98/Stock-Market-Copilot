@@ -37,148 +37,148 @@ type HubState = {
 
 const MODULE_CONFIG: Record<ExpansionModule, ModuleConfig> = {
   portfolio: {
-    title: "Portfolio Expansion Lab",
-    description: "Run allocation drills, capture conviction notes, and turn portfolio reviews into repeatable playbooks.",
+    title: "Portfolio Toolkit",
+    description: "Review your holdings, check your allocation, and build good portfolio habits.",
     checklist: [
-      "Rebalance concentration > 25%",
-      "Review top winners and laggards",
-      "Refresh risk budget for this week",
-      "Mark one position for thesis update",
+      "Check if any stock is more than 25% of your portfolio",
+      "Review your best and worst performers",
+      "Think about your risk comfort level",
+      "Pick one stock to research more",
     ],
     quickActions: [
       { label: "Open Watchlist", href: "/watchlist" },
       { label: "Open Analytics", href: "/analytics" },
       { label: "Open Execution", href: "/execution" },
     ],
-    starterPresets: ["Defensive rebalance", "Earnings week positioning"],
+    starterPresets: ["Safety-first rebalance", "Earnings week plan"],
   },
   watchlist: {
-    title: "Watchlist Expansion Lab",
-    description: "Promote symbols into themed baskets, prioritize setups, and prep entries before they hit execution.",
+    title: "Watchlist Toolkit",
+    description: "Organize your stock ideas, prioritize the best setups, and prepare before you trade.",
     checklist: [
-      "Tag top 5 symbols by conviction",
-      "Attach trigger levels for each setup",
-      "Remove stale symbols older than 30 days",
-      "Queue one symbol for deep research",
+      "Pick your top 5 stocks to focus on",
+      "Set target prices for each stock",
+      "Remove stocks you're no longer interested in",
+      "Send one stock to research for a deeper look",
     ],
     quickActions: [
       { label: "Open Research", href: "/research" },
-      { label: "Open Notifications", href: "/notifications" },
+      { label: "Open Alerts", href: "/notifications" },
       { label: "Open Portfolio", href: "/portfolio" },
     ],
-    starterPresets: ["Momentum radar", "Value watch basket"],
+    starterPresets: ["Growth picks", "Value opportunities"],
   },
   analytics: {
-    title: "Analytics Expansion Lab",
-    description: "Build scenario templates, track signal quality, and document recurring risk patterns.",
+    title: "Analytics Toolkit",
+    description: "Run your numbers, spot patterns, and keep track of how your portfolio is really doing.",
     checklist: [
-      "Run baseline beta and Sharpe review",
-      "Compare current vs prior month volatility",
-      "Log one sector concentration risk",
-      "Export one insight to execution",
+      "Check your overall risk scores",
+      "Compare this month to last month",
+      "Look for sectors that are too heavy",
+      "Note one insight to act on",
     ],
     quickActions: [
       { label: "Open Portfolio", href: "/portfolio" },
       { label: "Open Research", href: "/research" },
-      { label: "Open Audit", href: "/audit" },
+      { label: "Open History", href: "/audit" },
     ],
-    starterPresets: ["Macro stress test", "Rotation risk check"],
+    starterPresets: ["Market stress check", "Sector balance review"],
   },
   research: {
-    title: "Research Expansion Lab",
-    description: "Operationalize your thesis workflow with repeatable templates, confidence checkpoints, and routing.",
+    title: "Research Toolkit",
+    description: "Build your research process so every stock decision is backed by real thinking.",
     checklist: [
-      "Draft bull/base/bear case",
-      "Score evidence quality per source",
-      "Define invalidation trigger",
-      "Push one plan to execution queue",
+      "Write out the bull and bear case",
+      "Rate how strong your evidence is",
+      "Decide what would change your mind",
+      "Move one idea to paper trading",
     ],
     quickActions: [
       { label: "Open Execution", href: "/execution" },
       { label: "Open Watchlist", href: "/watchlist" },
-      { label: "Open Notifications", href: "/notifications" },
+      { label: "Open Alerts", href: "/notifications" },
     ],
-    starterPresets: ["Pre-earnings memo", "Swing thesis template"],
+    starterPresets: ["Earnings report prep", "Swing trade idea"],
   },
   execution: {
-    title: "Execution Expansion Lab",
-    description: "Codify entries, exits, and risk controls so each trade follows a clear and auditable runbook.",
+    title: "Execution Toolkit",
+    description: "Plan your trades carefully so every entry and exit has a clear reason behind it.",
     checklist: [
-      "Validate position size vs risk cap",
-      "Set stop and take-profit anchors",
-      "Run slippage + fee sanity check",
-      "Log post-trade review item",
+      "Check that your trade size fits your risk budget",
+      "Set a stop-loss and a profit target",
+      "Account for fees and slippage",
+      "Write a note about why you're making this trade",
     ],
     quickActions: [
       { label: "Open Research", href: "/research" },
-      { label: "Open Notifications", href: "/notifications" },
-      { label: "Open Audit", href: "/audit" },
+      { label: "Open Alerts", href: "/notifications" },
+      { label: "Open History", href: "/audit" },
     ],
-    starterPresets: ["Breakout execution", "Mean reversion setup"],
+    starterPresets: ["Breakout trade plan", "Mean reversion plan"],
   },
   notifications: {
-    title: "Alert Expansion Lab",
-    description: "Tune severity routing, action SLAs, and escalation ladders for faster incident response.",
+    title: "Alerts Toolkit",
+    description: "Fine-tune your alerts so you only hear about what really matters.",
     checklist: [
-      "Acknowledge all resolved alerts",
-      "Set escalation owner for critical alerts",
-      "Reduce noisy low-value triggers",
-      "Create one research-linked alert rule",
+      "Clear old alerts that are resolved",
+      "Set up alerts for your most important stocks",
+      "Turn off alerts that are too noisy",
+      "Create one alert tied to your research",
     ],
     quickActions: [
       { label: "Open Execution", href: "/execution" },
       { label: "Open Profile", href: "/profile" },
-      { label: "Open Audit", href: "/audit" },
+      { label: "Open History", href: "/audit" },
     ],
-    starterPresets: ["High-volatility alerts", "Macro event escalation"],
+    starterPresets: ["Big move alerts", "Important event alerts"],
   },
   profile: {
-    title: "Profile Expansion Lab",
-    description: "Personalize your workspace posture and save operating presets for different market regimes.",
+    title: "Profile Toolkit",
+    description: "Set up your account so Zentrade works the way you like it.",
     checklist: [
-      "Review operator risk posture",
-      "Set focus symbols for this week",
-      "Refresh session defaults",
-      "Archive stale saved configurations",
+      "Review your risk comfort setting",
+      "Pick your focus stocks for this week",
+      "Check your notification preferences",
+      "Clean up any old saved settings",
     ],
     quickActions: [
       { label: "Open Portfolio", href: "/portfolio" },
-      { label: "Open Notifications", href: "/notifications" },
+      { label: "Open Alerts", href: "/notifications" },
       { label: "Open Research", href: "/research" },
     ],
-    starterPresets: ["Calm market mode", "Volatility mode"],
+    starterPresets: ["Relaxed market mode", "Active market mode"],
   },
   audit: {
-    title: "Audit Expansion Lab",
-    description: "Track operational quality with recurring checks, summaries, and exportable compliance snapshots.",
+    title: "Activity Toolkit",
+    description: "Review what you've been doing to stay on track and learn from your decisions.",
     checklist: [
-      "Review last 24h action trail",
-      "Flag unusual action clusters",
-      "Verify rule changes were intended",
-      "Export daily compliance snapshot",
+      "Review your actions from the last 24 hours",
+      "Look for anything unusual",
+      "Make sure recent changes were intentional",
+      "Save a summary of today's activity",
     ],
     quickActions: [
-      { label: "Open Notifications", href: "/notifications" },
+      { label: "Open Alerts", href: "/notifications" },
       { label: "Open Profile", href: "/profile" },
       { label: "Open Execution", href: "/execution" },
     ],
-    starterPresets: ["Daily closeout", "Weekly governance review"],
+    starterPresets: ["End-of-day review", "Weekly check-in"],
   },
   trending: {
-    title: "Trendboard Expansion Lab",
-    description: "Convert crowd activity into actionable themes with ranking rules and rotation watch plans.",
+    title: "Trending Toolkit",
+    description: "Use what's popular to spot opportunities and stay aware of market buzz.",
     checklist: [
-      "Track top 3 momentum names",
-      "Map trend names to watchlist baskets",
-      "Add thesis quality notes",
-      "Queue one candidate for execution test",
+      "Check the top 3 trending stocks",
+      "Add interesting ones to your watchlist",
+      "Write a quick note on why they're trending",
+      "Pick one to research further",
     ],
     quickActions: [
       { label: "Open Watchlist", href: "/watchlist" },
       { label: "Open Research", href: "/research" },
       { label: "Open Execution", href: "/execution" },
     ],
-    starterPresets: ["Crowd momentum scanner", "Contrarian trend reversal"],
+    starterPresets: ["Momentum scanner", "Contrarian picks"],
   },
 };
 
@@ -314,13 +314,13 @@ export default function FeatureExpansionHub({ module }: { module: ExpansionModul
     <section className="surface-glass dynamic-surface rounded-2xl p-4 sm:p-5 fade-up">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-3xl">
-          <p className="text-[11px] tracking-[0.12em] uppercase muted font-semibold">Feature Expansion</p>
+          <p className="text-[11px] tracking-[0.12em] uppercase muted font-semibold">Toolkit</p>
           <h3 className="mt-1 text-lg sm:text-xl section-title">{config.title}</h3>
           <p className="mt-1 text-sm muted leading-relaxed">{config.description}</p>
         </div>
 
         <div className="rounded-xl control-surface px-3 py-2 min-w-[170px]">
-          <div className="text-[11px] muted uppercase tracking-[0.1em]">Readiness</div>
+          <div className="text-[11px] muted uppercase tracking-[0.1em]">Progress</div>
           <div className="mt-1 text-2xl font-semibold metric-value">{readinessScore}</div>
           <div className="text-[11px] muted">{completion.completed}/{completion.total} checklist complete</div>
         </div>
@@ -330,7 +330,7 @@ export default function FeatureExpansionHub({ module }: { module: ExpansionModul
         <div className="rounded-xl control-surface p-3">
           <div className="inline-flex items-center gap-2 text-xs font-semibold section-title">
             <Rocket size={13} />
-            Expansion Checklist
+            Checklist
           </div>
           <div className="mt-3 space-y-2">
             {config.checklist.map((item, index) => {
@@ -362,7 +362,7 @@ export default function FeatureExpansionHub({ module }: { module: ExpansionModul
           </div>
 
           <div className="mt-3">
-            <label className="text-[11px] muted uppercase tracking-[0.1em]">Operator Intensity</label>
+            <label className="text-[11px] muted uppercase tracking-[0.1em]">Focus Level</label>
             <input
               type="range"
               min={0}
@@ -422,12 +422,12 @@ export default function FeatureExpansionHub({ module }: { module: ExpansionModul
           <div className="rounded-xl control-surface p-3">
             <div className="inline-flex items-center gap-2 text-xs font-semibold section-title">
               <Gauge size={13} />
-              Operator Notes
+              Notes
             </div>
             <textarea
               value={state.notes}
               onChange={(event) => setState((prev) => ({ ...prev, notes: event.target.value }))}
-              placeholder="Capture trade logic, risks, and next steps..."
+              placeholder="Write your thoughts, ideas, and next steps..."
               className="mt-2 w-full min-h-[86px] rounded-lg control-surface bg-[color-mix(in_srgb,var(--surface-emphasis)_84%,transparent)] px-3 py-2 text-xs"
             />
           </div>

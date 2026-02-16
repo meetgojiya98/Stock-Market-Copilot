@@ -81,26 +81,26 @@ export default function SignupPage() {
             <BrandLogo size={54} withWordmark showTagline />
             <p className="auth-eyebrow">
               <Sparkles size={14} />
-              Operator Onboarding
+              Get Started
             </p>
-            <h1 className="auth-title">Create your Zentrade account and start trading with clarity.</h1>
+            <h1 className="auth-title">Create your free account and start making smarter moves.</h1>
             <p className="auth-subtitle">
-              Launch your portfolio stack, research copilots, and execution workflows with one secure
-              account.
+              Set up in seconds. Get access to portfolio tracking, AI research, paper trading,
+              and everything else Zentrade offers.
             </p>
 
             <div className="auth-highlight-grid">
               <div className="auth-highlight-card">
                 <Rocket size={16} />
-                <span>Fast setup flow</span>
+                <span>Quick signup</span>
               </div>
               <div className="auth-highlight-card">
                 <BrainCircuit size={16} />
-                <span>AI-native tooling</span>
+                <span>AI-powered tools</span>
               </div>
               <div className="auth-highlight-card">
                 <Target size={16} />
-                <span>Execution-first UX</span>
+                <span>Free to use</span>
               </div>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function SignupPage() {
 
             <p className="auth-form-eyebrow">Create Account</p>
             <h2 className="auth-form-title">Join Zentrade</h2>
-            <p className="auth-form-subtitle">Set up your account and unlock the full trading stack.</p>
+            <p className="auth-form-subtitle">It only takes a few seconds to get started.</p>
 
             {!isApiConfigured() && (
               <div className="auth-notice auth-notice-info">
@@ -178,7 +178,7 @@ export default function SignupPage() {
             <div className="auth-footer-row">
               <span className="inline-flex items-center gap-1">
                 <ShieldCheck size={13} />
-                Secure onboarding
+                Your data is secure
               </span>
               <span>
                 Already registered?{" "}

@@ -9,8 +9,8 @@ export default function ProfilePage() {
     <AuthGuard>
       <PageShell
         eyebrow="Account"
-        title="Profile & Identity"
-        subtitle="Run your identity, risk posture, and personalization stack from a single operator console."
+        title="Your Profile"
+        subtitle="Manage your account, set your preferences, and customize how Zentrade works for you."
       >
         <div className="space-y-6">
           <ProfileCommandCenter />

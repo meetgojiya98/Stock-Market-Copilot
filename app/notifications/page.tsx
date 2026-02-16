@@ -8,9 +8,9 @@ export default function NotificationsPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Alert Ops"
-        title="Alert Operations Center"
-        subtitle="Triage critical events, run alert-rule automation, and escalate risk with live stream + workflow controls."
+        eyebrow="Alerts"
+        title="Your Alerts"
+        subtitle="Stay on top of what matters. See important events, set rules, and never miss a move."
       >
         <div className="space-y-6">
           <NotificationsPanel />

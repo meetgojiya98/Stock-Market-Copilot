@@ -65,26 +65,26 @@ export default function LoginPage() {
             <BrandLogo size={54} withWordmark showTagline />
             <p className="auth-eyebrow">
               <Sparkles size={14} />
-              Operator Access
+              Welcome Back
             </p>
-            <h1 className="auth-title">Welcome back to your Zentrade command deck.</h1>
+            <h1 className="auth-title">Pick up right where you left off.</h1>
             <p className="auth-subtitle">
-              Continue with your portfolio intelligence, AI research, watchlists, and execution labs
-              from one unified workspace.
+              Your portfolio, research, watchlists, and alerts are all waiting for you.
+              Sign in to get back to it.
             </p>
 
             <div className="auth-highlight-grid">
               <div className="auth-highlight-card">
                 <ShieldCheck size={16} />
-                <span>Secure account session</span>
+                <span>Secure login</span>
               </div>
               <div className="auth-highlight-card">
                 <BarChart3 size={16} />
-                <span>Live market intelligence</span>
+                <span>Live market data</span>
               </div>
               <div className="auth-highlight-card">
                 <TimerReset size={16} />
-                <span>Fast state recovery</span>
+                <span>Instant access</span>
               </div>
             </div>
           </div>
@@ -98,8 +98,8 @@ export default function LoginPage() {
             </div>
 
             <p className="auth-form-eyebrow">Sign In</p>
-            <h2 className="auth-form-title">Continue into Zentrade</h2>
-            <p className="auth-form-subtitle">Access your personalized market workspace.</p>
+            <h2 className="auth-form-title">Sign in to Zentrade</h2>
+            <p className="auth-form-subtitle">Enter your details to access your account.</p>
 
             {!isApiConfigured() && (
               <div className="auth-notice auth-notice-info">
@@ -150,7 +150,7 @@ export default function LoginPage() {
             <div className="auth-footer-row">
               <span className="inline-flex items-center gap-1">
                 <KeyRound size={14} />
-                Session resumes instantly
+                You'll stay signed in
               </span>
               <span>
                 New here?{" "}

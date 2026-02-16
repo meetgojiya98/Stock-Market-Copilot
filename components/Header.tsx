@@ -7,7 +7,6 @@ import {
   BellPlus,
   Bot,
   BriefcaseBusiness,
-  Gauge,
   LogIn,
   LogOut,
   Menu,
@@ -31,7 +30,6 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  { name: "Command", href: "/portfolio", icon: <Gauge size={16} />, protected: true },
   {
     name: "Portfolio",
     href: "/portfolio",
@@ -70,7 +68,7 @@ function getMarketMeta() {
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup");
+  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/learn");
 
   const { mode, resolvedMode, setThemeMode } = useThemeMode();
   const [loggedIn, setLoggedIn] = useState(
@@ -156,7 +154,7 @@ export default function Header() {
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => navigate("/research", true)} className="topbar-ai hidden sm:inline-flex">
               <Sparkles size={14} />
-              <span className="hidden xl:inline">Open Research</span>
+              <span className="hidden xl:inline">AI Research</span>
             </button>
             {showThemeControl && (
               <ThemeModeSwitch className="hidden md:inline-flex" mode={mode} onModeChange={setThemeMode} />

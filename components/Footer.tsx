@@ -7,7 +7,7 @@ export default function Footer() {
   const pathname = usePathname();
   const year = new Date().getFullYear();
 
-  if (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup")) return null;
+  if (pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/learn")) return null;
 
   return (
     <footer className="mt-12 pb-4 sm:pb-6">
@@ -16,9 +16,9 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <BrandLogo withWordmark showTagline size={28} className="opacity-95" />
             <span className="hidden sm:inline footer-divider" />
-            <span className="hidden sm:inline muted">Research, risk, and execution in one focused studio</span>
+            <span className="hidden sm:inline muted">Your complete trading toolkit</span>
           </div>
-          <span className="muted text-xs sm:text-sm">{year} Zentrade · Operator Studio</span>
+          <span className="muted text-xs sm:text-sm">{year} Zentrade</span>
         </div>
       </div>
     </footer>

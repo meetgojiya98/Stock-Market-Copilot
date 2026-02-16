@@ -21,72 +21,72 @@ const GUIDE_KEY = "smc_workflow_guide_hidden_v1";
 const GUIDE_PROGRESS_KEY = "smc_workflow_guide_progress_v1";
 
 const CORE_FLOW: GuideItem[] = [
-  { label: "Portfolio", href: "/portfolio", description: "Set holdings and baseline exposure." },
-  { label: "Watchlist", href: "/watchlist", description: "Track symbols and key triggers." },
-  { label: "Research", href: "/research", description: "Build decision packs and thesis updates." },
-  { label: "Execution", href: "/execution", description: "Paper trade, risk test, and automate." },
-  { label: "Notifications", href: "/notifications", description: "Monitor alerts and escalation." },
+  { label: "Portfolio", href: "/portfolio", description: "Add your stocks and see your positions." },
+  { label: "Watchlist", href: "/watchlist", description: "Track stocks you're interested in." },
+  { label: "Research", href: "/research", description: "Get AI-powered insights on any stock." },
+  { label: "Execution", href: "/execution", description: "Practice trades and test strategies." },
+  { label: "Alerts", href: "/notifications", description: "Set up notifications for what matters." },
 ];
 
 const PAGE_GUIDES: Record<string, PageGuide> = {
   "/portfolio": {
-    title: "Portfolio Quickstart",
+    title: "Getting Started",
     steps: [
-      "Add core positions and verify concentration alerts.",
-      "Review allocation and rebalance suggestions.",
-      "Use analytics panel to validate beta/alpha profile.",
+      "Add the stocks you own to see your portfolio.",
+      "Check your allocation and how each position is doing.",
+      "Use the analytics panel to understand your risk.",
     ],
     quickLinks: [
-      { label: "Go to Watchlist", href: "/watchlist", description: "Track candidates and triggers." },
-      { label: "Open Analytics", href: "/analytics", description: "Deep-dive risk surface." },
+      { label: "Go to Watchlist", href: "/watchlist", description: "Track stocks you're eyeing." },
+      { label: "Open Analytics", href: "/analytics", description: "See risk and performance." },
     ],
   },
   "/watchlist": {
-    title: "Watchlist Quickstart",
+    title: "Getting Started",
     steps: [
-      "Add symbols with thesis notes and trigger levels.",
-      "Promote high-conviction names into portfolio.",
-      "Open research to build structured memo output.",
+      "Add stocks you want to keep an eye on.",
+      "Move your best ideas into your portfolio.",
+      "Use research to dig deeper into any stock.",
     ],
     quickLinks: [
-      { label: "Open Research", href: "/research", description: "Generate decision pack." },
-      { label: "Open Execution", href: "/execution", description: "Simulate trade setup." },
+      { label: "Open Research", href: "/research", description: "Get AI insights." },
+      { label: "Open Execution", href: "/execution", description: "Practice a trade." },
     ],
   },
   "/research": {
-    title: "Research Quickstart",
+    title: "Getting Started",
     steps: [
-      "Set primary/compare/benchmark symbols.",
-      "Generate decision pack and inspect shock scenarios.",
-      "Send validated setup directly to execution queue.",
+      "Pick a stock you want to research.",
+      "Ask the AI anything and review the analysis.",
+      "Use the insights to decide your next move.",
     ],
     quickLinks: [
-      { label: "Open Execution", href: "/execution", description: "Load queued research idea." },
-      { label: "Open Notifications", href: "/notifications", description: "Monitor thesis alerts." },
+      { label: "Open Execution", href: "/execution", description: "Try a paper trade." },
+      { label: "Open Alerts", href: "/notifications", description: "Set up alerts." },
     ],
   },
   "/execution": {
-    title: "Execution Quickstart",
+    title: "Getting Started",
     steps: [
-      "Load a research idea or pick a watchlist symbol.",
-      "Apply playbook, review risk budget, then place paper order.",
-      "Open Orders + Insights to audit fill quality, then use labs for backtest and risk checks.",
+      "Pick a stock from your watchlist or research.",
+      "Set up a paper trade to practice without risk.",
+      "Review your results and refine your approach.",
     ],
     quickLinks: [
-      { label: "Go to Research", href: "/research", description: "Refine thesis before trading." },
-      { label: "Go to Audit", href: "/audit", description: "Review action history." },
+      { label: "Go to Research", href: "/research", description: "Research before trading." },
+      { label: "Go to History", href: "/audit", description: "See past actions." },
     ],
   },
   "/notifications": {
-    title: "Alert Ops Quickstart",
+    title: "Getting Started",
     steps: [
-      "Filter by severity to isolate critical events.",
-      "Acknowledge resolved alerts to keep inbox clean.",
-      "Escalate persistent risk alerts to execution rules.",
+      "Review your alerts and filter by importance.",
+      "Clear resolved alerts to stay focused.",
+      "Set up new rules for the events you care about.",
     ],
     quickLinks: [
-      { label: "Open Execution", href: "/execution", description: "Adjust guardrails and rules." },
-      { label: "Open Profile", href: "/profile", description: "Tune operator preferences." },
+      { label: "Open Execution", href: "/execution", description: "Adjust your strategy." },
+      { label: "Open Profile", href: "/profile", description: "Update preferences." },
     ],
   },
 };
@@ -162,7 +162,7 @@ export default function WorkflowGuide() {
           className="text-xs rounded-full control-surface px-3 py-1.5 inline-flex items-center gap-1"
         >
           <Sparkles size={12} />
-          Show Workflow Guide
+          Show Guide
         </button>
       </div>
     );
@@ -174,7 +174,7 @@ export default function WorkflowGuide() {
         <div className="inline-flex items-center gap-2">
           <Compass size={14} />
           <span className="text-xs font-semibold section-title">
-            {pageGuide?.title || "Operator Workflow"}
+            {pageGuide?.title || "Quick Guide"}
           </span>
         </div>
         <button
@@ -191,7 +191,7 @@ export default function WorkflowGuide() {
 
       <div className="mt-2 rounded-lg workflow-progress-shell px-2.5 py-2">
         <div className="flex items-center justify-between gap-2 text-[11px]">
-          <span className="muted">Workflow completion</span>
+          <span className="muted">Your progress</span>
           <span className="font-semibold">
             {completion.completed}/{completion.total}
           </span>

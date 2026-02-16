@@ -7,9 +7,9 @@ export default function TrendingPage() {
   return (
     <AuthGuard>
       <PageShell
-        eyebrow="Trends"
-        title="Community Trendboard"
-        subtitle="Discover the most watched and most owned symbols from aggregated user activity."
+        eyebrow="Trending"
+        title="What's Popular"
+        subtitle="See which stocks other users are watching and holding the most right now."
       >
         <div className="space-y-6">
           <TrendingStocks />

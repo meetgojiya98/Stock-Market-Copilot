@@ -22,8 +22,8 @@ export default function AnalyticsPage() {
     <AuthGuard>
       <PageShell
         eyebrow="Analytics"
-        title="Advanced Risk & Performance Analytics"
-        subtitle="Analyze beta, alpha, Sharpe profile, and sector concentration for your current portfolio."
+        title="Risk & Performance"
+        subtitle="See how your portfolio stacks up: risk scores, sector mix, and key performance numbers."
       >
         <div className="space-y-6">
           <AdvancedAnalyticsPanel portfolio={portfolio} />

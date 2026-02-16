@@ -7,9 +7,9 @@ import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = {
-  title: "Zentrade | AI Investment Command Center",
+  title: "Zentrade | Your Trading Toolkit",
   description:
-    "Advanced AI-powered stock analytics workspace with portfolio intelligence, watchlists, alerts, and research copiloting.",
+    "Track your portfolio, research stocks with AI, practice trades, and stay on top of the market — all in one app.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
