@@ -15,6 +15,18 @@ import {
   Sparkles,
   UserRound,
   X,
+  LayoutDashboard,
+  BookOpen,
+  BarChart3,
+  Newspaper,
+  Users,
+  Search,
+  CalendarDays,
+  TrendingUp,
+  Download,
+  Lightbulb,
+  GitCompare,
+  FlaskConical,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
 import DynamicBackdrop from "./DynamicBackdrop";
@@ -37,10 +49,29 @@ const NAV_LINKS: NavLink[] = [
     protected: true,
   },
   { name: "Watchlist", href: "/watchlist", icon: <ScanSearch size={16} />, protected: true },
-  { name: "Analytics", href: "/analytics", icon: <Activity size={16} />, protected: true },
   { name: "Research", href: "/research", icon: <Bot size={16} />, protected: true },
   { name: "Execution", href: "/execution", icon: <Target size={16} />, protected: true },
   { name: "Alerts", href: "/notifications", icon: <BellPlus size={16} />, protected: true },
+];
+
+const MORE_LINKS: NavLink[] = [
+  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={16} />, protected: true },
+  { name: "Briefing", href: "/briefing", icon: <Newspaper size={16} />, protected: true },
+  { name: "Screener", href: "/screener", icon: <Search size={16} />, protected: true },
+  { name: "Compare", href: "/compare", icon: <GitCompare size={16} />, protected: true },
+  { name: "Sectors", href: "/sectors", icon: <BarChart3 size={16} />, protected: true },
+  { name: "Sentiment", href: "/sentiment", icon: <TrendingUp size={16} />, protected: true },
+  { name: "Ideas", href: "/ideas", icon: <Lightbulb size={16} />, protected: true },
+  { name: "Calendar", href: "/calendar", icon: <CalendarDays size={16} />, protected: true },
+  { name: "Journal", href: "/journal", icon: <BookOpen size={16} />, protected: true },
+  { name: "Heatmap", href: "/heatmap", icon: <FlaskConical size={16} />, protected: true },
+  { name: "Simulator", href: "/simulator", icon: <FlaskConical size={16} />, protected: true },
+  { name: "Goals", href: "/goals", icon: <Target size={16} />, protected: true },
+  { name: "Dividends", href: "/dividends", icon: <BarChart3 size={16} />, protected: true },
+  { name: "Community", href: "/community", icon: <Users size={16} />, protected: true },
+  { name: "Export", href: "/export", icon: <Download size={16} />, protected: true },
+  { name: "Glossary", href: "/glossary", icon: <BookOpen size={16} /> },
+  { name: "Strategies", href: "/strategies", icon: <BookOpen size={16} /> },
 ];
 
 function getMarketMeta() {
@@ -213,6 +244,23 @@ export default function Header() {
                 </button>
               );
             })}
+
+            <div className="topbar-mobile-meta mt-1">More Tools</div>
+            <div className="grid grid-cols-2 gap-1">
+              {MORE_LINKS.map((link) => {
+                const active = pathname === link.href;
+                return (
+                  <button
+                    key={link.href}
+                    onClick={() => navigate(link.href, link.protected)}
+                    className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
+                  >
+                    {link.icon}
+                    {link.name}
+                  </button>
+                );
+              })}
+            </div>
 
             {!loggedIn ? (
               <button className="topbar-mobile-auth" onClick={() => navigate("/login")}>

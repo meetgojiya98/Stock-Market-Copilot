@@ -5,6 +5,8 @@ import PortfolioTable from "../../components/PortfolioTable";
 import AdvancedAnalyticsPanel from "../../components/AdvancedAnalyticsPanel";
 import PageShell from "../../components/PageShell";
 import FeatureExpansionHub from "../../components/FeatureExpansionHub";
+import MultiPortfolio from "../../components/MultiPortfolio";
+import AIPortfolioReview from "../../components/AIPortfolioReview";
 import { fetchPortfolioData } from "../../lib/data-client";
 
 export default function PortfolioPage() {
@@ -25,6 +27,8 @@ export default function PortfolioPage() {
         <div className="space-y-6">
           <PortfolioTable onPortfolioChange={fetchPortfolio} />
           <AdvancedAnalyticsPanel portfolio={portfolio} />
+          <MultiPortfolio />
+          <AIPortfolioReview />
           <FeatureExpansionHub module="portfolio" />
         </div>
       </PageShell>

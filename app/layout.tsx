@@ -3,6 +3,7 @@ import { Providers } from "./providers";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileDock from "../components/MobileDock";
+import CommandPalette from "../components/CommandPalette";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -177,6 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 pb-24 md:pb-8 relative">{children}</main>
           <MobileDock />
           <Footer />
+          <CommandPalette />
         </Providers>
       </body>
     </html>
