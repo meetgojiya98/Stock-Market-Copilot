@@ -247,17 +247,13 @@ export default function Header() {
                 </button>
               );
             })}
-            <span ref={indicatorRef} className="topbar-indicator" />
-          </nav>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div ref={moreRef} className="relative hidden lg:block">
+            <div ref={moreRef} className="relative">
               <button
                 onClick={() => setMoreOpen((v) => !v)}
-                className={`topbar-action ${moreOpen ? "topbar-link-active" : ""}`}
+                className={`topbar-link ${moreOpen ? "topbar-link-active" : ""}`}
               >
                 <LayoutDashboard size={15} />
-                <span className="hidden xl:inline">More</span>
+                More
                 <ChevronDown size={13} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
               </button>
               {moreOpen && (
@@ -285,6 +281,10 @@ export default function Header() {
                 </div>
               )}
             </div>
+            <span ref={indicatorRef} className="topbar-indicator" />
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
               className="topbar-search-btn hidden lg:inline-flex"
