@@ -218,14 +218,17 @@ export default function Header() {
                 </button>
               );
             })}
-            <div ref={moreRef} className="relative">
+          </nav>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div ref={moreRef} className="relative hidden lg:block">
               <button
                 onClick={() => setMoreOpen((v) => !v)}
-                className={`topbar-link ${moreOpen ? "topbar-link-active" : ""}`}
+                className={`topbar-action ${moreOpen ? "topbar-link-active" : ""}`}
               >
-                <LayoutDashboard size={16} />
-                More
-                <ChevronDown size={14} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                <LayoutDashboard size={15} />
+                <span className="hidden xl:inline">More</span>
+                <ChevronDown size={13} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
               </button>
               {moreOpen && (
                 <div className="topbar-more-panel">
@@ -252,15 +255,12 @@ export default function Header() {
                 </div>
               )}
             </div>
-          </nav>
-
-          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
               className="topbar-search-btn hidden lg:inline-flex"
             >
               <Search size={14} />
-              <span>Search</span>
+              <span className="hidden xl:inline">Search</span>
               <kbd className="topbar-kbd">{"\u2318"}K</kbd>
             </button>
             <button onClick={() => navigate("/research", true)} className="topbar-ai hidden sm:inline-flex">
