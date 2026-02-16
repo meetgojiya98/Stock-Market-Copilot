@@ -5,6 +5,7 @@ type EmptyStateProps = {
   title: string;
   description?: string;
   action?: ReactNode;
+  demoAction?: ReactNode;
 };
 
 export default function EmptyState({
@@ -12,6 +13,7 @@ export default function EmptyState({
   title,
   description,
   action,
+  demoAction,
 }: EmptyStateProps) {
   return (
     <div className="empty-state" role="status">
@@ -19,6 +21,7 @@ export default function EmptyState({
       <h3 className="empty-state-title">{title}</h3>
       {description && <p className="empty-state-desc">{description}</p>}
       {action && <div className="empty-state-action">{action}</div>}
+      {demoAction && <div className="mt-2">{demoAction}</div>}
     </div>
   );
 }

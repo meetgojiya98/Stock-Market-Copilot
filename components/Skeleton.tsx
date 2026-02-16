@@ -46,7 +46,7 @@ function SkeletonUnit({
       className={`${baseClass} ${className || ""}`}
       style={{
         ...variantStyles[variant || "rect"],
-        ...(stagger ? { animationDelay: `${index * 80}ms` } : {}),
+        ...(stagger ? { animationDelay: `${index * 80}ms`, '--stagger-index': index } as React.CSSProperties : {}),
       }}
     />
   );

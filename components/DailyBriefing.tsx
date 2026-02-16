@@ -12,6 +12,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import EmptyState from "./EmptyState";
+import SentimentBadge from "./SentimentBadge";
 
 type PortfolioRow = { symbol: string; shares: number };
 
@@ -137,6 +138,14 @@ export default function DailyBriefing() {
       : "Yesterday's Briefing"
     : null;
 
+  const derivedSentiment: "bullish" | "bearish" | "neutral" = briefing
+    ? /bull|positive|up|gain|improv/i.test(briefing.recommendation)
+      ? "bullish"
+      : /bear|negative|down|decline|drawdown/i.test(briefing.recommendation)
+      ? "bearish"
+      : "neutral"
+    : "neutral";
+
   return (
     <div className="space-y-4 fade-up">
       {/* Header */}
@@ -148,10 +157,13 @@ export default function DailyBriefing() {
               Daily Market Briefing
             </div>
             {briefingLabel && (
-              <span className="inline-flex items-center gap-1.5 text-xs muted mt-1">
-                <Calendar size={12} />
-                {briefingLabel} ({briefing?.date})
-              </span>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-flex items-center gap-1.5 text-xs muted">
+                  <Calendar size={12} />
+                  {briefingLabel} ({briefing?.date})
+                </span>
+                <SentimentBadge sentiment={derivedSentiment} />
+              </div>
             )}
           </div>
           <button

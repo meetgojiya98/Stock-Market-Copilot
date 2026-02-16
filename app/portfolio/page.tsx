@@ -9,6 +9,8 @@ import AIPortfolioReview from "../../components/AIPortfolioReview";
 import PortfolioImporter from "../../components/PortfolioImporter";
 import PerformanceAttribution from "../../components/PerformanceAttribution";
 import TaxHarvestingPanel from "../../components/TaxHarvestingPanel";
+import FloatingActionButton from "../../components/FloatingActionButton";
+import { Plus, RefreshCw, Download } from "lucide-react";
 import { fetchPortfolioData } from "../../lib/data-client";
 
 export default function PortfolioPage() {
@@ -34,6 +36,13 @@ export default function PortfolioPage() {
           <MultiPortfolio />
           <AIPortfolioReview />
         </div>
+        <FloatingActionButton
+          actions={[
+            { icon: <Plus size={16} />, label: "Add Position", onClick: () => { const input = document.querySelector<HTMLInputElement>('input[placeholder="Add symbol"]'); input?.focus(); } },
+            { icon: <RefreshCw size={16} />, label: "Refresh Prices", onClick: () => { window.location.reload(); } },
+            { icon: <Download size={16} />, label: "Export CSV", onClick: () => { /* trigger export */ } },
+          ]}
+        />
       </PageShell>
     </AuthGuard>
   );

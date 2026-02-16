@@ -11,6 +11,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import SentimentBadge from "./SentimentBadge";
 
 type Headline = {
   title: string;
@@ -173,12 +174,11 @@ export default function NewsSentiment() {
                 ) : (
                   <BarChart3 size={16} style={{ color: sentimentColor(data.overall) }} />
                 )}
-                <span
-                  className="text-lg font-bold"
-                  style={{ color: sentimentColor(data.overall) }}
-                >
-                  {data.overall}
-                </span>
+                <SentimentBadge
+                  sentiment={data.overall.toLowerCase() as "bullish" | "bearish" | "neutral"}
+                  score={Math.abs(data.score)}
+                  size="md"
+                />
               </div>
             </div>
 
@@ -252,13 +252,9 @@ export default function NewsSentiment() {
                     <p className="text-sm font-medium">{h.title}</p>
                     <p className="text-[11px] muted mt-0.5">{h.source}</p>
                   </div>
-                  <span
-                    className={`shrink-0 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${sentimentBadge(
-                      h.sentiment
-                    )}`}
-                  >
-                    {h.sentiment}
-                  </span>
+                  <SentimentBadge
+                    sentiment={h.sentiment.toLowerCase() as "bullish" | "bearish" | "neutral"}
+                  />
                 </li>
               ))}
             </ul>

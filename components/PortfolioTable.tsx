@@ -5,9 +5,12 @@ import { AlertTriangle, BarChart3, BriefcaseBusiness, Eye, RefreshCw, Target, Tr
 import { useRouter } from "next/navigation";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
+import SymbolPopover from "./SymbolPopover";
 import SymbolAutocomplete from "./SymbolAutocomplete";
 import { useToast } from "./ToastProvider";
 import { useConfirm } from "./ConfirmDialog";
+import BulkActionsToolbar from "./BulkActionsToolbar";
+import InlineEditableCell from "./InlineEditableCell";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -103,6 +106,9 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; symbol: string } | null>(null);
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
+  const [pendingSymbols, setPendingSymbols] = useState<Set<string>>(new Set());
+  const [successSymbols, setSuccessSymbols] = useState<Set<string>>(new Set());
+  const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -276,11 +282,16 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
 
     setError("");
 
+    // Optimistic: mark pending and add temporary row
+    setPendingSymbols((prev) => new Set(prev).add(normalizedSymbol));
+    setPortfolio((prev) => [...prev, { symbol: normalizedSymbol, shares: parsedShares }]);
+
     const token = localStorage.getItem("access_token");
     const result = await addPortfolioPosition(normalizedSymbol, parsedShares, token || undefined);
     setDataMode(result.mode);
 
     if (result.ok) {
+      setPendingSymbols((prev) => { const next = new Set(prev); next.delete(normalizedSymbol); return next; });
       setSymbol("");
       setShares("");
       if (result.detail) {
@@ -288,9 +299,17 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
       }
       fetchPortfolio();
       toast({ type: "success", message: `Added ${normalizedSymbol} to portfolio` });
+      // Brief success flash
+      setSuccessSymbols((prev) => new Set(prev).add(normalizedSymbol));
+      setTimeout(() => {
+        setSuccessSymbols((prev) => { const next = new Set(prev); next.delete(normalizedSymbol); return next; });
+      }, 600);
       return;
     }
 
+    // On error: remove pending and rollback temporary row
+    setPendingSymbols((prev) => { const next = new Set(prev); next.delete(normalizedSymbol); return next; });
+    setPortfolio((prev) => prev.filter((r) => r.symbol !== normalizedSymbol));
     setError(result.detail || "Unable to add symbol to portfolio.");
     toast({ type: "error", message: result.detail || "Unable to add position." });
   };
@@ -401,6 +420,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
             <div className="rounded-lg control-surface bg-white/70 dark:bg-black/25 p-2.5">
               <div className="text-xs muted">Total Value</div>
               <div className="font-semibold metric-value mt-1">{formatMoney(totalValue)}</div>
+              {totalValue > 0 && <Sparkline data={Array.from({length: 7}, (_, i) => totalValue * (1 + (Math.random() - 0.48) * 0.01 * (i + 1)))} width={60} height={18} color="var(--accent)" className="mt-1" />}
             </div>
             <div className="rounded-lg control-surface bg-white/70 dark:bg-black/25 p-2.5">
               <div className="text-xs muted">Estimated Day P/L</div>
@@ -476,7 +496,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
             >
               <div className="portfolio-card-header">
                 <div>
-                  <div className="portfolio-card-symbol">{row.symbol}</div>
+                  <SymbolPopover symbol={row.symbol}><div className="portfolio-card-symbol">{row.symbol}</div></SymbolPopover>
                   <div className="text-xs muted">{row.shares} shares</div>
                 </div>
                 <div className="text-right">
@@ -502,6 +522,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-black/5 dark:bg-white/10">
             <tr className="text-left">
+              <th className="px-3 py-2.5 w-8"><input type="checkbox" className="table-select-all" checked={selectedSymbols.size === filteredPortfolio.length && filteredPortfolio.length > 0} onChange={(e) => { if (e.target.checked) setSelectedSymbols(new Set(filteredPortfolio.map(r => r.symbol))); else setSelectedSymbols(new Set()); }} /></th>
               <th className="px-3 py-2.5 font-medium">Symbol</th>
               <th className="px-3 py-2.5 font-medium">Trend</th>
               <th className="px-3 py-2.5 font-medium">Shares</th>
@@ -527,14 +548,15 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
               return (
                 <React.Fragment key={row.symbol}>
                   <tr
-                    className="border-t border-black/5 dark:border-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-pointer"
+                    className={`border-t border-black/5 dark:border-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] cursor-pointer${pendingSymbols.has(row.symbol) ? " optimistic-pending" : ""}${successSymbols.has(row.symbol) ? " optimistic-success" : ""} ${selectedSymbols.has(row.symbol) ? "row-selected" : ""}`}
                     onClick={() => setExpandedRow(isExpanded ? null : row.symbol)}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       setContextMenu({ x: e.clientX, y: e.clientY, symbol: row.symbol });
                     }}
                   >
-                    <td className="px-3 py-2.5 font-semibold">{row.symbol}</td>
+                    <td className="px-3 py-2.5"><input type="checkbox" className="table-select-checkbox" checked={selectedSymbols.has(row.symbol)} onChange={(e) => { e.stopPropagation(); const next = new Set(selectedSymbols); if (e.target.checked) next.add(row.symbol); else next.delete(row.symbol); setSelectedSymbols(next); }} onClick={(e) => e.stopPropagation()} /></td>
+                    <td className="px-3 py-2.5 font-semibold"><SymbolPopover symbol={row.symbol}>{row.symbol}</SymbolPopover></td>
                     <td className="px-3 py-2.5">
                       {meta.price > 0 && (
                         <Sparkline
@@ -545,7 +567,21 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                         />
                       )}
                     </td>
-                    <td className="px-3 py-2.5 metric-value">{row.shares}</td>
+                    <td className="px-3 py-2.5 metric-value">
+                      <InlineEditableCell
+                        value={row.shares}
+                        type="number"
+                        onSave={async (val) => {
+                          const newShares = Number(val);
+                          if (!Number.isFinite(newShares) || newShares <= 0) return;
+                          const token = localStorage.getItem("access_token") || undefined;
+                          await removePortfolioPosition(row.symbol, token);
+                          await addPortfolioPosition(row.symbol, newShares, token);
+                          fetchPortfolio();
+                          toast({ type: "success", message: `Updated ${row.symbol} to ${newShares} shares` });
+                        }}
+                      />
+                    </td>
                     <td className="px-3 py-2.5 metric-value">{meta.price > 0 ? formatMoney(meta.price) : "--"}</td>
                     <td className="px-3 py-2.5">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${meta.changePct >= 0 ? "badge-positive" : "badge-negative"}`}>
@@ -569,7 +605,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                   </tr>
                   {isExpanded && (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={9}>
                         <div className="row-expand px-4 py-3 bg-[color-mix(in_srgb,var(--surface-emphasis)_50%,transparent)]">
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-xs">
                             <div>
@@ -619,7 +655,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
 
             {!filteredPortfolio.length && !loading && (
               <tr>
-                <td colSpan={8} className="px-3 py-12 text-center">
+                <td colSpan={9} className="px-3 py-12 text-center">
                   <div className="flex flex-col items-center gap-3">
                     <BriefcaseBusiness size={48} className="muted opacity-40" />
                     <div>
@@ -639,6 +675,26 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                       className="mt-1 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-4 py-2 text-sm font-semibold"
                     >
                       Add Stock
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const demoSymbols = [
+                          { symbol: "AAPL", shares: 10 },
+                          { symbol: "GOOGL", shares: 5 },
+                          { symbol: "MSFT", shares: 8 },
+                          { symbol: "AMZN", shares: 3 },
+                        ];
+                        const token = localStorage.getItem("access_token") || undefined;
+                        for (const d of demoSymbols) {
+                          await addPortfolioPosition(d.symbol, d.shares, token);
+                        }
+                        fetchPortfolio();
+                        toast({ type: "success", message: "Added demo portfolio with 4 positions" });
+                      }}
+                      className="empty-state-demo-btn"
+                    >
+                      Try with demo data
                     </button>
                   </div>
                 </td>
@@ -788,6 +844,29 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
           </div>
         </div>
       )}
+
+      <BulkActionsToolbar
+        count={selectedSymbols.size}
+        onClear={() => setSelectedSymbols(new Set())}
+        onDelete={async () => {
+          for (const sym of selectedSymbols) {
+            await handleRemove(sym);
+          }
+          setSelectedSymbols(new Set());
+        }}
+        onExport={() => {
+          const rows = portfolio.filter(r => selectedSymbols.has(r.symbol));
+          const csv = "Symbol,Shares\n" + rows.map(r => `${r.symbol},${r.shares}`).join("\n");
+          const blob = new Blob([csv], { type: "text/csv" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "portfolio-export.csv";
+          a.click();
+          URL.revokeObjectURL(url);
+          setSelectedSymbols(new Set());
+        }}
+      />
     </div>
   );
 }

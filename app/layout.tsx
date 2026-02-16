@@ -10,6 +10,7 @@ import PriceStreamProvider from "../components/PriceStreamProvider";
 import ToastProvider from "../components/ToastProvider";
 import ConfirmDialogProvider from "../components/ConfirmDialog";
 import ContextualTips from "../components/ContextualTips";
+import StatusBar from "../components/StatusBar";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -185,6 +186,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PriceStreamProvider>
             <KeyboardShortcutsProvider>
               <a href="#main-content" className="skip-link">Skip to content</a>
+              <StatusBar />
               <Header />
               <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
               <MobileDock />

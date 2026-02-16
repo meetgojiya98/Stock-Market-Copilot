@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import AdvancedMarketChart from "./AdvancedMarketChart";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
+import SymbolPopover from "./SymbolPopover";
 import SymbolAutocomplete from "./SymbolAutocomplete";
 import { useToast } from "./ToastProvider";
 import { useConfirm } from "./ConfirmDialog";
@@ -408,7 +409,7 @@ export default function WatchlistPanel() {
                   <div className="flex items-center gap-3">
                     <GripVertical size={14} className="drag-handle" />
                     <div>
-                      <div className="font-semibold text-base">{item.symbol}</div>
+                      <SymbolPopover symbol={item.symbol}><div className="font-semibold text-base">{item.symbol}</div></SymbolPopover>
                       <div className="text-xs muted mt-0.5">
                         {meta.price > 0 ? formatMoney(meta.price) : "Price unavailable"}
                       </div>

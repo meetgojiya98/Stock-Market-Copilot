@@ -126,11 +126,24 @@ function loadStockItems(): NavItem[] {
   }
 }
 
+function tryCalculate(input: string): { expression: string; result: number } | null {
+  const cleaned = input.replace(/[^0-9+\-*/.() ]/g, "").trim();
+  if (!cleaned || !/\d/.test(cleaned) || !/[+\-*/]/.test(cleaned)) return null;
+  try {
+    const result = Function(`"use strict"; return (${cleaned})`)();
+    if (typeof result === "number" && Number.isFinite(result)) {
+      return { expression: cleaned, result };
+    }
+  } catch { /* not a valid expression */ }
+  return null;
+}
+
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [stockItems, setStockItems] = useState<NavItem[]>([]);
+  const [recentActions, setRecentActions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -140,6 +153,10 @@ export default function CommandPalette() {
   useEffect(() => {
     if (open) {
       setStockItems(loadStockItems());
+      const recentRaw = localStorage.getItem("smc_cmd_recent_v1");
+      if (recentRaw) {
+        try { setRecentActions(JSON.parse(recentRaw).slice(0, 5)); } catch {}
+      }
     }
   }, [open]);
 
@@ -175,6 +192,11 @@ export default function CommandPalette() {
   const navigate = useCallback(
     (path: string) => {
       close();
+      try {
+        const recent = JSON.parse(localStorage.getItem("smc_cmd_recent_v1") || "[]");
+        const updated = [path, ...recent.filter((r: string) => r !== path)].slice(0, 5);
+        localStorage.setItem("smc_cmd_recent_v1", JSON.stringify(updated));
+      } catch {}
       router.push(path);
     },
     [close, router]
@@ -290,6 +312,16 @@ export default function CommandPalette() {
 
         {/* Results */}
         <div ref={listRef} role="listbox" className="max-h-[50vh] overflow-y-auto p-2">
+          {(() => {
+            const calc = tryCalculate(query);
+            if (calc) return (
+              <div className="cmd-calc-result">
+                <span className="cmd-calc-expression">{calc.expression} =</span>
+                <span className="cmd-calc-value">{calc.result.toLocaleString("en-US", { maximumFractionDigits: 4 })}</span>
+              </div>
+            );
+            return null;
+          })()}
           {flatItems.length === 0 && (
             <div className="p-4 text-sm muted text-center">No results found. Try a different search.</div>
           )}

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import { resolveChartColors, CHART_FONT, chartGridConfig } from "../lib/chart-theme";
+import TimeframeSelector from "./TimeframeSelector";
 import {
   Chart as ChartJS,
   LineElement,
@@ -24,14 +25,6 @@ ChartJS.register(
   TimeScale,
   Filler
 );
-
-const RANGES = [
-  { label: "1M", value: "1mo" },
-  { label: "6M", value: "6mo" },
-  { label: "1Y", value: "1y" },
-  { label: "5Y", value: "5y" },
-  { label: "Max", value: "max" }
-];
 
 // Define props type
 interface ChartProps {
@@ -88,19 +81,18 @@ export default function Chart({ data: _data, loading: _loading, symbol = "AAPL" 
   return (
     <div className="bg-zinc-100 dark:bg-zinc-900 rounded-xl shadow p-4 sm:p-6 flex flex-col min-h-[240px] sm:h-[210px]">
       <div className="flex gap-2 mb-3 sm:mb-4 items-center flex-wrap">
-        <span className="text-sm font-semibold dark:text-white">Range:</span>
-        {RANGES.map(r => (
-          <button
-            key={r.value}
-            onClick={() => setRange(r.value)}
-            className={`px-3 py-1 rounded text-xs font-bold transition
-              ${range === r.value
-                ? "bg-orange-400 text-white"
-                : "bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-zinc-700"}`}
-          >
-            {r.label}
-          </button>
-        ))}
+        <TimeframeSelector
+          value={range}
+          onChange={setRange}
+          timeframes={[
+            { label: "1M", value: "1mo" },
+            { label: "6M", value: "6mo" },
+            { label: "1Y", value: "1y" },
+            { label: "5Y", value: "5y" },
+            { label: "Max", value: "max" },
+          ]}
+          enableKeyboard
+        />
       </div>
       {loading ? (
         <div className="h-20 flex items-center justify-center text-gray-500 dark:text-gray-400">Loading chart...</div>
