@@ -506,6 +506,13 @@ button:active {
   border: 1px solid color-mix(in srgb, var(--surface-border) 60%, transparent);
   background: color-mix(in srgb, var(--surface-emphasis) 80%, transparent);
   padding: 0.18rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.topbar-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .dark .topbar-nav {
