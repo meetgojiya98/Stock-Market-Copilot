@@ -7,13 +7,15 @@ import PageShell from "../../components/PageShell";
 import PublicWatchlists from "../../components/PublicWatchlists";
 import StockDiscussions from "../../components/StockDiscussions";
 import Leaderboard from "../../components/Leaderboard";
+import SharedPortfolios from "../../components/SharedPortfolios";
 
-type Tab = "watchlists" | "discussions" | "leaderboard";
+type Tab = "watchlists" | "discussions" | "leaderboard" | "shared";
 
 const TABS: { key: Tab; label: string; icon: typeof List }[] = [
   { key: "watchlists", label: "Watchlists", icon: List },
   { key: "discussions", label: "Discussions", icon: MessageCircle },
   { key: "leaderboard", label: "Leaderboard", icon: Trophy },
+  { key: "shared", label: "Shared", icon: List },
 ];
 
 export default function CommunityPage() {
@@ -45,6 +47,7 @@ export default function CommunityPage() {
           {activeTab === "watchlists" && <PublicWatchlists />}
           {activeTab === "discussions" && <StockDiscussions />}
           {activeTab === "leaderboard" && <Leaderboard />}
+          {activeTab === "shared" && <SharedPortfolios />}
         </div>
       </PageShell>
     </AuthGuard>

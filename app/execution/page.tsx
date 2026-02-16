@@ -3,6 +3,7 @@
 import AuthGuard from "../../components/AuthGuard";
 import PageShell from "../../components/PageShell";
 import ExecutionHub from "../../components/ExecutionHub";
+import OrderTemplateBuilder from "../../components/OrderTemplateBuilder";
 
 export default function ExecutionPage() {
   return (
@@ -10,6 +11,7 @@ export default function ExecutionPage() {
       <PageShell title="Execution">
         <div className="space-y-6">
           <ExecutionHub />
+          <OrderTemplateBuilder />
         </div>
       </PageShell>
     </AuthGuard>

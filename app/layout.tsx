@@ -6,6 +6,8 @@ import MobileDock from "../components/MobileDock";
 import CommandPalette from "../components/CommandPalette";
 import OnboardingModal from "../components/OnboardingModal";
 import KeyboardShortcutsProvider from "../components/KeyboardShortcutsProvider";
+import PriceStreamProvider from "../components/PriceStreamProvider";
+import ContextualTips from "../components/ContextualTips";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -176,15 +178,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col antialiased text-[var(--ink)]">
         <Providers>
-          <KeyboardShortcutsProvider>
-            <a href="#main-content" className="skip-link">Skip to content</a>
-            <Header />
-            <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
-            <MobileDock />
-            <Footer />
-            <CommandPalette />
-            <OnboardingModal />
-          </KeyboardShortcutsProvider>
+          <PriceStreamProvider>
+            <KeyboardShortcutsProvider>
+              <a href="#main-content" className="skip-link">Skip to content</a>
+              <Header />
+              <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
+              <MobileDock />
+              <Footer />
+              <CommandPalette />
+              <OnboardingModal />
+              <ContextualTips />
+            </KeyboardShortcutsProvider>
+          </PriceStreamProvider>
         </Providers>
       </body>
     </html>
