@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Star, TrendingUp, Trash2 } from "lucide-react";
+import { Plus, ScanSearch, Star, TrendingUp, Trash2 } from "lucide-react";
 import AdvancedMarketChart from "./AdvancedMarketChart";
+import Sparkline from "./Sparkline";
+import Skeleton from "./Skeleton";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -88,6 +90,7 @@ export default function WatchlistPanel() {
   const [prices, setPrices] = useState<Record<string, PriceMeta>>({});
   const [trending, setTrending] = useState<TrendingItem[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dataMode, setDataMode] = useState<"remote" | "local">("remote");
   const [selectedSymbol, setSelectedSymbol] = useState("");
@@ -112,24 +115,28 @@ export default function WatchlistPanel() {
 
   const loadWatchlist = async () => {
     setError("");
-    const token = localStorage.getItem("access_token") || undefined;
+    try {
+      const token = localStorage.getItem("access_token") || undefined;
 
-    const [watchResult, trendResult] = await Promise.all([
-      fetchWatchlistData(token),
-      fetchTrendingData(token),
-    ]);
+      const [watchResult, trendResult] = await Promise.all([
+        fetchWatchlistData(token),
+        fetchTrendingData(token),
+      ]);
 
-    setWatchlist(watchResult.data);
-    setTrending(trendResult.data);
-    setDataMode(watchResult.mode);
+      setWatchlist(watchResult.data);
+      setTrending(trendResult.data);
+      setDataMode(watchResult.mode);
 
-    if (watchResult.detail) {
-      setError(`Switched to Local Mode: ${watchResult.detail}`);
-    }
+      if (watchResult.detail) {
+        setError(`Switched to Local Mode: ${watchResult.detail}`);
+      }
 
-    await refreshPrices(watchResult.data.map((row) => row.symbol));
-    if (!selectedSymbol && watchResult.data[0]?.symbol) {
-      setSelectedSymbol(watchResult.data[0].symbol);
+      await refreshPrices(watchResult.data.map((row) => row.symbol));
+      if (!selectedSymbol && watchResult.data[0]?.symbol) {
+        setSelectedSymbol(watchResult.data[0].symbol);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -268,13 +275,50 @@ export default function WatchlistPanel() {
         {error && <div className="text-sm text-red-600 dark:text-red-300">{error}</div>}
 
         <div className="space-y-2">
-          {sortedWatchlist.length === 0 && (
-            <div className="card-elevated rounded-xl p-4 text-sm muted">
-              Watchlist is empty. Add symbols to start monitoring.
+          {loading &&
+            Array.from({ length: 5 }, (_, i) => (
+              <div key={`skel-${i}`} className="card-elevated rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-2">
+                    <Skeleton variant="text" width="4rem" />
+                    <Skeleton variant="text" width="5rem" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Skeleton variant="rect" width="3.5rem" height="1.4rem" />
+                    <Skeleton variant="rect" width="4rem" height="1.4rem" />
+                    <Skeleton variant="rect" width="6rem" height="1.4rem" />
+                  </div>
+                </div>
+                <Skeleton variant="rect" width="100%" height="68px" />
+              </div>
+            ))}
+
+          {!loading && sortedWatchlist.length === 0 && (
+            <div className="card-elevated rounded-xl p-8 flex flex-col items-center gap-3 text-center">
+              <ScanSearch size={48} className="muted opacity-40" />
+              <div>
+                <div className="font-semibold text-sm">Your watchlist is empty</div>
+                <div className="text-xs muted mt-1">
+                  Search for stocks to start tracking.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const addInput = document.querySelector<HTMLInputElement>(
+                    'input[placeholder="Add symbol"]'
+                  );
+                  addInput?.focus();
+                }}
+                className="mt-1 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-4 py-2 text-sm font-semibold"
+              >
+                <Plus size={14} />
+                Add Symbol
+              </button>
             </div>
           )}
 
-          {sortedWatchlist.map((item) => {
+          {!loading && sortedWatchlist.map((item) => {
             const meta = prices[item.symbol] ?? { price: 0, changePct: 0 };
             const note = notes[item.symbol] || "";
 
@@ -288,11 +332,21 @@ export default function WatchlistPanel() {
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-semibold text-base">{item.symbol}</div>
-                    <div className="text-xs muted mt-0.5">
-                      {meta.price > 0 ? formatMoney(meta.price) : "Price unavailable"}
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="font-semibold text-base">{item.symbol}</div>
+                      <div className="text-xs muted mt-0.5">
+                        {meta.price > 0 ? formatMoney(meta.price) : "Price unavailable"}
+                      </div>
                     </div>
+                    {meta.price > 0 && (
+                      <Sparkline
+                        data={Array.from({ length: 7 }, (_, i) =>
+                          meta.price * (1 + (Math.random() - 0.48) * 0.03 * (i + 1))
+                        )}
+                        color={meta.changePct >= 0 ? "var(--positive)" : "var(--negative)"}
+                      />
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap justify-end">

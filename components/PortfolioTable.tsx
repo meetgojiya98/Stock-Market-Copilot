@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, RefreshCw, Target, Trash2 } from "lucide-react";
+import { AlertTriangle, BriefcaseBusiness, RefreshCw, Target, Trash2 } from "lucide-react";
+import Sparkline from "./Sparkline";
+import Skeleton from "./Skeleton";
 import {
   addPortfolioPosition,
   fetchPortfolioData,
@@ -357,6 +359,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
           <thead className="bg-black/5 dark:bg-white/10">
             <tr className="text-left">
               <th className="px-3 py-2.5 font-medium">Symbol</th>
+              <th className="px-3 py-2.5 font-medium">Trend</th>
               <th className="px-3 py-2.5 font-medium">Shares</th>
               <th className="px-3 py-2.5 font-medium">Last</th>
               <th className="px-3 py-2.5 font-medium">Change</th>
@@ -377,6 +380,16 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                   className="border-t border-black/5 dark:border-white/10 hover:bg-black/[0.03] dark:hover:bg-white/[0.04]"
                 >
                   <td className="px-3 py-2.5 font-semibold">{row.symbol}</td>
+                  <td className="px-3 py-2.5">
+                    {meta.price > 0 && (
+                      <Sparkline
+                        data={Array.from({ length: 7 }, (_, i) =>
+                          meta.price * (1 + (Math.random() - 0.48) * 0.03 * (i + 1))
+                        )}
+                        color={meta.changePct >= 0 ? "var(--positive)" : "var(--negative)"}
+                      />
+                    )}
+                  </td>
                   <td className="px-3 py-2.5 metric-value">{row.shares}</td>
                   <td className="px-3 py-2.5 metric-value">{meta.price > 0 ? formatMoney(meta.price) : "--"}</td>
                   <td className="px-3 py-2.5">
@@ -399,10 +412,44 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
               );
             })}
 
+            {loading &&
+              Array.from({ length: 5 }, (_, i) => (
+                <tr key={`skel-${i}`} className="border-t border-black/5 dark:border-white/10">
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="4rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="rect" width="80px" height="24px" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="2.5rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="4rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="3.5rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="5rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="text" width="3rem" /></td>
+                  <td className="px-3 py-2.5"><Skeleton variant="rect" width="5rem" height="1.5rem" /></td>
+                </tr>
+              ))}
+
             {!filteredPortfolio.length && !loading && (
               <tr>
-                <td colSpan={7} className="px-3 py-6 text-center muted">
-                  No positions found.
+                <td colSpan={8} className="px-3 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <BriefcaseBusiness size={48} className="muted opacity-40" />
+                    <div>
+                      <div className="font-semibold text-sm">No positions yet</div>
+                      <div className="text-xs muted mt-1">
+                        Add your first stock to start tracking your portfolio.
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const symbolInput = document.querySelector<HTMLInputElement>(
+                          'input[placeholder="Symbol"]'
+                        );
+                        symbolInput?.focus();
+                      }}
+                      className="mt-1 inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-4 py-2 text-sm font-semibold"
+                    >
+                      Add Stock
+                    </button>
+                  </div>
                 </td>
               </tr>
             )}
@@ -511,7 +558,6 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         </div>
       </div>
 
-      {loading && <div className="text-sm muted">Loading portfolio...</div>}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import {
   AlarmClockCheck,
   Archive,
   ArrowUpRight,
+  Bell,
   BellRing,
   CheckCheck,
   CircleAlert,
@@ -68,6 +69,7 @@ const READ_KEY = "smc_notifications_read_v2";
 const ARCHIVE_KEY = "smc_notifications_archived_v1";
 const RULES_KEY = "smc_alert_rules_v3";
 const LOCAL_NOTIFICATIONS_KEY = "smc_local_notifications_v2";
+const DESKTOP_NOTIF_KEY = "smc_desktop_notif_pref";
 
 function normalizeSymbol(symbol: string) {
   return symbol.trim().toUpperCase();
@@ -299,6 +301,15 @@ function triggerMessage(rule: AlertRule, quote: QuotePoint) {
   return rule.note.trim() ? `${rule.note.trim()} ${suffix}` : suffix;
 }
 
+function sendBrowserNotification(title: string, body: string) {
+  if (typeof window === "undefined" || !("Notification" in window)) return;
+  if (Notification.permission === "granted") {
+    new Notification(title, { body, icon: "/zentrade-logo.svg" });
+  } else if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
 export default function NotificationsPanel() {
   const [notifications, setNotifications] = useState<MarketNotification[]>([]);
   const [readSet, setReadSet] = useState<Record<string, boolean>>({});
@@ -313,6 +324,9 @@ export default function NotificationsPanel() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [evaluating, setEvaluating] = useState(false);
+
+  const [desktopNotifEnabled, setDesktopNotifEnabled] = useState(false);
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission>("default");
 
   const [ruleSymbol, setRuleSymbol] = useState("AAPL");
   const [ruleOperator, setRuleOperator] = useState<RuleOperator>("price_above");
@@ -394,7 +408,14 @@ export default function NotificationsPanel() {
           const last = rule.lastTriggeredAt ? Date.parse(rule.lastTriggeredAt) : 0;
           if (last && now - last < cooldownMs) return rule;
 
-          createLocalAlert(rule.symbol, triggerMessage(rule, quote), rule.severity);
+          const message = triggerMessage(rule, quote);
+          createLocalAlert(rule.symbol, message, rule.severity);
+          if (desktopNotifEnabled) {
+            sendBrowserNotification(
+              `Alert: ${rule.symbol}`,
+              message
+            );
+          }
           triggered += 1;
 
           return {
@@ -421,13 +442,17 @@ export default function NotificationsPanel() {
         setEvaluating(false);
       }
     },
-    [fetchNotifications, rules]
+    [desktopNotifEnabled, fetchNotifications, rules]
   );
 
   useEffect(() => {
     setReadSet(parseBooleanMap(localStorage.getItem(READ_KEY)));
     setArchivedSet(parseBooleanMap(localStorage.getItem(ARCHIVE_KEY)));
     setRules(parseRules(localStorage.getItem(RULES_KEY)));
+    setDesktopNotifEnabled(localStorage.getItem(DESKTOP_NOTIF_KEY) === "true");
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifPermission(Notification.permission);
+    }
     fetchNotifications();
     refreshCoverageSymbols();
   }, [fetchNotifications, refreshCoverageSymbols]);
@@ -461,7 +486,7 @@ export default function NotificationsPanel() {
   useEffect(() => {
     const id = window.setInterval(() => {
       evaluateRules(false);
-    }, 60_000);
+    }, 30_000);
     return () => window.clearInterval(id);
   }, [evaluateRules]);
 
@@ -971,14 +996,59 @@ export default function NotificationsPanel() {
                 <AlarmClockCheck size={15} />
                 Alert Rule Engine
               </h3>
-              <button
-                onClick={() => evaluateRules(true)}
-                disabled={evaluating}
-                className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent-2)] to-[var(--accent-3)] text-white px-3 py-1.5 text-xs font-semibold disabled:opacity-70"
-              >
-                <Zap size={12} />
-                {evaluating ? "Scanning..." : "Run Scan"}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (
+                      typeof window !== "undefined" &&
+                      "Notification" in window &&
+                      Notification.permission !== "granted"
+                    ) {
+                      Notification.requestPermission().then((perm) => {
+                        setNotifPermission(perm);
+                        if (perm === "granted") {
+                          setDesktopNotifEnabled(true);
+                          localStorage.setItem(DESKTOP_NOTIF_KEY, "true");
+                          setNotice("Desktop notifications enabled.");
+                        }
+                      });
+                    } else {
+                      const next = !desktopNotifEnabled;
+                      setDesktopNotifEnabled(next);
+                      localStorage.setItem(DESKTOP_NOTIF_KEY, String(next));
+                      setNotice(
+                        next
+                          ? "Desktop notifications enabled."
+                          : "Desktop notifications disabled."
+                      );
+                    }
+                  }}
+                  className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold border ${
+                    desktopNotifEnabled
+                      ? "border-emerald-400/60 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
+                      : "border-[var(--surface-border)] control-surface bg-white/80 dark:bg-black/25"
+                  }`}
+                  title={`Browser permission: ${notifPermission}`}
+                >
+                  <Bell size={12} />
+                  {desktopNotifEnabled ? "Desktop On" : "Desktop Off"}
+                  <span className="text-[10px] muted ml-0.5">
+                    ({notifPermission === "granted"
+                      ? "allowed"
+                      : notifPermission === "denied"
+                      ? "blocked"
+                      : "ask"})
+                  </span>
+                </button>
+                <button
+                  onClick={() => evaluateRules(true)}
+                  disabled={evaluating}
+                  className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent-2)] to-[var(--accent-3)] text-white px-3 py-1.5 text-xs font-semibold disabled:opacity-70"
+                >
+                  <Zap size={12} />
+                  {evaluating ? "Scanning..." : "Run Scan"}
+                </button>
+              </div>
             </div>
 
             <p className="text-xs muted">

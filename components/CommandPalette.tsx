@@ -41,7 +41,7 @@ type NavItem = {
   path: string;
   icon: typeof Search;
   description: string;
-  group: "Pages" | "Tools" | "Education";
+  group: "Pages" | "Tools" | "Education" | "Your Stocks";
 };
 
 const ITEMS: NavItem[] = [
@@ -74,25 +74,86 @@ const ITEMS: NavItem[] = [
   { name: "Learn", path: "/learn", icon: BookOpen, description: "How to use Zentrade", group: "Education" },
 ];
 
-const GROUP_ORDER: NavItem["group"][] = ["Pages", "Tools", "Education"];
+const GROUP_ORDER: NavItem["group"][] = ["Your Stocks", "Pages", "Tools", "Education"];
+
+type PortfolioItem = { symbol: string; name: string; shares?: number; avg_cost?: number };
+type WatchlistItem = { symbol: string; name: string };
+
+function loadStockItems(): NavItem[] {
+  try {
+    const portfolioRaw = localStorage.getItem("smc_portfolio_v3");
+    const watchlistRaw = localStorage.getItem("smc_watchlist_v3");
+    const seen = new Set<string>();
+    const items: NavItem[] = [];
+
+    if (portfolioRaw) {
+      const portfolio: PortfolioItem[] = JSON.parse(portfolioRaw);
+      for (const p of portfolio) {
+        if (!p.symbol) continue;
+        const key = p.symbol.toUpperCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          name: key,
+          path: "/research",
+          icon: TrendingUp,
+          description: p.name || key,
+          group: "Your Stocks",
+        });
+      }
+    }
+
+    if (watchlistRaw) {
+      const watchlist: WatchlistItem[] = JSON.parse(watchlistRaw);
+      for (const w of watchlist) {
+        if (!w.symbol) continue;
+        const key = w.symbol.toUpperCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        items.push({
+          name: key,
+          path: "/research",
+          icon: TrendingUp,
+          description: w.name || key,
+          group: "Your Stocks",
+        });
+      }
+    }
+
+    return items;
+  } catch {
+    return [];
+  }
+}
 
 export default function CommandPalette() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [stockItems, setStockItems] = useState<NavItem[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+
+  // Load stock data from localStorage whenever the palette opens
+  useEffect(() => {
+    if (open) {
+      setStockItems(loadStockItems());
+    }
+  }, [open]);
+
+  const allItems = useMemo(() => [...stockItems, ...ITEMS], [stockItems]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return ITEMS;
-    return ITEMS.filter(
+    if (!q) return allItems;
+    return allItems.filter(
       (item) =>
         item.name.toLowerCase().includes(q) ||
         item.description.toLowerCase().includes(q)
     );
-  }, [query]);
+  }, [query, allItems]);
 
   const grouped = useMemo(() => {
     const groups: { group: NavItem["group"]; items: NavItem[] }[] = [];
@@ -152,6 +213,26 @@ export default function CommandPalette() {
       if (flatItems[activeIndex]) navigate(flatItems[activeIndex].path);
     } else if (e.key === "Escape") {
       close();
+    } else if (e.key === "Tab") {
+      // Focus trapping: cycle through results and back to input
+      e.preventDefault();
+      if (e.shiftKey) {
+        // Shift+Tab: go backwards
+        if (activeIndex <= 0) {
+          inputRef.current?.focus();
+        } else {
+          setActiveIndex((prev) => prev - 1);
+        }
+      } else {
+        // Tab: go forward
+        if (activeIndex >= flatItems.length - 1) {
+          // Last item — cycle back to input
+          setActiveIndex(0);
+          inputRef.current?.focus();
+        } else {
+          setActiveIndex((prev) => prev + 1);
+        }
+      }
     }
   };
 
@@ -161,6 +242,23 @@ export default function CommandPalette() {
     if (active) active.scrollIntoView({ block: "nearest" });
   }, [activeIndex]);
 
+  // Focus trap: prevent focus from leaving the palette while open
+  useEffect(() => {
+    if (!open) return;
+    const handleFocusTrap = (e: FocusEvent) => {
+      if (
+        containerRef.current &&
+        e.target instanceof Node &&
+        !containerRef.current.contains(e.target)
+      ) {
+        e.stopPropagation();
+        inputRef.current?.focus();
+      }
+    };
+    document.addEventListener("focusin", handleFocusTrap);
+    return () => document.removeEventListener("focusin", handleFocusTrap);
+  }, [open]);
+
   if (!open) return null;
 
   let itemCounter = 0;
@@ -169,6 +267,7 @@ export default function CommandPalette() {
     <div className="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh]" onClick={close}>
       <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
       <div
+        ref={containerRef}
         className="relative w-full max-w-lg mx-4 rounded-2xl surface-glass dynamic-surface overflow-hidden shadow-2xl"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={handleKeyDown}
@@ -181,6 +280,7 @@ export default function CommandPalette() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search pages and tools..."
+            aria-label="Search pages, tools, and stocks"
             className="flex-1 bg-transparent text-sm outline-none section-title placeholder:text-[var(--ink-muted)]"
           />
           <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] muted font-semibold control-surface">
@@ -189,7 +289,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[50vh] overflow-y-auto p-2">
+        <div ref={listRef} role="listbox" className="max-h-[50vh] overflow-y-auto p-2">
           {flatItems.length === 0 && (
             <div className="p-4 text-sm muted text-center">No results found. Try a different search.</div>
           )}
@@ -205,7 +305,9 @@ export default function CommandPalette() {
                 const isActive = idx === activeIndex;
                 return (
                   <button
-                    key={item.path}
+                    key={`${item.group}-${item.name}-${item.path}`}
+                    role="option"
+                    aria-selected={isActive}
                     data-active={isActive}
                     onClick={() => navigate(item.path)}
                     onMouseEnter={() => setActiveIndex(idx)}

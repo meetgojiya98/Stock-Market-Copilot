@@ -18,6 +18,8 @@ import {
   Square,
   CheckSquare,
   Grid3X3,
+  Pin,
+  PinOff,
 } from "lucide-react";
 
 type Widget = {
@@ -42,7 +44,7 @@ const DEFAULT_LAYOUT = ["portfolio_summary", "watchlist_preview", "market_status
 
 const STORAGE_KEY = "smc_dashboard_layout_v1";
 
-type LayoutItem = { id: string; enabled: boolean };
+type LayoutItem = { id: string; enabled: boolean; pinned?: boolean };
 
 function loadLayout(): LayoutItem[] {
   try {
@@ -87,8 +89,22 @@ export default function DashboardBuilder() {
     update(next);
   };
 
+  const togglePin = (id: string) => {
+    const next = layout.map((l) =>
+      l.id === id ? { ...l, pinned: !l.pinned } : l
+    );
+    // Sort so pinned items rise to the top while preserving relative order
+    const pinned = next.filter((l) => l.pinned);
+    const unpinned = next.filter((l) => !l.pinned);
+    update([...pinned, ...unpinned]);
+  };
+
+  const pinnedCount = useMemo(() => layout.filter((l) => l.pinned).length, [layout]);
+
   const moveUp = (index: number) => {
     if (index <= 0) return;
+    // Cannot move into the pinned zone if the item is not pinned
+    if (!layout[index].pinned && layout[index - 1]?.pinned) return;
     const next = [...layout];
     [next[index - 1], next[index]] = [next[index], next[index - 1]];
     update(next);
@@ -96,15 +112,19 @@ export default function DashboardBuilder() {
 
   const moveDown = (index: number) => {
     if (index >= layout.length - 1) return;
+    // Cannot move a pinned item out of the pinned zone
+    if (layout[index].pinned && !layout[index + 1]?.pinned) return;
     const next = [...layout];
     [next[index], next[index + 1]] = [next[index + 1], next[index]];
     update(next);
   };
 
   const resetLayout = () => {
+    localStorage.removeItem(STORAGE_KEY);
     const def = ALL_WIDGETS.map((w) => ({
       id: w.id,
       enabled: DEFAULT_LAYOUT.includes(w.id),
+      pinned: false,
     }));
     update(def);
   };
@@ -114,7 +134,7 @@ export default function DashboardBuilder() {
   return (
     <div className="space-y-4">
       {/* Stats row */}
-      <div className="grid sm:grid-cols-3 gap-3">
+      <div className="grid sm:grid-cols-4 gap-3">
         <div className="rounded-xl control-surface p-3">
           <div className="text-[11px] tracking-[0.12em] uppercase muted font-semibold flex items-center gap-1">
             <Grid3X3 size={13} /> Available
@@ -127,12 +147,18 @@ export default function DashboardBuilder() {
           </div>
           <div className="mt-1 text-lg metric-value font-semibold">{enabledCount} active</div>
         </div>
+        <div className="rounded-xl control-surface p-3">
+          <div className="text-[11px] tracking-[0.12em] uppercase muted font-semibold flex items-center gap-1">
+            <Pin size={13} /> Pinned
+          </div>
+          <div className="mt-1 text-lg metric-value font-semibold">{pinnedCount} locked</div>
+        </div>
         <div className="rounded-xl control-surface p-3 flex items-center">
           <button
             onClick={resetLayout}
-            className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold w-full justify-center"
+            className="inline-flex items-center gap-1 rounded-lg border border-[var(--surface-border)] muted px-3 py-2 text-xs w-full justify-center hover:opacity-80 transition-opacity"
           >
-            <RotateCcw size={13} /> Reset to Default
+            <RotateCcw size={13} /> Reset Layout
           </button>
         </div>
       </div>
@@ -145,11 +171,27 @@ export default function DashboardBuilder() {
             const widget = widgetMap[item.id];
             if (!widget) return null;
             const Icon = widget.icon;
+            const isPinned = Boolean(item.pinned);
+            const canMoveUp =
+              index > 0 && !isPinned && !layout[index - 1]?.pinned
+                ? true
+                : index > 0 && isPinned;
+            const canMoveDown =
+              index < layout.length - 1 &&
+              !isPinned
+                ? true
+                : index < layout.length - 1 &&
+                  isPinned &&
+                  Boolean(layout[index + 1]?.pinned);
             return (
               <div
                 key={item.id}
                 className={`flex items-center gap-3 rounded-xl p-3 transition-colors ${
-                  item.enabled ? "control-surface" : "opacity-50"
+                  isPinned
+                    ? "control-surface border border-[var(--accent)]/30"
+                    : item.enabled
+                    ? "control-surface"
+                    : "opacity-50"
                 }`}
               >
                 <button onClick={() => toggleWidget(item.id)} className="flex-shrink-0">
@@ -163,15 +205,26 @@ export default function DashboardBuilder() {
                 <span className="flex-1 text-sm font-semibold section-title truncate">{widget.label}</span>
                 <div className="flex items-center gap-1">
                   <button
+                    onClick={() => togglePin(item.id)}
+                    className={`p-1 rounded hover:opacity-80 ${isPinned ? "" : "muted"}`}
+                    title={isPinned ? "Unpin widget" : "Pin widget to top"}
+                  >
+                    {isPinned ? (
+                      <Pin size={13} style={{ color: "var(--accent)" }} />
+                    ) : (
+                      <PinOff size={13} />
+                    )}
+                  </button>
+                  <button
                     onClick={() => moveUp(index)}
-                    disabled={index === 0}
+                    disabled={!canMoveUp || isPinned}
                     className="p-1 rounded muted hover:opacity-80 disabled:opacity-30"
                   >
                     <ArrowUp size={13} />
                   </button>
                   <button
                     onClick={() => moveDown(index)}
-                    disabled={index === layout.length - 1}
+                    disabled={!canMoveDown || isPinned}
                     className="p-1 rounded muted hover:opacity-80 disabled:opacity-30"
                   >
                     <ArrowDown size={13} />

@@ -4,6 +4,8 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import MobileDock from "../components/MobileDock";
 import CommandPalette from "../components/CommandPalette";
+import OnboardingModal from "../components/OnboardingModal";
+import KeyboardShortcutsProvider from "../components/KeyboardShortcutsProvider";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
 
@@ -174,11 +176,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col antialiased text-[var(--ink)]">
         <Providers>
-          <Header />
-          <main className="flex-1 pb-24 md:pb-8 relative">{children}</main>
-          <MobileDock />
-          <Footer />
-          <CommandPalette />
+          <KeyboardShortcutsProvider>
+            <a href="#main-content" className="skip-link">Skip to content</a>
+            <Header />
+            <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
+            <MobileDock />
+            <Footer />
+            <CommandPalette />
+            <OnboardingModal />
+          </KeyboardShortcutsProvider>
         </Providers>
       </body>
     </html>
