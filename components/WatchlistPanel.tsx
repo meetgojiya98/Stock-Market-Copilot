@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BarChart3, Plus, ScanSearch, Star, TrendingUp, Trash2 } from "lucide-react";
+import { BarChart3, GripVertical, Plus, ScanSearch, Star, TrendingUp, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import AdvancedMarketChart from "./AdvancedMarketChart";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
+import SymbolAutocomplete from "./SymbolAutocomplete";
+import { useToast } from "./ToastProvider";
+import { useConfirm } from "./ConfirmDialog";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -100,6 +103,10 @@ export default function WatchlistPanel() {
   const [selectedSource, setSelectedSource] = useState<"local" | "remote" | "synthetic">("local");
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; symbol: string } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const sortedWatchlist = useMemo(
     () =>
@@ -239,6 +246,7 @@ export default function WatchlistPanel() {
 
     if (!result.ok) {
       setError(result.detail || "Unable to add symbol.");
+      toast({ type: "error", message: result.detail || "Unable to add symbol." });
       return;
     }
 
@@ -247,19 +255,42 @@ export default function WatchlistPanel() {
       setError(`Saved in Local Mode: ${result.detail}`);
     }
     loadWatchlist();
+    toast({ type: "success", message: `Added ${normalized} to watchlist` });
   };
 
   const handleRemove = async (watchSymbol: string) => {
+    const ok = await confirm({
+      title: "Remove from watchlist?",
+      message: `This will remove ${watchSymbol} from your watchlist.`,
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
+
     const token = localStorage.getItem("access_token") || undefined;
     const result = await removeWatchlistSymbol(watchSymbol, token);
     setDataMode(result.mode);
 
     if (!result.ok) {
-      setError(result.detail || "Unable to remove symbol.");
+      toast({ type: "error", message: result.detail || "Unable to remove symbol." });
       return;
     }
 
     loadWatchlist();
+
+    toast({
+      type: "success",
+      message: `Removed ${watchSymbol}`,
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          const t = localStorage.getItem("access_token") || undefined;
+          await addWatchlistSymbol(watchSymbol, t);
+          loadWatchlist();
+          toast({ type: "success", message: `Restored ${watchSymbol}` });
+        },
+      },
+    });
   };
 
   const handlePromote = async (watchSymbol: string) => {
@@ -273,18 +304,19 @@ export default function WatchlistPanel() {
     }
 
     setError(`${watchSymbol} added to portfolio (1 share baseline).`);
+    toast({ type: "success", message: `${watchSymbol} added to portfolio` });
   };
 
   return (
     <div className="grid xl:grid-cols-[1.55fr_1fr] gap-4">
       <div className="space-y-4">
         <form onSubmit={handleAdd} className="card-elevated rounded-xl p-4 flex flex-wrap gap-2 items-center">
-          <input
+          <SymbolAutocomplete
             value={symbol}
-            onChange={(event) => setSymbol(event.target.value.toUpperCase())}
+            onChange={setSymbol}
+            onSelect={(sym) => { setSymbol(sym); }}
             placeholder="Add symbol"
-            className="rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-2 text-sm w-full sm:w-auto sm:min-w-[180px]"
-            required
+            className="w-full sm:w-auto sm:min-w-[180px]"
           />
           <button className="inline-flex items-center gap-1 rounded-lg bg-gradient-to-r from-[var(--accent)] to-[var(--accent-2)] text-white px-3 py-2 text-sm font-semibold">
             <Plus size={14} />
@@ -342,13 +374,26 @@ export default function WatchlistPanel() {
             </div>
           )}
 
-          {!loading && sortedWatchlist.map((item) => {
+          {!loading && sortedWatchlist.map((item, itemIndex) => {
             const meta = prices[item.symbol] ?? { price: 0, changePct: 0 };
             const note = notes[item.symbol] || "";
 
             return (
               <div
                 key={item.symbol}
+                draggable
+                onDragStart={() => setDragIndex(itemIndex)}
+                onDragOver={(e) => { e.preventDefault(); setDragOverIndex(itemIndex); }}
+                onDrop={() => {
+                  if (dragIndex === null || dragIndex === itemIndex) return;
+                  const reordered = [...sortedWatchlist];
+                  const [moved] = reordered.splice(dragIndex, 1);
+                  reordered.splice(itemIndex, 0, moved);
+                  setWatchlist(reordered);
+                  setDragIndex(null);
+                  setDragOverIndex(null);
+                }}
+                onDragEnd={() => { setDragIndex(null); setDragOverIndex(null); }}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setContextMenu({ x: e.clientX, y: e.clientY, symbol: item.symbol });
@@ -357,10 +402,11 @@ export default function WatchlistPanel() {
                   selectedSymbol === item.symbol
                     ? "border-[color-mix(in_srgb,var(--accent)_45%,var(--surface-border))]"
                     : ""
-                }`}
+                }${dragIndex === itemIndex ? " dragging" : ""}${dragOverIndex === itemIndex && dragIndex !== itemIndex ? " drag-over" : ""}`}
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
+                    <GripVertical size={14} className="drag-handle" />
                     <div>
                       <div className="font-semibold text-base">{item.symbol}</div>
                       <div className="text-xs muted mt-0.5">

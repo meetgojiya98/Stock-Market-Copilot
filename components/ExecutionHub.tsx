@@ -14,6 +14,7 @@ import {
   Wallet,
   XCircle,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
 import AttributionRiskLab from "./AttributionRiskLab";
 import AdvancedMarketChart from "./AdvancedMarketChart";
 import AutomationRulesLab from "./AutomationRulesLab";
@@ -787,7 +788,7 @@ export default function ExecutionHub() {
 
   if (!ledger) {
     return (
-      <div className="card-elevated rounded-xl p-4 text-sm muted">
+      <div className="card-elevated rounded-xl p-4 text-sm muted" role="status">
         {busy ? "Loading execution workspace..." : "Execution workspace unavailable."}
       </div>
     );
@@ -878,6 +879,7 @@ export default function ExecutionHub() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleRefresh}
+                  aria-label="Sync execution workspace"
                   className="inline-flex items-center gap-1 rounded-lg control-surface bg-white/80 dark:bg-black/25 px-3 py-1.5 text-xs"
                 >
                   <RefreshCw size={13} />
@@ -885,6 +887,7 @@ export default function ExecutionHub() {
                 </button>
                 <button
                   onClick={handleReset}
+                  aria-label="Reset simulator ledger"
                   className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-3 py-1.5 text-xs"
                 >
                   <RotateCcw size={13} />
@@ -1228,8 +1231,12 @@ export default function ExecutionHub() {
                 <tbody>
                   {positionRows.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-6 text-center text-xs muted">
-                        No simulated positions yet.
+                      <td colSpan={6}>
+                        <EmptyState
+                          icon={<Target size={48} />}
+                          title="No trades yet"
+                          description="Execute your first paper trade to get started."
+                        />
                       </td>
                     </tr>
                   )}

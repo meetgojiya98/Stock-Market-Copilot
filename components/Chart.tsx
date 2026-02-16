@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
+import { resolveChartColors, CHART_FONT, chartGridConfig } from "../lib/chart-theme";
 import {
   Chart as ChartJS,
   LineElement,
@@ -44,6 +45,11 @@ export default function Chart({ data: _data, loading: _loading, symbol = "AAPL" 
   const [range, setRange] = useState("1mo");
   const [loading, setLoading] = useState(_loading || false);
   const [error, setError] = useState("");
+  const [colors, setColors] = useState(resolveChartColors());
+
+  useEffect(() => {
+    setColors(resolveChartColors());
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -63,8 +69,8 @@ export default function Chart({ data: _data, loading: _loading, symbol = "AAPL" 
                 label: `${symbol} Price`,
                 data: data.map((d: any) => d.close ?? d.price),
                 fill: true,
-                borderColor: "#fb923c",
-                backgroundColor: "rgba(251, 146, 60, 0.15)",
+                borderColor: colors.primary,
+                backgroundColor: colors.primaryFill,
                 tension: 0.4,
                 pointRadius: 0,
               },
@@ -112,34 +118,32 @@ export default function Chart({ data: _data, loading: _loading, symbol = "AAPL" 
                 tooltip: {
                   mode: "index",
                   intersect: false,
-                  backgroundColor: "#fff",
-                  titleColor: "#fb923c",
-                  bodyColor: "#1e293b",
-                  borderColor: "#fb923c",
+                  backgroundColor: colors.background,
+                  titleColor: colors.primary,
+                  bodyColor: colors.text,
+                  borderColor: colors.primary,
                   borderWidth: 1,
                 },
               },
               scales: {
                 x: {
                   ticks: {
-                    color: "#fb923c",
+                    color: colors.text,
+                    font: CHART_FONT,
                     maxTicksLimit: 8,
                     callback: function (val: any, idx: number, values: any) {
                       if (range === "1mo" || range === "6mo") return this.getLabelForValue(val);
                       return idx % Math.ceil(values.length / 6) === 0 ? this.getLabelForValue(val) : "";
                     },
                   },
-                  grid: {
-                    color: "rgba(251,146,60,0.06)",
-                  },
+                  grid: chartGridConfig(colors),
                 },
                 y: {
                   ticks: {
-                    color: "#fb923c",
+                    color: colors.text,
+                    font: CHART_FONT,
                   },
-                  grid: {
-                    color: "rgba(251,146,60,0.07)",
-                  },
+                  grid: chartGridConfig(colors),
                 },
               },
               elements: {

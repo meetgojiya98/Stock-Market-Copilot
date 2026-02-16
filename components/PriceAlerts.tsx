@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -12,6 +12,11 @@ import {
   Trash2,
   Zap,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
+import SymbolAutocomplete from "./SymbolAutocomplete";
+import Tooltip from "./Tooltip";
+import { useToast } from "./ToastProvider";
+import { useConfirm } from "./ConfirmDialog";
 
 type PriceAlert = {
   id: string;
@@ -40,6 +45,9 @@ function formatDate(ts: number): string {
 }
 
 export default function PriceAlerts() {
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const createFormRef = useRef<HTMLFormElement>(null);
   const [alerts, setAlerts] = useState<PriceAlert[]>([]);
   const [symbol, setSymbol] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
@@ -75,13 +83,22 @@ export default function PriceAlerts() {
     persist([newAlert, ...alerts]);
     setSymbol("");
     setTargetPrice("");
+    toast({ type: "success", message: "Price alert created" });
   };
 
   const removeAlert = useCallback(
-    (id: string) => {
+    async (id: string) => {
+      const ok = await confirm({
+        title: "Delete alert?",
+        message: "This price alert will be removed.",
+        confirmLabel: "Delete",
+        destructive: true,
+      });
+      if (!ok) return;
       persist(alerts.filter((a) => a.id !== id));
+      toast({ type: "success", message: "Alert deleted" });
     },
-    [alerts, persist]
+    [alerts, persist, confirm, toast]
   );
 
   const checkAlerts = useCallback(() => {
@@ -113,15 +130,15 @@ export default function PriceAlerts() {
         <div className="text-[11px] tracking-[0.12em] uppercase muted font-semibold mb-3">
           Create Price Alert
         </div>
-        <form onSubmit={addAlert} className="flex flex-wrap gap-2 items-end">
+        <form ref={createFormRef} onSubmit={addAlert} className="flex flex-wrap gap-2 items-end">
           <div className="flex-1 min-w-[120px]">
             <label className="text-[11px] muted block mb-1">Symbol</label>
-            <input
+            <SymbolAutocomplete
               value={symbol}
-              onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+              onChange={setSymbol}
+              onSelect={(sym) => { setSymbol(sym); }}
               placeholder="AAPL"
-              className="w-full rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-sm"
-              required
+              className="w-full sm:w-auto sm:min-w-[180px]"
             />
           </div>
           <div className="flex-1 min-w-[120px]">
@@ -275,13 +292,16 @@ export default function PriceAlerts() {
                   {alert.status === "triggered" ? "Triggered" : "Active"}
                 </span>
                 <span className="text-[11px] muted">{formatDate(alert.createdAt)}</span>
-                <button
-                  onClick={() => removeAlert(alert.id)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-2 py-1 text-[11px]"
-                >
-                  <Trash2 size={12} />
-                  Remove
-                </button>
+                <Tooltip content="Delete alert">
+                  <button
+                    onClick={() => removeAlert(alert.id)}
+                    aria-label={`Delete alert for ${alert.symbol}`}
+                    className="inline-flex items-center gap-1 rounded-lg border border-red-400/45 bg-red-500/10 text-red-600 dark:text-red-300 px-2 py-1 text-[11px]"
+                  >
+                    <Trash2 size={12} />
+                    Remove
+                  </button>
+                </Tooltip>
               </div>
             </div>
           ))}
@@ -290,12 +310,22 @@ export default function PriceAlerts() {
 
       {/* Empty state */}
       {!alerts.length && (
-        <div className="rounded-2xl surface-glass dynamic-surface p-8 text-center">
-          <Bell size={28} className="mx-auto muted" />
-          <p className="mt-3 text-sm muted">
-            No alerts yet. Create one above to get notified when a stock hits your target price.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Bell size={48} />}
+          title="No alerts set"
+          description="Create price alerts to get notified when stocks hit your targets."
+          action={
+            <button
+              onClick={() => {
+                createFormRef.current?.querySelector("input")?.focus();
+              }}
+              className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold"
+            >
+              <Plus size={14} />
+              Create alert
+            </button>
+          }
+        />
       )}
     </div>
   );

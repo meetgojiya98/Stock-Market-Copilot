@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BookOpen,
   Plus,
@@ -11,6 +11,10 @@ import {
   Minus,
   BarChart3,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
+import Tooltip from "./Tooltip";
+import { useToast } from "./ToastProvider";
+import { useConfirm } from "./ConfirmDialog";
 
 type Emotion = "confident" | "nervous" | "neutral" | "excited" | "uncertain";
 type Outcome = "good" | "bad" | "neutral" | "";
@@ -55,6 +59,9 @@ function saveEntries(entries: JournalEntry[]) {
 }
 
 export default function TradeJournal() {
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const addFormRef = useRef<HTMLFormElement>(null);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [filter, setFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -114,12 +121,21 @@ export default function TradeJournal() {
     setEmotion("neutral");
     setOutcome("");
     setShowForm(false);
+    toast({ type: "success", message: "Journal entry added" });
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
+    const ok = await confirm({
+      title: "Delete entry?",
+      message: "This journal entry will be permanently deleted.",
+      confirmLabel: "Delete",
+      destructive: true,
+    });
+    if (!ok) return;
     const next = entries.filter((e) => e.id !== id);
     setEntries(next);
     saveEntries(next);
+    toast({ type: "success", message: "Entry deleted" });
   };
 
   return (
@@ -166,7 +182,9 @@ export default function TradeJournal() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative flex-1 min-w-[180px]">
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 muted" />
+          <label htmlFor="journal-filter" className="sr-only">Filter by symbol</label>
           <input
+            id="journal-filter"
             value={filter}
             onChange={(e) => setFilter(e.target.value.toUpperCase())}
             placeholder="Filter by symbol"
@@ -184,7 +202,7 @@ export default function TradeJournal() {
 
       {/* Add form */}
       {showForm && (
-        <form onSubmit={handleAdd} className="rounded-2xl surface-glass dynamic-surface p-4 sm:p-5 space-y-3 fade-up">
+        <form ref={addFormRef} onSubmit={handleAdd} className="rounded-2xl surface-glass dynamic-surface p-4 sm:p-5 space-y-3 fade-up">
           <div className="text-sm font-semibold section-title">Log a new trade</div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
             <label className="text-xs space-y-1">
@@ -253,9 +271,28 @@ export default function TradeJournal() {
 
       {/* Entries list */}
       <div className="space-y-2">
-        {filtered.length === 0 && (
+        {filtered.length === 0 && entries.length === 0 && (
+          <EmptyState
+            icon={<BookOpen size={48} />}
+            title="No journal entries yet"
+            description="Record your trades to track performance over time."
+            action={
+              <button
+                onClick={() => {
+                  setShowForm(true);
+                  setTimeout(() => addFormRef.current?.querySelector("input")?.focus(), 100);
+                }}
+                className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold"
+              >
+                <Plus size={14} />
+                New entry
+              </button>
+            }
+          />
+        )}
+        {filtered.length === 0 && entries.length > 0 && (
           <div className="rounded-xl control-surface p-4 text-sm muted">
-            {entries.length === 0 ? "No journal entries yet. Start by logging your first trade." : "No entries match your filter."}
+            No entries match your filter.
           </div>
         )}
         {filtered.map((entry) => (
@@ -299,9 +336,11 @@ export default function TradeJournal() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs muted">{new Date(entry.date).toLocaleDateString()}</span>
-                <button onClick={() => handleDelete(entry.id)} className="text-[var(--negative)] hover:opacity-80">
-                  <Trash2 size={14} />
-                </button>
+                <Tooltip content="Delete entry">
+                  <button onClick={() => handleDelete(entry.id)} aria-label="Delete entry" className="text-[var(--negative)] hover:opacity-80">
+                    <Trash2 size={14} />
+                  </button>
+                </Tooltip>
               </div>
             </div>
             <div className="mt-2 flex items-center gap-4 text-xs muted">

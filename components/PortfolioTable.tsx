@@ -5,6 +5,9 @@ import { AlertTriangle, BarChart3, BriefcaseBusiness, Eye, RefreshCw, Target, Tr
 import { useRouter } from "next/navigation";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
+import SymbolAutocomplete from "./SymbolAutocomplete";
+import { useToast } from "./ToastProvider";
+import { useConfirm } from "./ConfirmDialog";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -101,6 +104,8 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<string>>(new Set());
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const confirm = useConfirm();
 
   const filteredPortfolio = useMemo(() => {
     let result = portfolio;
@@ -282,20 +287,51 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         setError(`Saved in Local Mode: ${result.detail}`);
       }
       fetchPortfolio();
+      toast({ type: "success", message: `Added ${normalizedSymbol} to portfolio` });
       return;
     }
 
     setError(result.detail || "Unable to add symbol to portfolio.");
+    toast({ type: "error", message: result.detail || "Unable to add position." });
   };
 
-  const handleRemove = async (rowSymbol: string) => {
-    const token = localStorage.getItem("access_token");
-    const result = await removePortfolioPosition(rowSymbol, token || undefined);
+  const handleRemove = async (removeSymbol: string) => {
+    const ok = await confirm({
+      title: "Remove position?",
+      message: `This will remove ${removeSymbol} from your portfolio.`,
+      confirmLabel: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    // Store for undo
+    const previousPortfolio = [...portfolio];
+
+    const token = localStorage.getItem("access_token") || undefined;
+    const result = await removePortfolioPosition(removeSymbol, token);
     setDataMode(result.mode);
-    if (!result.ok && result.detail) {
-      setError(result.detail);
+
+    if (!result.ok) {
+      toast({ type: "error", message: result.detail || "Unable to remove position." });
+      return;
     }
+
     fetchPortfolio();
+
+    toast({
+      type: "success",
+      message: `Removed ${removeSymbol}`,
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          const shares = previousPortfolio.find((p: any) => p.symbol === removeSymbol)?.shares || 1;
+          const t = localStorage.getItem("access_token") || undefined;
+          await addPortfolioPosition(removeSymbol, shares, t);
+          fetchPortfolio();
+          toast({ type: "success", message: `Restored ${removeSymbol}` });
+        },
+      },
+    });
   };
 
   const toggleFilter = useCallback((filter: string) => {
@@ -336,12 +372,12 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         <form onSubmit={handleAdd} className="card-elevated rounded-xl p-4 space-y-3">
           <div className="text-sm font-semibold section-title">Add Position</div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input
+            <SymbolAutocomplete
               value={symbol}
-              onChange={(event) => setSymbol(event.target.value.toUpperCase())}
-              placeholder="Symbol"
-              className="rounded-lg control-surface bg-white/75 dark:bg-black/25 px-3 py-2 text-sm"
-              required
+              onChange={setSymbol}
+              onSelect={(sym) => { setSymbol(sym); }}
+              placeholder="Add symbol"
+              className="w-full sm:w-auto sm:min-w-[180px]"
             />
             <input
               value={shares}
@@ -428,7 +464,41 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-xl border soft-divider bg-[color-mix(in_srgb,var(--surface)_86%,transparent)]">
+      {/* Mobile card view */}
+      <div className="sm:hidden divide-y divide-[var(--surface-border)]">
+        {filteredPortfolio.map((row: any) => {
+          const priceVal = priceMap[row.symbol]?.price ?? row.currentPrice ?? 0;
+          const dayChange = priceMap[row.symbol]?.changePct ?? 0;
+          return (
+            <div key={`mobile-${row.symbol}`} className="portfolio-card-mobile"
+              onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, symbol: row.symbol }); }}
+              onClick={() => setExpandedRow(expandedRow === row.symbol ? null : row.symbol)}
+            >
+              <div className="portfolio-card-header">
+                <div>
+                  <div className="portfolio-card-symbol">{row.symbol}</div>
+                  <div className="text-xs muted">{row.shares} shares</div>
+                </div>
+                <div className="text-right">
+                  <div className="portfolio-card-price">${priceVal.toFixed(2)}</div>
+                  <span className={`inline-flex rounded-full px-1.5 py-0.5 text-[0.65rem] font-semibold ${dayChange >= 0 ? "badge-positive" : "badge-negative"}`}>
+                    {dayChange >= 0 ? "+" : ""}{dayChange.toFixed(2)}%
+                  </span>
+                </div>
+              </div>
+              {expandedRow === row.symbol && (
+                <div className="portfolio-card-details">
+                  <div><dt>Value</dt><dd>${(priceVal * row.shares).toFixed(2)}</dd></div>
+                  <div><dt>Change</dt><dd className={dayChange >= 0 ? "text-[var(--positive)]" : "text-[var(--negative)]"}>{dayChange >= 0 ? "+" : ""}{dayChange.toFixed(2)}%</dd></div>
+                  <div><dt>Shares</dt><dd>{row.shares}</dd></div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border soft-divider bg-[color-mix(in_srgb,var(--surface)_86%,transparent)] hidden sm:block">
         <table className="w-full min-w-[560px] text-sm">
           <thead className="bg-black/5 dark:bg-white/10">
             <tr className="text-left">

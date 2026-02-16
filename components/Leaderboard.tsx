@@ -11,6 +11,7 @@ import {
   Trophy,
   User,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 type PaperPosition = { symbol: string; shares: number; averagePrice: number };
 type PaperOrder = {
@@ -167,6 +168,7 @@ export default function Leaderboard() {
           </h3>
           <button
             onClick={() => setShowUsername((p) => !p)}
+            aria-label={showUsername ? "Hide username" : "Show username"}
             className="rounded-lg border border-[var(--surface-border)] px-2.5 py-1.5 text-xs muted inline-flex items-center gap-1"
           >
             {showUsername ? <Eye size={12} /> : <EyeOff size={12} />}
@@ -243,6 +245,17 @@ export default function Leaderboard() {
               </tr>
             </thead>
             <tbody>
+              {entries.length === 0 && (
+                <tr>
+                  <td colSpan={5}>
+                    <EmptyState
+                      icon={<Trophy size={48} />}
+                      title="No rankings yet"
+                      description="Rankings appear as users complete trades."
+                    />
+                  </td>
+                </tr>
+              )}
               {top10.map((entry) => (
                 <tr
                   key={entry.username + entry.rank}

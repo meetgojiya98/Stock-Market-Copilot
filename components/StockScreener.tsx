@@ -7,10 +7,12 @@ import {
   ChevronUp,
   Filter,
   Plus,
+  ScanSearch,
   Search,
   SlidersHorizontal,
   Check,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 type Stock = {
   symbol: string;
@@ -250,8 +252,12 @@ export default function StockScreener() {
           <tbody>
             {results.length === 0 && (
               <tr>
-                <td colSpan={10} className="py-6 text-center text-sm muted">
-                  No stocks match your filters. Try adjusting your criteria.
+                <td colSpan={10}>
+                  <EmptyState
+                    icon={<ScanSearch size={48} />}
+                    title="No stocks match"
+                    description="Adjust your filters to find stocks."
+                  />
                 </td>
               </tr>
             )}
@@ -274,6 +280,7 @@ export default function StockScreener() {
                     <button
                       onClick={() => addToWatchlist(stock.symbol)}
                       disabled={inWatchlist}
+                      aria-label={inWatchlist ? `${stock.symbol} added to watchlist` : `Add ${stock.symbol} to watchlist`}
                       className={`inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-semibold border transition-colors ${
                         inWatchlist
                           ? "border-[var(--positive)] bg-[color-mix(in_srgb,var(--positive)_12%,transparent)] text-[var(--positive)]"

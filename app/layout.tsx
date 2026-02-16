@@ -7,6 +7,8 @@ import CommandPalette from "../components/CommandPalette";
 import OnboardingModal from "../components/OnboardingModal";
 import KeyboardShortcutsProvider from "../components/KeyboardShortcutsProvider";
 import PriceStreamProvider from "../components/PriceStreamProvider";
+import ToastProvider from "../components/ToastProvider";
+import ConfirmDialogProvider from "../components/ConfirmDialog";
 import ContextualTips from "../components/ContextualTips";
 import Script from "next/script";
 import type { Metadata, Viewport } from "next";
@@ -178,6 +180,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col antialiased text-[var(--ink)]">
         <Providers>
+          <ToastProvider>
+          <ConfirmDialogProvider>
           <PriceStreamProvider>
             <KeyboardShortcutsProvider>
               <a href="#main-content" className="skip-link">Skip to content</a>
@@ -190,6 +194,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ContextualTips />
             </KeyboardShortcutsProvider>
           </PriceStreamProvider>
+          </ConfirmDialogProvider>
+          </ToastProvider>
         </Providers>
       </body>
     </html>

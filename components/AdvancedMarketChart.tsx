@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { resolveChartColors } from "../lib/chart-theme";
 import {
   Area,
   Bar,
@@ -189,6 +190,11 @@ export default function AdvancedMarketChart({
   const [showBands, setShowBands] = useState(true);
   const [showEma, setShowEma] = useState(true);
   const [showRelative, setShowRelative] = useState(true);
+  const [colors, setColors] = useState(resolveChartColors());
+
+  useEffect(() => {
+    setColors(resolveChartColors());
+  }, []);
 
   const chartData = useMemo(() => enrichSeries(data, benchmark), [data, benchmark]);
 
@@ -311,21 +317,21 @@ export default function AdvancedMarketChart({
           <ComposedChart data={chartData}>
             <defs>
               <linearGradient id="amc-close-fill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="rgba(15,141,132,0.45)" />
-                <stop offset="70%" stopColor="rgba(15,141,132,0.12)" />
-                <stop offset="100%" stopColor="rgba(15,141,132,0.02)" />
+                <stop offset="0%" stopColor={colors.positive} stopOpacity={0.45} />
+                <stop offset="70%" stopColor={colors.positive} stopOpacity={0.12} />
+                <stop offset="100%" stopColor={colors.positive} stopOpacity={0.02} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(110,122,140,0.2)" />
+            <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
             <XAxis
               dataKey="date"
               tickFormatter={shortDate}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: colors.text }}
               minTickGap={30}
             />
             <YAxis
               yAxisId="price"
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: colors.text }}
               width={66}
               tickFormatter={(value: number) =>
                 new Intl.NumberFormat("en-US", {
@@ -348,7 +354,7 @@ export default function AdvancedMarketChart({
             <Bar
               yAxisId="volume"
               dataKey="volumeProxy"
-              fill="rgba(25,116,174,0.2)"
+              fill={colors.primaryFill}
               barSize={2}
             />
 
@@ -357,15 +363,17 @@ export default function AdvancedMarketChart({
                 <Line
                   yAxisId="price"
                   dataKey="bbUpper"
-                  stroke="rgba(236,122,25,0.45)"
+                  stroke={colors.warning}
                   strokeWidth={1.2}
+                  strokeOpacity={0.45}
                   dot={false}
                 />
                 <Line
                   yAxisId="price"
                   dataKey="bbLower"
-                  stroke="rgba(236,122,25,0.45)"
+                  stroke={colors.warning}
                   strokeWidth={1.2}
+                  strokeOpacity={0.45}
                   dot={false}
                 />
               </>
@@ -387,24 +395,27 @@ export default function AdvancedMarketChart({
                   yAxisId="price"
                   type="monotone"
                   dataKey="ema9"
-                  stroke="rgba(236,122,25,0.95)"
+                  stroke={colors.warning}
                   strokeWidth={1.6}
+                  strokeOpacity={0.95}
                   dot={false}
                 />
                 <Line
                   yAxisId="price"
                   type="monotone"
                   dataKey="ema21"
-                  stroke="rgba(25,116,174,0.95)"
+                  stroke={colors.primary}
                   strokeWidth={1.4}
+                  strokeOpacity={0.95}
                   dot={false}
                 />
                 <Line
                   yAxisId="price"
                   type="monotone"
                   dataKey="ema55"
-                  stroke="rgba(99,102,241,0.7)"
+                  stroke={colors.primary}
                   strokeWidth={1.2}
+                  strokeOpacity={0.7}
                   dot={false}
                 />
               </>
@@ -414,18 +425,20 @@ export default function AdvancedMarketChart({
               <ReferenceLine
                 yAxisId="price"
                 y={support}
-                stroke="rgba(11,156,102,0.7)"
+                stroke={colors.positive}
                 strokeDasharray="4 4"
-                label={{ value: "Support", fill: "rgba(11,156,102,0.9)", fontSize: 11 }}
+                strokeOpacity={0.7}
+                label={{ value: "Support", fill: colors.positive, fontSize: 11 }}
               />
             )}
             {typeof resistance === "number" && Number.isFinite(resistance) && resistance > 0 && (
               <ReferenceLine
                 yAxisId="price"
                 y={resistance}
-                stroke="rgba(222,58,54,0.7)"
+                stroke={colors.negative}
                 strokeDasharray="4 4"
-                label={{ value: "Resistance", fill: "rgba(222,58,54,0.9)", fontSize: 11 }}
+                strokeOpacity={0.7}
+                label={{ value: "Resistance", fill: colors.negative, fontSize: 11 }}
               />
             )}
           </ComposedChart>
@@ -436,15 +449,15 @@ export default function AdvancedMarketChart({
         <div className="h-[96px]">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(110,122,140,0.15)" />
+              <CartesianGrid strokeDasharray="3 3" stroke={colors.grid} />
               <XAxis
                 dataKey="date"
                 tickFormatter={shortDate}
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 10, fill: colors.text }}
                 minTickGap={36}
               />
               <YAxis
-                tick={{ fontSize: 10 }}
+                tick={{ fontSize: 10, fill: colors.text }}
                 width={54}
                 tickFormatter={(value: number) => `${value.toFixed(0)}%`}
               />
@@ -455,21 +468,23 @@ export default function AdvancedMarketChart({
                 }}
                 labelFormatter={(value: string) => new Date(value).toLocaleDateString("en-US")}
               />
-              <ReferenceLine y={0} stroke="rgba(120,130,150,0.45)" strokeDasharray="3 3" />
-              <ReferenceLine y={70} stroke="rgba(236,122,25,0.4)" strokeDasharray="4 4" />
-              <ReferenceLine y={30} stroke="rgba(15,141,132,0.4)" strokeDasharray="4 4" />
+              <ReferenceLine y={0} stroke={colors.text} strokeDasharray="3 3" strokeOpacity={0.45} />
+              <ReferenceLine y={70} stroke={colors.warning} strokeDasharray="4 4" strokeOpacity={0.4} />
+              <ReferenceLine y={30} stroke={colors.positive} strokeDasharray="4 4" strokeOpacity={0.4} />
               <Line
                 type="monotone"
                 dataKey="relativeStrength"
-                stroke="rgba(25,116,174,0.95)"
+                stroke={colors.primary}
                 strokeWidth={1.8}
+                strokeOpacity={0.95}
                 dot={false}
               />
               <Line
                 type="monotone"
                 dataKey="rsi14"
-                stroke="rgba(236,122,25,0.9)"
+                stroke={colors.warning}
                 strokeWidth={1.3}
+                strokeOpacity={0.9}
                 dot={false}
               />
             </ComposedChart>

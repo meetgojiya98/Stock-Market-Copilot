@@ -11,6 +11,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import EmptyState from "./EmptyState";
 
 type PortfolioRow = { symbol: string; shares: number };
 
@@ -156,6 +157,7 @@ export default function DailyBriefing() {
           <button
             onClick={refresh}
             disabled={loading}
+            aria-label="Refresh daily market briefing"
             className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -166,7 +168,7 @@ export default function DailyBriefing() {
 
       {/* Loading */}
       {loading && (
-        <div className="rounded-2xl surface-glass dynamic-surface p-8 text-center">
+        <div className="rounded-2xl surface-glass dynamic-surface p-8 text-center" role="status">
           <Newspaper size={28} className="mx-auto animate-pulse" style={{ color: "var(--accent)" }} />
           <p className="mt-3 text-sm muted">Preparing your market briefing...</p>
         </div>
@@ -299,12 +301,20 @@ export default function DailyBriefing() {
 
       {/* Empty state */}
       {!briefing && !loading && (
-        <div className="rounded-2xl surface-glass dynamic-surface p-8 text-center">
-          <Newspaper size={28} className="mx-auto muted" />
-          <p className="mt-3 text-sm muted">
-            Click "Refresh Briefing" to generate your daily market summary.
-          </p>
-        </div>
+        <EmptyState
+          icon={<Newspaper size={48} />}
+          title="No briefing available"
+          description="Check back during market hours."
+          action={
+            <button
+              onClick={refresh}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--accent)] text-white px-3 py-2 text-xs font-semibold"
+            >
+              <RefreshCw size={14} />
+              Refresh Briefing
+            </button>
+          }
+        />
       )}
     </div>
   );
