@@ -19,6 +19,8 @@
   --positive: #2ea76d;
   --negative: #d85675;
   --warning: #c48f1f;
+  --surface-card: #ffffff;
+  --ink-faint: rgba(14, 26, 47, 0.22);
   --shadow-sm: 0 10px 24px rgba(14, 30, 66, 0.12);
   --shadow-lg: 0 34px 90px rgba(14, 30, 66, 0.2);
   --shadow-xl: 0 64px 150px rgba(14, 30, 66, 0.26);
@@ -42,6 +44,8 @@
   --positive: #67d996;
   --negative: #ff7e9d;
   --warning: #f0be5f;
+  --surface-card: #111d33;
+  --ink-faint: rgba(237, 243, 255, 0.18);
   --shadow-sm: 0 8px 20px rgba(3, 8, 18, 0.45);
   --shadow-lg: 0 24px 74px rgba(3, 8, 18, 0.62);
   --shadow-xl: 0 52px 140px rgba(3, 8, 18, 0.74);
@@ -3683,15 +3687,6 @@ textarea::placeholder {
 }
 
 /* ---- CSS Containment for heavy components ---- */
-.surface-glass,
-.dynamic-surface {
-  contain: layout style paint;
-}
-
-.card-elevated {
-  contain: layout style;
-}
-
 .topbar-shell {
   contain: style;
 }

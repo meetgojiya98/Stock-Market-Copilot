@@ -42,7 +42,7 @@ export default function CommunityPage() {
                 className={`rounded-lg px-3 py-2 text-xs font-semibold inline-flex items-center gap-1.5 border transition-colors ${
                   activeTab === key
                     ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] text-[var(--accent)]"
-                    : "border-[var(--surface-border)] bg-white/70 dark:bg-black/25 muted"
+                    : "border-[var(--surface-border)] bg-[var(--surface)] muted"
                 }`}
               >
                 <Icon size={13} />

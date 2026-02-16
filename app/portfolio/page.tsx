@@ -18,7 +18,6 @@ import { Plus, RefreshCw, Download } from "lucide-react";
 import { fetchPortfolioData } from "../../lib/data-client";
 import { PresenceAvatars, VersionHistory } from "../../components/CollaborationKit";
 import AccordionPanel from "../../components/AccordionPanel";
-import NumberTransition from "../../components/NumberTransition";
 
 export default function PortfolioPage() {
   const [portfolio, setPortfolio] = useState([]);

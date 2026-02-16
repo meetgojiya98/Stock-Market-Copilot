@@ -200,7 +200,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <a href="#main-content" className="skip-link">Skip to content</a>
               <StatusBar />
               <Header />
-              <main id="main-content" className="flex-1 pb-24 md:pb-8 relative" role="main">{children}</main>
+              <main id="main-content" className="flex-1 pb-24 lg:pb-0 relative" role="main">{children}</main>
               <MobileDock />
               <MobileGestureNav />
               <Footer />
