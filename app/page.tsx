@@ -53,7 +53,7 @@ const BENTO_ITEMS = [
     description: "All your holdings, performance, and risk metrics in one clean view with real-time updates.",
     icon: BriefcaseBusiness,
     span: "col",
-    accent: "#7c3aed",
+    accent: "#3b6de7",
   },
   {
     title: "AI Research",
@@ -88,7 +88,7 @@ const BENTO_ITEMS = [
     description: "Share watchlists, discuss picks, compete on leaderboards.",
     icon: Users,
     span: "col",
-    accent: "#8b5cf6",
+    accent: "#5b8af0",
   },
 ] as const;
 
@@ -252,7 +252,7 @@ function AppPreview() {
             <span className="landing-preview-badge">+12.4%</span>
           </div>
           <div className="landing-preview-chart">
-            <MiniSparkline color="#7c3aed" />
+            <MiniSparkline color="#3b6de7" />
           </div>
           <div className="landing-preview-table">
             {[

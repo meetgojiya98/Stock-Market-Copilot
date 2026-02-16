@@ -13,7 +13,7 @@
   --surface-emphasis: rgba(255, 255, 255, 0.985);
   --surface-border: rgba(17, 40, 84, 0.14);
   --surface-border-strong: rgba(17, 40, 84, 0.27);
-  --accent: #18408d;
+  --accent: #3b6de7;
   --accent-2: #ff8a1f;
   --accent-3: #21a4be;
   --positive: #2ea76d;
@@ -38,7 +38,7 @@
   --surface-emphasis: rgba(19, 36, 62, 0.97);
   --surface-border: rgba(156, 183, 227, 0.23);
   --surface-border-strong: rgba(156, 183, 227, 0.36);
-  --accent: #69a4ff;
+  --accent: #7ba4ff;
   --accent-2: #ff9f52;
   --accent-3: #59cbdf;
   --positive: #67d996;
@@ -2242,7 +2242,7 @@ textarea::placeholder {
   font-size: clamp(1.8rem, 4vw, 2.8rem);
   font-weight: 800;
   letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #3b6de7, #38bdf8);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2266,7 +2266,7 @@ textarea::placeholder {
 }
 
 .dark .landing-stat-value {
-  background: linear-gradient(135deg, #a78bfa, #f472b6);
+  background: linear-gradient(135deg, #7ba4ff, #93c5fd);
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -2295,7 +2295,7 @@ textarea::placeholder {
   border-radius: 999px;
   border: 1px solid rgba(201, 179, 228, 0.6);
   background: rgba(124, 58, 237, 0.1);
-  color: #7c3aed;
+  color: #3b6de7;
   padding: 0.36rem 0.72rem;
   font-size: 0.78rem;
   font-weight: 700;
@@ -2347,7 +2347,7 @@ textarea::placeholder {
   place-items: center;
   font-size: 0.82rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #3b6de7, #38bdf8);
   color: #fff;
   box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
 }
@@ -2360,7 +2360,7 @@ textarea::placeholder {
   display: grid;
   place-items: center;
   background: rgba(124, 58, 237, 0.1);
-  color: #7c3aed;
+  color: #3b6de7;
 }
 
 .landing-how-card h3 {
@@ -2397,7 +2397,7 @@ textarea::placeholder {
 
 .dark .landing-how-icon {
   background: rgba(124, 58, 237, 0.2);
-  color: #a78bfa;
+  color: #7ba4ff;
 }
 
 .dark .landing-section-title {
@@ -2411,7 +2411,7 @@ textarea::placeholder {
 .dark .landing-section-eyebrow {
   border-color: rgba(167, 139, 250, 0.4);
   background: rgba(124, 58, 237, 0.2);
-  color: #a78bfa;
+  color: #7ba4ff;
 }
 
 @media (max-width: 900px) {
@@ -2449,7 +2449,7 @@ textarea::placeholder {
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.14), rgba(236, 72, 153, 0.12));
-  color: #7c3aed;
+  color: #3b6de7;
 }
 
 .landing-feature-card h3 {
@@ -2507,7 +2507,7 @@ textarea::placeholder {
 
 .dark .landing-feature-icon {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.24), rgba(236, 72, 153, 0.18));
-  color: #a78bfa;
+  color: #7ba4ff;
 }
 
 .dark .landing-feature-highlights li {
@@ -2550,7 +2550,7 @@ textarea::placeholder {
   border-radius: 1rem;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #3b6de7, #38bdf8);
   color: #fff;
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);
 }
@@ -2580,7 +2580,7 @@ textarea::placeholder {
   border-radius: 0.9rem;
   font-size: 0.95rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  background: linear-gradient(135deg, #3b6de7, #38bdf8);
   color: #fff;
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
 }
@@ -2662,7 +2662,7 @@ textarea::placeholder {
 
 /* ── Gradient title text ── */
 .landing-title-gradient {
-  background: linear-gradient(135deg, #c084fc, #f472b6, #fbbf24);
+  background: linear-gradient(135deg, #c084fc, #93c5fd, #fbbf24);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -2766,17 +2766,17 @@ textarea::placeholder {
 }
 
 .landing-preview-nav-item.active {
-  color: #7c3aed;
+  color: #3b6de7;
   background: rgba(124, 58, 237, 0.08);
   font-weight: 700;
-  border-right: 2px solid #7c3aed;
+  border-right: 2px solid #3b6de7;
 }
 
 .dark .landing-preview-nav-item { color: #a99bc2; }
 .dark .landing-preview-nav-item.active {
-  color: #a78bfa;
+  color: #7ba4ff;
   background: rgba(124, 58, 237, 0.15);
-  border-color: #a78bfa;
+  border-color: #7ba4ff;
 }
 
 .landing-preview-main {
@@ -2980,12 +2980,12 @@ textarea::placeholder {
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(236, 72, 153, 0.1));
-  color: #7c3aed;
+  color: #3b6de7;
 }
 
 .dark .landing-why-icon {
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.22), rgba(236, 72, 153, 0.16));
-  color: #a78bfa;
+  color: #7ba4ff;
 }
 
 .landing-why-card h3 {
