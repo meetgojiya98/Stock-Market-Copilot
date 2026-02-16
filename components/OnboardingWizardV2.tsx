@@ -134,12 +134,13 @@ export default function OnboardingWizardV2() {
 
   useEffect(() => {
     try {
+      const loggedIn = !!localStorage.getItem("access_token");
       const done = localStorage.getItem(STORAGE_KEY);
-      if (done !== "true") {
+      if (loggedIn && done !== "true") {
         setVisible(true);
       }
     } catch {
-      setVisible(true);
+      /* silently skip */
     }
   }, []);
 
