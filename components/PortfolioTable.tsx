@@ -5,12 +5,8 @@ import { AlertTriangle, BarChart3, BriefcaseBusiness, Eye, RefreshCw, Target, Tr
 import { useRouter } from "next/navigation";
 import Sparkline from "./Sparkline";
 import Skeleton from "./Skeleton";
-import SymbolPopover from "./SymbolPopover";
 import SymbolAutocomplete from "./SymbolAutocomplete";
-import { useToast } from "./ToastProvider";
 import { useConfirm } from "./ConfirmDialog";
-import BulkActionsToolbar from "./BulkActionsToolbar";
-import InlineEditableCell from "./InlineEditableCell";
 import {
   addPortfolioPosition,
   addWatchlistSymbol,
@@ -110,7 +106,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
   const [successSymbols, setSuccessSymbols] = useState<Set<string>>(new Set());
   const [selectedSymbols, setSelectedSymbols] = useState<Set<string>>(new Set());
   const contextMenuRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+  const toast = (opts: { type: string; message: string; action?: any }) => { /* no-op: ToastProvider removed */ };
   const confirm = useConfirm();
 
   const filteredPortfolio = useMemo(() => {
@@ -496,7 +492,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
             >
               <div className="portfolio-card-header">
                 <div>
-                  <SymbolPopover symbol={row.symbol}><div className="portfolio-card-symbol">{row.symbol}</div></SymbolPopover>
+                  <div className="portfolio-card-symbol">{row.symbol}</div>
                   <div className="text-xs muted">{row.shares} shares</div>
                 </div>
                 <div className="text-right">
@@ -556,7 +552,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                     }}
                   >
                     <td className="px-3 py-2.5"><input type="checkbox" className="table-select-checkbox" checked={selectedSymbols.has(row.symbol)} onChange={(e) => { e.stopPropagation(); const next = new Set(selectedSymbols); if (e.target.checked) next.add(row.symbol); else next.delete(row.symbol); setSelectedSymbols(next); }} onClick={(e) => e.stopPropagation()} /></td>
-                    <td className="px-3 py-2.5 font-semibold"><SymbolPopover symbol={row.symbol}>{row.symbol}</SymbolPopover></td>
+                    <td className="px-3 py-2.5 font-semibold"><span>{row.symbol}</span></td>
                     <td className="px-3 py-2.5">
                       {meta.price > 0 && (
                         <Sparkline
@@ -568,19 +564,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                       )}
                     </td>
                     <td className="px-3 py-2.5 metric-value">
-                      <InlineEditableCell
-                        value={row.shares}
-                        type="number"
-                        onSave={async (val) => {
-                          const newShares = Number(val);
-                          if (!Number.isFinite(newShares) || newShares <= 0) return;
-                          const token = localStorage.getItem("access_token") || undefined;
-                          await removePortfolioPosition(row.symbol, token);
-                          await addPortfolioPosition(row.symbol, newShares, token);
-                          fetchPortfolio();
-                          toast({ type: "success", message: `Updated ${row.symbol} to ${newShares} shares` });
-                        }}
-                      />
+{row.shares}
                     </td>
                     <td className="px-3 py-2.5 metric-value">{meta.price > 0 ? formatMoney(meta.price) : "--"}</td>
                     <td className="px-3 py-2.5">
@@ -726,7 +710,7 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
                 onClick={() => setRebalanceMode("risk-aware")}
                 className={`px-2 py-1 text-xs rounded-md font-semibold ${
                   rebalanceMode === "risk-aware"
-                    ? "bg-[var(--accent)] text-white"
+                    ? "bg-[var(--accent-2)] text-white"
                     : "hover:bg-black/5 dark:hover:bg-white/10"
                 }`}
               >
@@ -845,28 +829,6 @@ export default function PortfolioTable({ onPortfolioChange }: PortfolioTableProp
         </div>
       )}
 
-      <BulkActionsToolbar
-        count={selectedSymbols.size}
-        onClear={() => setSelectedSymbols(new Set())}
-        onDelete={async () => {
-          for (const sym of selectedSymbols) {
-            await handleRemove(sym);
-          }
-          setSelectedSymbols(new Set());
-        }}
-        onExport={() => {
-          const rows = portfolio.filter(r => selectedSymbols.has(r.symbol));
-          const csv = "Symbol,Shares\n" + rows.map(r => `${r.symbol},${r.shares}`).join("\n");
-          const blob = new Blob([csv], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "portfolio-export.csv";
-          a.click();
-          URL.revokeObjectURL(url);
-          setSelectedSymbols(new Set());
-        }}
-      />
     </div>
   );
 }

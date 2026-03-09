@@ -1,5 +1,10 @@
 import { NextRequest } from "next/server";
-import { fetchAskAnswer, normalizeQuery, normalizeSymbol } from "@/lib/server/ask-core";
+import {
+  fetchAskAnswer,
+  normalizeQuery,
+  normalizeSymbol,
+  streamClaudeAnswer,
+} from "@/lib/server/ask-core";
 import {
   computeGroundingMetrics,
   ensureSourceTrail,
@@ -15,18 +20,9 @@ function toSseEvent(event: string, payload: unknown) {
   return `event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`;
 }
 
-function chunkAnswer(answer: string, size = 220) {
-  if (!answer) return [];
-  const chunks: string[] = [];
-  for (let cursor = 0; cursor < answer.length; cursor += size) {
-    chunks.push(answer.slice(cursor, cursor + size));
-  }
-  return chunks;
-}
-
 function buildSourcePacketBlock(sources: CopilotSource[]) {
   if (!sources.length) return "";
-  const lines = sources.slice(0, 8).map((source) => {
+  const lines = sources.slice(0, 10).map((source) => {
     const link = source.url || "#";
     return `- [${source.id}] ${source.title} (${source.source}) ${link} | relevance=${source.relevance.toFixed(2)}`;
   });
@@ -68,73 +64,6 @@ function enforceCitationRigour(answer: string, sources: CopilotSource[], strict:
   );
 }
 
-function streamResponse(args: {
-  answer: string;
-  mode: "live" | "deterministic";
-  detail: string;
-  sources: CopilotSource[];
-  groundingConfidence: number;
-  citationVerificationScore: number;
-  citationUsage: {
-    used: number;
-    verified: number;
-    total: number;
-  };
-}) {
-  const encoder = new TextEncoder();
-  const chunks = chunkAnswer(args.answer);
-
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      let closed = false;
-      const safeClose = () => {
-        if (closed) return;
-        closed = true;
-        controller.close();
-      };
-
-      const send = (event: string, payload: unknown) => {
-        if (closed) return;
-        controller.enqueue(encoder.encode(toSseEvent(event, payload)));
-      };
-
-      void (async () => {
-        try {
-          send("sources", { sources: args.sources });
-          for (const chunk of chunks) {
-            send("chunk", { text: chunk });
-            await new Promise((resolve) => setTimeout(resolve, 14));
-          }
-
-          send("meta", {
-            mode: args.mode,
-            detail: args.detail,
-            groundingConfidence: args.groundingConfidence,
-            citationVerificationScore: args.citationVerificationScore,
-            citationUsage: args.citationUsage,
-          });
-          send("done", {});
-        } catch (error) {
-          send("error", {
-            detail: error instanceof Error ? error.message : "Streaming failure",
-          });
-        } finally {
-          safeClose();
-        }
-      })();
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
-  });
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const query = normalizeQuery(body?.query) || normalizeQuery(body?.question);
@@ -151,6 +80,82 @@ export async function POST(req: NextRequest) {
     webSources,
     sourceLimit
   );
+
+  // Try true streaming with Claude first
+  const useNativeStreaming = !!process.env.ANTHROPIC_API_KEY;
+
+  if (useNativeStreaming) {
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream<Uint8Array>({
+      async start(controller) {
+        let closed = false;
+        const safeClose = () => {
+          if (closed) return;
+          closed = true;
+          controller.close();
+        };
+
+        const send = (event: string, payload: unknown) => {
+          if (closed) return;
+          controller.enqueue(encoder.encode(toSseEvent(event, payload)));
+        };
+
+        try {
+          // Send sources first
+          send("sources", { sources: rankedSources });
+
+          // Stream Claude response
+          let fullAnswer = "";
+          const claudeStream = streamClaudeAnswer(query, symbol, rankedSources);
+
+          for await (const event of claudeStream) {
+            if (event.type === "text") {
+              fullAnswer += event.content;
+              send("chunk", { text: event.content });
+            } else if (event.type === "error") {
+              send("error", { detail: event.content });
+              break;
+            }
+          }
+
+          // Post-process
+          const finalAnswer = enforceCitationRigour(
+            ensureSourceTrail(fullAnswer, rankedSources),
+            rankedSources,
+            citationStrict
+          );
+          const metrics = computeGroundingMetrics(finalAnswer, rankedSources);
+
+          send("meta", {
+            mode: "live",
+            detail: `Streaming response via Claude.`,
+            groundingConfidence: metrics.groundingConfidence,
+            citationVerificationScore: metrics.citationVerificationScore,
+            citationUsage: metrics.citationUsage,
+          });
+          send("done", {});
+        } catch (error) {
+          send("error", {
+            detail: error instanceof Error ? error.message : "Streaming failure",
+          });
+        } finally {
+          safeClose();
+        }
+      },
+    });
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream; charset=utf-8",
+        "Cache-Control": "no-cache, no-transform",
+        Connection: "keep-alive",
+        "X-Accel-Buffering": "no",
+      },
+    });
+  }
+
+  // Fallback to non-streaming response chunked via SSE
   const sourcePacket = buildSourcePacketBlock(rankedSources);
   const enhancedQuery = sourcePacket ? `${query}\n\n${sourcePacket}` : query;
 
@@ -168,11 +173,58 @@ export async function POST(req: NextRequest) {
   );
   const metrics = computeGroundingMetrics(answer, rankedSources);
 
-  return streamResponse({
-    answer,
-    mode: result.mode,
-    detail: result.detail,
-    sources: rankedSources,
-    ...metrics,
+  // Chunk and stream the non-streaming response
+  const encoder = new TextEncoder();
+  const chunks: string[] = [];
+  for (let cursor = 0; cursor < answer.length; cursor += 180) {
+    chunks.push(answer.slice(cursor, cursor + 180));
+  }
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const safeClose = () => {
+        if (closed) return;
+        closed = true;
+        controller.close();
+      };
+
+      const send = (event: string, payload: unknown) => {
+        if (closed) return;
+        controller.enqueue(encoder.encode(toSseEvent(event, payload)));
+      };
+
+      try {
+        send("sources", { sources: rankedSources });
+        for (const chunk of chunks) {
+          send("chunk", { text: chunk });
+          await new Promise((resolve) => setTimeout(resolve, 12));
+        }
+
+        send("meta", {
+          mode: result.mode,
+          detail: result.detail,
+          groundingConfidence: metrics.groundingConfidence,
+          citationVerificationScore: metrics.citationVerificationScore,
+          citationUsage: metrics.citationUsage,
+        });
+        send("done", {});
+      } catch (error) {
+        send("error", {
+          detail: error instanceof Error ? error.message : "Streaming failure",
+        });
+      } finally {
+        safeClose();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
   });
 }

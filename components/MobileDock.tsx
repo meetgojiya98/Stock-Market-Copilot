@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Bot, BriefcaseBusiness, LayoutGrid, SearchCode, Target } from "lucide-react";
+import { Bot, BriefcaseBusiness, Eye, LayoutDashboard, Sparkles, Terminal } from "lucide-react";
 
 type DockItem = {
   label: string;
@@ -12,20 +12,15 @@ type DockItem = {
 };
 
 const ITEMS: DockItem[] = [
-  {
-    label: "Portfolio",
-    href: "/portfolio",
-    protected: true,
-    icon: <BriefcaseBusiness size={16} />,
-  },
-  { label: "Watch", href: "/watchlist", protected: true, icon: <SearchCode size={16} /> },
-  { label: "Research", href: "/research", protected: true, icon: <Bot size={16} /> },
-  { label: "Exec", href: "/execution", protected: true, icon: <Target size={16} /> },
-  { label: "Alerts", href: "/notifications", protected: true, icon: <Bell size={16} /> },
-  { label: "More", href: "/dashboard", protected: true, icon: <LayoutGrid size={16} /> },
+  { label: "Dashboard", href: "/dashboard", protected: true, icon: <LayoutDashboard size={16} /> },
+  { label: "Agents", href: "/agents", protected: true, icon: <Bot size={16} /> },
+  { label: "Research", href: "/research", protected: true, icon: <Sparkles size={16} /> },
+  { label: "Portfolio", href: "/portfolio", protected: true, icon: <BriefcaseBusiness size={16} /> },
+  { label: "Watchlist", href: "/watchlist", protected: true, icon: <Eye size={16} /> },
+  { label: "Terminal", href: "/terminal", protected: true, icon: <Terminal size={16} /> },
 ];
 
-const HIDDEN_PREFIXES = ["/login", "/signup", "/reset-password", "/learn"];
+const HIDDEN_PREFIXES = ["/login", "/signup", "/pricing"];
 
 export default function MobileDock() {
   const router = useRouter();
@@ -52,7 +47,6 @@ export default function MobileDock() {
       router.push("/login");
       return;
     }
-
     setBouncingItem(item.href);
     setTimeout(() => {
       router.push(item.href);

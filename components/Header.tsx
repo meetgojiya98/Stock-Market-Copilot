@@ -3,40 +3,44 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  Activity,
-  BellPlus,
+  BarChart3,
+  Bell,
   Bitcoin,
+  BookOpen,
   Bot,
   BriefcaseBusiness,
+  Calendar,
   ChevronDown,
-  FileText,
-  Link2,
+  Copy,
+  Eye,
+  Gauge,
+  GitBranch,
+  Globe,
+  LayoutDashboard,
+  LineChart,
+  Link,
   LogIn,
   LogOut,
   Menu,
-  SignalHigh,
-  Target,
-  ScanSearch,
-  Sparkles,
-  Trophy,
-  UserRound,
-  X,
-  LayoutDashboard,
-  BookOpen,
-  BarChart3,
-  Newspaper,
-  Users,
+  MessageSquare,
+  PieChart,
+  Play,
+  Rss,
   Search,
-  CalendarDays,
-  TrendingUp,
-  Download,
-  GitCompare,
-  FlaskConical,
-  Columns3,
-  PlayCircle,
+  Settings,
+  Sparkles,
+  Store,
+  Terminal,
+  TrendingDown,
+  Trophy,
+  UserCheck,
+  Users,
+  Wallet,
+  X,
 } from "lucide-react";
 import BrandLogo from "./BrandLogo";
-import DynamicBackdrop from "./DynamicBackdrop";
+import DarkModeToggle from "./DarkModeToggle";
+import NotificationCenter from "./NotificationCenter";
 import { clearAuthSession } from "../lib/auth-client";
 
 type NavLink = {
@@ -47,98 +51,111 @@ type NavLink = {
 };
 
 const NAV_LINKS: NavLink[] = [
-  {
-    name: "Portfolio",
-    href: "/portfolio",
-    icon: <BriefcaseBusiness size={16} />,
-    protected: true,
-  },
-  { name: "Watchlist", href: "/watchlist", icon: <ScanSearch size={16} />, protected: true },
-  { name: "Research", href: "/research", icon: <Bot size={16} />, protected: true },
-  { name: "Execution", href: "/execution", icon: <Target size={16} />, protected: true },
-  { name: "Alerts", href: "/notifications", icon: <BellPlus size={16} />, protected: true },
-];
-
-type MoreGroup = { label: string; links: NavLink[] };
-
-const MORE_GROUPS: MoreGroup[] = [
-  {
-    label: "Insights",
-    links: [
-      { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={16} />, protected: true },
-      { name: "Briefing", href: "/briefing", icon: <Newspaper size={16} />, protected: true },
-      { name: "Screener", href: "/screener", icon: <Search size={16} />, protected: true },
-      { name: "Sectors", href: "/sectors", icon: <BarChart3 size={16} />, protected: true },
-      { name: "Sentiment", href: "/sentiment", icon: <TrendingUp size={16} />, protected: true },
-      { name: "Signals", href: "/ideas", icon: <SignalHigh size={16} />, protected: true },
-    ],
-  },
-  {
-    label: "Trading",
-    links: [
-      { name: "Options", href: "/options", icon: <Activity size={16} />, protected: true },
-      { name: "Crypto", href: "/crypto", icon: <Bitcoin size={16} />, protected: true },
-      { name: "Broker", href: "/broker", icon: <Link2 size={16} />, protected: true },
-      { name: "Simulator", href: "/simulator", icon: <FlaskConical size={16} />, protected: true },
-      { name: "Replay", href: "/replay", icon: <PlayCircle size={16} />, protected: true },
-      { name: "Heatmap", href: "/heatmap", icon: <FlaskConical size={16} />, protected: true },
-    ],
-  },
-  {
-    label: "Portfolio Tools",
-    links: [
-      { name: "Compare", href: "/compare", icon: <GitCompare size={16} />, protected: true },
-      { name: "Analytics", href: "/analytics", icon: <BarChart3 size={16} />, protected: true },
-      { name: "Goals", href: "/goals", icon: <Target size={16} />, protected: true },
-      { name: "Dividends", href: "/dividends", icon: <BarChart3 size={16} />, protected: true },
-      { name: "Journal", href: "/journal", icon: <BookOpen size={16} />, protected: true },
-      { name: "Benchmarks", href: "/benchmarks", icon: <Trophy size={16} />, protected: true },
-      { name: "Workspace", href: "/workspace", icon: <Columns3 size={16} />, protected: true },
-    ],
-  },
-  {
-    label: "Community & Learn",
-    links: [
-      { name: "Calendar", href: "/calendar", icon: <CalendarDays size={16} />, protected: true },
-      { name: "Transcripts", href: "/transcripts", icon: <FileText size={16} />, protected: true },
-      { name: "Community", href: "/community", icon: <Users size={16} />, protected: true },
-      { name: "Export", href: "/export", icon: <Download size={16} />, protected: true },
-      { name: "Glossary", href: "/glossary", icon: <BookOpen size={16} /> },
-      { name: "Strategies", href: "/strategies", icon: <BookOpen size={16} /> },
-    ],
-  },
+  { name: "Dashboard", href: "/dashboard", icon: <LayoutDashboard size={15} />, protected: true },
+  { name: "Agents", href: "/agents", icon: <Bot size={15} />, protected: true },
+  { name: "Research", href: "/research", icon: <Sparkles size={15} />, protected: true },
+  { name: "Portfolio", href: "/portfolio", icon: <BriefcaseBusiness size={15} />, protected: true },
+  { name: "Watchlist", href: "/watchlist", icon: <Eye size={15} />, protected: true },
+  { name: "Terminal", href: "/terminal", icon: <Terminal size={15} />, protected: true },
 ];
 
 function getMarketMeta() {
   const nowInNY = new Date(
-    new Date().toLocaleString("en-US", {
-      timeZone: "America/New_York",
-    })
+    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
   );
-
   const day = nowInNY.getDay();
   const mins = nowInNY.getHours() * 60 + nowInNY.getMinutes();
   const isWeekday = day >= 1 && day <= 5;
   const isOpen = isWeekday && mins >= 570 && mins < 960;
 
   return {
-    time: nowInNY.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    }),
+    time: nowInNY.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
     isOpen,
     statusLabel: isOpen ? "US Market Open" : "US Market Closed",
   };
 }
 
+type MoreLink = { name: string; href: string; icon: ReactNode };
+type MoreSection = { label: string; links: MoreLink[] };
+
+const MORE_SECTIONS: MoreSection[] = [
+  {
+    label: "Market Data",
+    links: [
+      { name: "Heatmap", href: "/heatmap", icon: <BarChart3 size={14} /> },
+      { name: "Sentiment", href: "/sentiment", icon: <Gauge size={14} /> },
+      { name: "Compare", href: "/compare", icon: <LineChart size={14} /> },
+      { name: "Sectors", href: "/sectors", icon: <BarChart3 size={14} /> },
+      { name: "Crypto", href: "/crypto", icon: <Bitcoin size={14} /> },
+    ],
+  },
+  {
+    label: "Trading",
+    links: [
+      { name: "Options", href: "/options", icon: <GitBranch size={14} /> },
+      { name: "Insiders", href: "/insiders", icon: <UserCheck size={14} /> },
+      { name: "Paper Trading", href: "/paper-trading", icon: <Play size={14} /> },
+      { name: "Journal", href: "/journal", icon: <BookOpen size={14} /> },
+      { name: "Portfolios", href: "/portfolios", icon: <Wallet size={14} /> },
+    ],
+  },
+  {
+    label: "Calendars",
+    links: [
+      { name: "Earnings", href: "/earnings", icon: <Calendar size={14} /> },
+      { name: "Economic", href: "/economic-calendar", icon: <Globe size={14} /> },
+    ],
+  },
+  {
+    label: "Analytics",
+    links: [
+      { name: "Performance", href: "/performance", icon: <TrendingDown size={14} /> },
+      { name: "Correlation", href: "/correlation", icon: <PieChart size={14} /> },
+      { name: "Drawdown", href: "/drawdown", icon: <TrendingDown size={14} /> },
+      { name: "Backtest", href: "/backtest", icon: <Play size={14} /> },
+    ],
+  },
+  {
+    label: "AI & Agents",
+    links: [
+      { name: "Agent Chains", href: "/chains", icon: <Link size={14} /> },
+      { name: "NL Alerts", href: "/nl-alerts", icon: <MessageSquare size={14} /> },
+      { name: "Trade Replay", href: "/replay", icon: <Play size={14} /> },
+      { name: "Workflows", href: "/workflows", icon: <Play size={14} /> },
+      { name: "Templates", href: "/templates", icon: <Store size={14} /> },
+      { name: "Leaderboard", href: "/leaderboard", icon: <Trophy size={14} /> },
+    ],
+  },
+  {
+    label: "Social",
+    links: [
+      { name: "Profiles", href: "/profiles", icon: <Users size={14} /> },
+      { name: "Signal Feed", href: "/signals", icon: <Rss size={14} /> },
+      { name: "Copy Trading", href: "/copy-trading", icon: <Copy size={14} /> },
+    ],
+  },
+  {
+    label: "System",
+    links: [
+      { name: "Alerts", href: "/alerts", icon: <Bell size={14} /> },
+      { name: "Webhooks", href: "/webhooks", icon: <Globe size={14} /> },
+      { name: "Settings", href: "/settings", icon: <Settings size={14} /> },
+    ],
+  },
+];
+
+const ALL_MORE_LINKS = MORE_SECTIONS.flatMap((s) => s.links);
+
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
-  const hideChrome = pathname === "/" || pathname.startsWith("/login") || pathname.startsWith("/signup") || pathname.startsWith("/reset-password") || pathname.startsWith("/learn");
+  const hideChrome =
+    pathname === "/" ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup") ||
+    pathname.startsWith("/pricing");
 
-  const [loggedIn, setLoggedIn] = useState(
-    () => typeof window !== "undefined" && Boolean(localStorage.getItem("access_token"))
-  );
+  const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const moreRef = useRef<HTMLDivElement>(null);
@@ -147,39 +164,31 @@ export default function Header() {
   const [clockTick, setClockTick] = useState(0);
 
   useEffect(() => {
-    const checkLogin = () => {
-      setLoggedIn(Boolean(localStorage.getItem("access_token")));
-    };
-
+    const checkLogin = () => setLoggedIn(Boolean(localStorage.getItem("access_token")));
     checkLogin();
     window.addEventListener("storage", checkLogin);
-
     return () => window.removeEventListener("storage", checkLogin);
   }, [pathname]);
 
   useEffect(() => {
-    const id = window.setInterval(() => setClockTick((value) => value + 1), 60_000);
+    const id = window.setInterval(() => setClockTick((v) => v + 1), 60_000);
     return () => window.clearInterval(id);
   }, []);
 
-  /* Close the "More" dropdown on outside click */
+  useEffect(() => {
+    setMenuOpen(false);
+    setMoreOpen(false);
+  }, [pathname]);
+
   useEffect(() => {
     if (!moreOpen) return;
     const handleClick = (e: MouseEvent) => {
-      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
-        setMoreOpen(false);
-      }
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) setMoreOpen(false);
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [moreOpen]);
 
-  /* Close the "More" dropdown on navigation */
-  useEffect(() => {
-    setMoreOpen(false);
-  }, [pathname]);
-
-  /* Slide the active indicator under the current nav link */
   useEffect(() => {
     const nav = navRef.current;
     const indicator = indicatorRef.current;
@@ -194,17 +203,15 @@ export default function Header() {
   }, [pathname]);
 
   const marketMeta = useMemo(() => getMarketMeta(), [clockTick]);
-  const homeHref = loggedIn ? "/portfolio" : "/login";
+  const homeHref = loggedIn ? "/dashboard" : "/login";
 
   const navigate = (href: string, protectedRoute?: boolean) => {
     if (protectedRoute && !localStorage.getItem("access_token")) {
       router.push("/login");
       return;
     }
-
     router.push(href);
     setMenuOpen(false);
-    setMoreOpen(false);
   };
 
   const handleLogout = () => {
@@ -219,16 +226,15 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 px-2 sm:px-3 pt-2 fade-in">
       <div className="topbar-shell relative">
-        <DynamicBackdrop variant="aurora" className="opacity-[0.24]" />
         <div className="topbar-inner relative z-[1]">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <button className="topbar-brand" onClick={() => navigate(homeHref)}>
-              <BrandLogo size={36} withWordmark showTagline={false} />
+              <BrandLogo size={32} withWordmark showTagline={false} />
             </button>
-            <div className="hidden xl:flex items-center gap-2">
+            <div className="hidden xl:flex items-center gap-1.5">
               <span className={`topbar-chip ${marketMeta.isOpen ? "topbar-chip-live" : ""}`}>
                 {marketMeta.isOpen && <span className="pulse-dot" />}
-                {marketMeta.isOpen ? "Session Live" : "After Hours"}
+                {marketMeta.isOpen ? "Market Open" : "After Hours"}
               </span>
               <span className="topbar-chip">{marketMeta.time} ET</span>
             </div>
@@ -248,78 +254,84 @@ export default function Header() {
                 </button>
               );
             })}
+            <span ref={indicatorRef} className="topbar-indicator" />
+            {/* More dropdown */}
             <div ref={moreRef} className="relative">
               <button
                 onClick={() => setMoreOpen((v) => !v)}
-                className={`topbar-link ${moreOpen ? "topbar-link-active" : ""}`}
+                className={`topbar-link ${ALL_MORE_LINKS.some((l) => pathname === l.href) ? "topbar-link-active" : ""}`}
               >
-                <LayoutDashboard size={15} />
                 More
-                <ChevronDown size={13} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+                <ChevronDown size={12} className={`transition-transform ${moreOpen ? "rotate-180" : ""}`} />
               </button>
               {moreOpen && (
-                <div className="topbar-more-panel">
-                  {MORE_GROUPS.map((group) => (
-                    <div key={group.label}>
-                      <div className="topbar-more-group-label">{group.label}</div>
-                      <div className="grid grid-cols-2 gap-1">
-                        {group.links.map((link) => {
-                          const active = pathname === link.href;
-                          return (
-                            <button
-                              key={link.href}
-                              onClick={() => navigate(link.href, link.protected)}
-                              className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
-                            >
-                              {link.icon}
-                              {link.name}
-                            </button>
-                          );
-                        })}
+                <div
+                  className="absolute top-full right-0 mt-2 w-56 p-1.5 shadow-xl z-50 rounded-xl border"
+                  style={{
+                    maxHeight: "calc(100vh - 100px)",
+                    overflowY: "auto",
+                    background: "var(--surface)",
+                    borderColor: "var(--surface-border)",
+                    backdropFilter: "blur(20px)",
+                  }}
+                >
+                  {MORE_SECTIONS.map((section) => (
+                    <div key={section.label}>
+                      <div className="px-3 pt-2.5 pb-1 text-[10px] uppercase tracking-widest font-semibold" style={{ color: "var(--ink-muted)", opacity: 0.6 }}>
+                        {section.label}
                       </div>
+                      {section.links.map((link) => {
+                        const active = pathname === link.href;
+                        return (
+                          <button
+                            key={link.href}
+                            onClick={() => navigate(link.href, true)}
+                            className={`w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              active
+                                ? "text-[var(--accent-2)] bg-[color-mix(in_srgb,var(--accent-2)_10%,transparent)]"
+                                : "text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[color-mix(in_srgb,var(--ink)_5%,transparent)]"
+                            }`}
+                          >
+                            {link.icon}
+                            {link.name}
+                          </button>
+                        );
+                      })}
                     </div>
                   ))}
                 </div>
               )}
             </div>
-            <span ref={indicatorRef} className="topbar-indicator" />
           </nav>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
               onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
               className="topbar-search-btn hidden lg:inline-flex"
             >
-              <Search size={14} />
+              <Search size={13} />
               <span className="hidden xl:inline">Search</span>
               <kbd className="topbar-kbd">{"\u2318"}K</kbd>
             </button>
-            <button onClick={() => navigate("/research", true)} className="topbar-ai hidden sm:inline-flex">
-              <Sparkles size={14} />
-              <span className="hidden xl:inline">AI Research</span>
-            </button>
+            <DarkModeToggle />
+            {loggedIn && <NotificationCenter />}
             {!loggedIn ? (
               <button className="topbar-action hidden sm:inline-flex" onClick={() => navigate("/login")}>
-                <LogIn size={15} />
+                <LogIn size={14} />
                 <span className="hidden xl:inline">Sign In</span>
               </button>
             ) : (
               <>
-                <button className="topbar-action hidden sm:inline-flex" onClick={() => navigate("/profile", true)}>
-                  <UserRound size={15} />
-                  <span className="hidden xl:inline">Profile</span>
-                </button>
                 <button className="topbar-action-danger hidden sm:inline-flex" onClick={handleLogout}>
-                  <LogOut size={15} />
+                  <LogOut size={14} />
                   <span className="hidden xl:inline">Logout</span>
                 </button>
               </>
             )}
-
             <button
               aria-label="Open navigation"
               className="topbar-icon-btn lg:hidden"
-              onClick={() => setMenuOpen((value) => !value)}
+              onClick={() => setMenuOpen((v) => !v)}
             >
               {menuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -328,12 +340,11 @@ export default function Header() {
       </div>
 
       {menuOpen && (
-        <div className="lg:hidden mt-2 topbar-mobile-sheet rise-stagger max-h-[calc(100vh-120px)] overflow-y-auto">
-          <div className="grid gap-2">
+        <div className="lg:hidden mt-1.5 topbar-mobile-sheet rise-stagger max-h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="grid gap-1.5">
             <div className="topbar-mobile-meta">
-              {marketMeta.statusLabel} - {marketMeta.time} ET
+              {marketMeta.statusLabel} &middot; {marketMeta.time} ET
             </div>
-
             {NAV_LINKS.map((link) => {
               const active = pathname === link.href;
               return (
@@ -347,28 +358,24 @@ export default function Header() {
                 </button>
               );
             })}
-
-            {MORE_GROUPS.map((group) => (
-              <div key={group.label}>
-                <div className="topbar-mobile-meta mt-1">{group.label}</div>
-                <div className="grid grid-cols-2 gap-1 mt-2">
-                  {group.links.map((link) => {
-                    const active = pathname === link.href;
-                    return (
-                      <button
-                        key={link.href}
-                        onClick={() => navigate(link.href, link.protected)}
-                        className={`topbar-mobile-link text-xs ${active ? "topbar-mobile-link-active" : ""}`}
-                      >
-                        {link.icon}
-                        {link.name}
-                      </button>
-                    );
-                  })}
-                </div>
+            {MORE_SECTIONS.map((section) => (
+              <div key={section.label}>
+                <div className="topbar-mobile-meta mt-1">{section.label}</div>
+                {section.links.map((link) => {
+                  const active = pathname === link.href;
+                  return (
+                    <button
+                      key={link.href}
+                      onClick={() => navigate(link.href, true)}
+                      className={`topbar-mobile-link ${active ? "topbar-mobile-link-active" : ""}`}
+                    >
+                      {link.icon}
+                      {link.name}
+                    </button>
+                  );
+                })}
               </div>
             ))}
-
             {!loggedIn ? (
               <button className="topbar-mobile-auth" onClick={() => navigate("/login")}>
                 <LogIn size={15} />

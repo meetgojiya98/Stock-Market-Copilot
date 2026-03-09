@@ -1,10 +1,48 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="z-fill" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#3b6de7"/>
-      <stop offset="1" stop-color="#7ba4ff"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#050508"/>
+      <stop offset="1" stop-color="#0c0c12"/>
     </linearGradient>
+
+    <linearGradient id="z" x1="148" y1="148" x2="364" y2="364" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#818cf8"/>
+      <stop offset="0.5" stop-color="#a78bfa"/>
+      <stop offset="1" stop-color="#38bdf8"/>
+    </linearGradient>
+
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="b"/>
+      <feComposite in="SourceGraphic" in2="b" operator="over"/>
+    </filter>
+
+    <filter id="ambient" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+
+    <clipPath id="clip">
+      <rect width="512" height="512" rx="108"/>
+    </clipPath>
   </defs>
-  <rect width="512" height="512" rx="128" fill="url(#z-fill)"/>
-  <path d="M152 158h208l-208 196h208" stroke="#fff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="108" fill="url(#bg)"/>
+  <rect x="1" y="1" width="510" height="510" rx="107" stroke="rgba(255,255,255,0.04)" stroke-width="1" fill="none"/>
+
+  <g clip-path="url(#clip)">
+    <!-- Ambient -->
+    <circle cx="256" cy="256" r="120" fill="#6366f1" opacity="0.04" filter="url(#ambient)"/>
+
+    <!-- Z letterform -->
+    <g filter="url(#glow)">
+      <path
+        d="M 160,168 L 352,168 L 160,344 L 352,344"
+        stroke="url(#z)"
+        stroke-width="32"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        fill="none"
+      />
+    </g>
+  </g>
 </svg>

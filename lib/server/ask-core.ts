@@ -1,3 +1,5 @@
+import Anthropic from "@anthropic-ai/sdk";
+
 type BaseSource = {
   id?: string;
   title: string;
@@ -27,15 +29,22 @@ const BACKEND_BASES = Array.from(
 );
 
 const ASK_TIMEOUT_MS = (() => {
-  const parsed = Number(process.env.ASK_TIMEOUT_MS ?? 16000);
-  if (!Number.isFinite(parsed) || parsed < 2000) return 16000;
+  const parsed = Number(process.env.ASK_TIMEOUT_MS ?? 30000);
+  if (!Number.isFinite(parsed) || parsed < 2000) return 30000;
   return Math.floor(parsed);
 })();
 
-const DIRECT_LLM_API_KEY =
-  process.env.DIRECT_LLM_API_KEY || process.env.GROQ_API_KEY || process.env.OPENAI_API_KEY || "";
-const DIRECT_LLM_BASE = normalizeBase(process.env.DIRECT_LLM_BASE) || "https://api.groq.com/openai/v1";
-const DIRECT_LLM_MODEL = (process.env.DIRECT_LLM_MODEL || "llama-3.1-8b-instant").trim();
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "";
+const ANTHROPIC_MODEL = (process.env.ANTHROPIC_MODEL || "claude-sonnet-4-20250514").trim();
+
+let anthropicClient: Anthropic | null = null;
+function getAnthropicClient(): Anthropic | null {
+  if (!ANTHROPIC_API_KEY) return null;
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
+  }
+  return anthropicClient;
+}
 
 export function normalizeSymbol(value: unknown) {
   if (typeof value !== "string") return "";
@@ -93,85 +102,70 @@ function looksLikeEmptyAnswer(answer: string) {
 
 function buildDirectPrompt(query: string, symbol: string, sources: BaseSource[]) {
   const sourceLines = sources
-    .slice(0, 8)
+    .slice(0, 10)
     .map((item, index) => `- [S${index + 1}] ${item.title} (${item.source}) ${item.url || "#"}`)
     .join("\n");
 
   return [
-    "You are an institutional-grade market research copilot.",
-    "Be precise and risk-first. Do not fabricate facts.",
-    "Use markdown sections:",
-    "### Direct Answer",
-    "### Evidence",
-    "### Risks / Counterpoints",
-    "### Action Plan",
-    "### Source Trail",
     `Symbol: ${symbol || "N/A"}`,
     `Question: ${query || "Provide a risk-first setup."}`,
-    sourceLines ? `Sources:\n${sourceLines}` : "Sources: none provided",
+    sourceLines ? `\nSources:\n${sourceLines}` : "\nSources: none provided",
   ].join("\n");
 }
 
-async function fetchDirectLlmAnswer(
+const SYSTEM_PROMPT = `You are an institutional-grade market research copilot powered by Claude. You provide precise, risk-first financial analysis.
+
+Key principles:
+- Be precise, evidence-driven, and risk-aware
+- Never fabricate data or statistics
+- Cite sources using [S1], [S2] notation for every factual claim
+- If you don't have enough information, say so clearly
+- Consider both bull and bear perspectives
+
+Structure your response with these markdown sections:
+### Direct Answer
+### Evidence
+### Risks / Counterpoints
+### Action Plan
+### Source Trail`;
+
+async function fetchClaudeAnswer(
   query: string,
   symbol: string,
   sources: BaseSource[]
 ): Promise<{ answer: string; detail: string } | null> {
-  if (!DIRECT_LLM_API_KEY || !DIRECT_LLM_MODEL || !DIRECT_LLM_BASE) {
-    return null;
-  }
+  const client = getAnthropicClient();
+  if (!client) return null;
 
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), ASK_TIMEOUT_MS);
   try {
-    const response = await fetch(`${DIRECT_LLM_BASE}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${DIRECT_LLM_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: DIRECT_LLM_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: "You are a concise, factual financial research assistant.",
-          },
-          {
-            role: "user",
-            content: buildDirectPrompt(query, symbol, sources),
-          },
-        ],
-        temperature: 0.2,
-        max_tokens: 700,
-      }),
-      signal: controller.signal,
+    const message = await client.messages.create({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2048,
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content: buildDirectPrompt(query, symbol, sources),
+        },
+      ],
     });
 
-    const contentType = response.headers.get("content-type") || "";
-    const payload: Record<string, unknown> = contentType.includes("application/json")
-      ? ((await response.json().catch(() => ({}))) as Record<string, unknown>)
-      : { detail: await response.text().catch(() => "") };
+    const textBlock = message.content.find((block) => block.type === "text");
+    const answer = textBlock?.text?.trim() ?? "";
 
-    if (!response.ok) {
-      const detail = String(payload?.detail ?? "").trim() || `Direct LLM request failed (${response.status}).`;
-      throw new Error(detail);
-    }
-
-    const choices = Array.isArray(payload?.choices) ? payload.choices : [];
-    const first = choices[0] as Record<string, unknown> | undefined;
-    const message = first?.message as Record<string, unknown> | undefined;
-    const answer = String(message?.content ?? "").trim();
     if (looksLikeEmptyAnswer(answer)) {
-      throw new Error("Direct LLM response was empty.");
+      throw new Error("Claude response was empty.");
     }
 
     return {
       answer,
-      detail: `Direct model response via ${DIRECT_LLM_MODEL}.`,
+      detail: `Response via Claude (${ANTHROPIC_MODEL}).`,
     };
-  } finally {
-    clearTimeout(timeout);
+  } catch (error) {
+    if (error instanceof Anthropic.APIError) {
+      throw new Error(`Claude API error: ${error.message} (${error.status})`);
+    }
+    throw error;
   }
 }
 
@@ -184,6 +178,7 @@ export async function fetchAskAnswer(
   let lastDetail = "AI service is unavailable.";
   const body = JSON.stringify(payload);
 
+  // Try configured backend bases first
   for (const base of BACKEND_BASES) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), ASK_TIMEOUT_MS);
@@ -232,17 +227,18 @@ export async function fetchAskAnswer(
     }
   }
 
+  // Fallback to Claude (Anthropic API) directly
   try {
-    const direct = await fetchDirectLlmAnswer(query, symbol, sources);
-    if (direct?.answer) {
+    const claude = await fetchClaudeAnswer(query, symbol, sources);
+    if (claude?.answer) {
       return {
-        answer: direct.answer,
+        answer: claude.answer,
         mode: "live" as const,
-        detail: direct.detail,
+        detail: claude.detail,
       };
     }
   } catch (error) {
-    lastDetail = error instanceof Error ? error.message : "Direct LLM fallback failed.";
+    lastDetail = error instanceof Error ? error.message : "Claude API fallback failed.";
   }
 
   return {
@@ -250,4 +246,70 @@ export async function fetchAskAnswer(
     mode: "deterministic" as const,
     detail: lastDetail,
   };
+}
+
+// Streaming support for Claude
+export async function* streamClaudeAnswer(
+  query: string,
+  symbol: string,
+  sources: BaseSource[],
+  systemPrompt?: string
+): AsyncGenerator<{ type: "text" | "done" | "error"; content: string }> {
+  const client = getAnthropicClient();
+  if (!client) {
+    yield { type: "error", content: "Anthropic API key not configured." };
+    return;
+  }
+
+  const sourceLines = sources
+    .slice(0, 10)
+    .map((item, index) => `- [S${index + 1}] ${item.title} (${item.source}) ${item.url || "#"}`)
+    .join("\n");
+
+  // Fetch live price data for the symbol if available
+  let liveData = "";
+  if (symbol && symbol !== "N/A") {
+    try {
+      const priceRes = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3002"}/api/stocks/price?symbol=${symbol}`);
+      if (priceRes.ok) {
+        const p = await priceRes.json();
+        if (p.price != null) {
+          liveData = `\n### Live Market Data\n**${symbol}:** $${p.price} | Change: ${p.change || "N/A"} (${p.changePercent || "N/A"})`;
+          if (p.high) liveData += ` | Day Range: $${p.low}-$${p.high}`;
+          if (p.volume) liveData += ` | Volume: ${Number(p.volume).toLocaleString()}`;
+          if (p["52WeekHigh"]) liveData += `\n**52W Range:** $${p["52WeekLow"]}-$${p["52WeekHigh"]}`;
+          if (p.marketCap) liveData += ` | **Market Cap:** $${(p.marketCap / 1e9).toFixed(1)}B`;
+          if (p.pe) liveData += ` | **P/E:** ${p.pe}`;
+        }
+      }
+    } catch { /* skip if unavailable */ }
+  }
+
+  const userContent = [
+    `Symbol: ${symbol || "N/A"}`,
+    `Question: ${query || "Provide a risk-first setup."}`,
+    liveData,
+    sourceLines ? `\nSources:\n${sourceLines}` : "\nSources: none provided",
+    `\nIMPORTANT: Reference the live market data with specific prices and numbers in your analysis.`,
+  ].filter(Boolean).join("\n");
+
+  try {
+    const stream = client.messages.stream({
+      model: ANTHROPIC_MODEL,
+      max_tokens: 2048,
+      system: systemPrompt || SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userContent }],
+    });
+
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        yield { type: "text", content: event.delta.text };
+      }
+    }
+
+    yield { type: "done", content: "" };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Claude streaming failed.";
+    yield { type: "error", content: message };
+  }
 }
